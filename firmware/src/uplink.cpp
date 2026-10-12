@@ -220,7 +220,7 @@ static void sendBatch() {
   st["rssi"] = WiFi.RSSI();
   st["uptime_s"] = millis() / 1000;
   st["heap"] = ESP.getFreeHeap();
-  st["queue"] = s_st.queue;
+  st["queue"] = s_st.queue > n ? s_st.queue - n : 0;  // pendências depois deste lote
   String body;
   serializeJson(doc, body);
 

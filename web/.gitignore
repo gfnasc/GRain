@@ -28,3 +28,4 @@ logs
 # Segredos gerados localmente
 .panel-password.txt
 .device-token-*.txt
+.test-password.txt

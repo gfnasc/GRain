@@ -24,7 +24,7 @@ onMounted(() => {
 onBeforeUnmount(() => clearInterval(timer))
 
 const fmt = (v: number | null | undefined, d = 1) =>
-  v == null ? '–' : v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d })
+  v == null ? '–' : v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: false })
 const hhmm = (ts: number) =>
   new Date(ts * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
 
