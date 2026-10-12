@@ -30,3 +30,29 @@ alter table devices add column if not exists config_version         integer not 
 alter table devices add column if not exists config_updated_at      timestamptz;
 alter table devices add column if not exists config_applied_version integer;     -- informado pela estação a cada consulta
 alter table devices add column if not exists last_poll_at           timestamptz; -- última consulta de configuração
+
+-- Fase 9: notificações por WhatsApp (CallMeBot).
+alter table devices add column if not exists notify jsonb;  -- agenda, alertas e local da previsão
+
+create table if not exists recipients (
+  id         serial primary key,
+  name       text not null,
+  phone      text not null,           -- formato internacional, ex.: +5511999999999
+  apikey     text not null,           -- chave do CallMeBot (nunca devolvida ao navegador)
+  enabled    boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+-- Registro de envios. "slot" identifica o envio (agenda + dia, alerta + janela):
+-- a unicidade garante que nada é enviado duas vezes.
+create table if not exists notifications (
+  id         serial primary key,
+  slot       text not null unique,
+  kind       text not null,           -- schedule | alert | test
+  type       text,                    -- forecast | current | trend | summary | temp_max | ...
+  status     text not null default 'pendente',  -- enviado | parcial | falhou | sem_destinatarios
+  detail     text,
+  message    text,
+  created_at timestamptz not null default now()
+);
+create index if not exists notifications_created_idx on notifications (created_at desc);

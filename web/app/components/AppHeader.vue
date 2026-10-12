@@ -34,6 +34,7 @@ async function logout() {
       <NuxtLink to="/">Agora</NuxtLink>
       <NuxtLink to="/historico">Histórico</NuxtLink>
       <NuxtLink to="/display">Display</NuxtLink>
+      <NuxtLink to="/mensagens">Mensagens</NuxtLink>
     </nav>
     <div class="actions">
       <span v-if="lastSeenAt !== undefined" class="pill" :class="online ? 'ok' : 'off'">
@@ -55,7 +56,7 @@ async function logout() {
 }
 .brand { margin-right: auto; }
 h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; font-stretch: 118%; }
-nav { display: flex; gap: 4px; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; }
 nav a {
   color: var(--fg);
   text-decoration: none;
