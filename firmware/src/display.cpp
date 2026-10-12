@@ -122,8 +122,43 @@ static void drawDetails() {
   drawRow(63, "Ligado há", buf);
 }
 
+// --- Tela de abertura: "Iniciando..." com spinner ---
+// O spinner ocupa só os tiles 6..9 x 1..4 (32x32 px), atualizados com
+// updateDisplayArea para não reenviar a tela inteira a cada quadro.
+static const int SPIN_CX = 64, SPIN_CY = 24, SPIN_R = 11, SPIN_DOTS = 8;
+static uint32_t s_splashUntil = 0;
+static int s_spinFrame = -1;
+
+static bool splashActive() { return s_splashUntil != 0 && (int32_t)(millis() - s_splashUntil) < 0; }
+
+static void drawSpinner(int frame) {
+  s_oled.setDrawColor(0);
+  s_oled.drawBox(48, 8, 32, 32);
+  s_oled.setDrawColor(1);
+  for (int i = 0; i < SPIN_DOTS; i++) {
+    float a = i * 2.0f * PI / SPIN_DOTS - PI / 2;
+    int x = SPIN_CX + (int)lroundf(SPIN_R * cosf(a));
+    int y = SPIN_CY + (int)lroundf(SPIN_R * sinf(a));
+    int age = (frame - i + SPIN_DOTS) % SPIN_DOTS;  // 0 = ponto da frente
+    if (age == 0) s_oled.drawDisc(x, y, 3);
+    else if (age == 1) s_oled.drawDisc(x, y, 2);
+    else if (age == 2) s_oled.drawDisc(x, y, 1);
+    else s_oled.drawPixel(x, y);
+  }
+}
+
+static void drawSplashFull() {
+  s_oled.clearBuffer();
+  drawSpinner(s_spinFrame < 0 ? 0 : s_spinFrame);
+  s_oled.setFont(u8g2_font_7x13_tf);
+  const char *msg = "Iniciando...";
+  s_oled.drawUTF8((128 - s_oled.getUTF8Width(msg)) / 2, 58, msg);
+  s_oled.sendBuffer();
+}
+
 static void render() {
   if (!s_ok) return;
+  if (splashActive()) return drawSplashFull();
   s_oled.clearBuffer();
   if (!s_hasReading) {
     s_oled.setFont(u8g2_font_7x13_tf);
@@ -150,7 +185,9 @@ bool displayBegin() {
   }
   s_oled.setContrast(DISPLAY_CONTRAST);
   s_oled.enableUTF8Print();
-  s_pageSince = millis();
+  s_splashUntil = millis() + DISPLAY_SPLASH_MS;
+  if (s_splashUntil == 0) s_splashUntil = 1;
+  s_spinFrame = 0;
   render();
   log_i("[%s] OLED ok em 0x%02X", TAG, ADDR_OLED);
   return true;
@@ -163,7 +200,27 @@ void displayUpdate(const Reading &r) {
 }
 
 void displayLoop() {
+  if (!s_ok) return;
   uint32_t now = millis();
+
+  if (s_splashUntil != 0) {
+    if (splashActive()) {
+      int frame = (now / DISPLAY_SPINNER_FRAME_MS) % SPIN_DOTS;
+      if (frame != s_spinFrame) {
+        s_spinFrame = frame;
+        drawSpinner(frame);
+        s_oled.updateDisplayArea(6, 1, 4, 4);
+      }
+      return;
+    }
+    // Fim da abertura: começa pela primeira página.
+    s_splashUntil = 0;
+    s_page = 0;
+    s_pageSince = now;
+    render();
+    return;
+  }
+
   if ((uint32_t)(now - s_pageSince) >= DISPLAY_PAGE_MS) {
     s_pageSince = now;
     s_page = (s_page + 1) % PAGE_COUNT;

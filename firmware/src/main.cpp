@@ -41,6 +41,8 @@ void setup() {
   log_i("[%s] boot: GWeather", TAG);
 
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, I2C_FREQ_HZ);
+  // Display primeiro, para a tela de abertura aparecer durante a inicialização.
+  bool oledOk = displayBegin();
   i2cScan(Wire);
 
   s_altitudeM = sensorAltitudeM(SITE_GROUND_ALT_M, SITE_FLOOR, SITE_FLOOR_HEIGHT_M, SITE_SENSOR_HEIGHT_M);
@@ -55,7 +57,7 @@ void setup() {
     Serial.println("BMP280: NÃO ENCONTRADO");
   }
   Serial.printf("Altitude do sensor: %.1f m\n", s_altitudeM);
-  Serial.printf("OLED  : %s\n", displayBegin() ? "ok (0x3C)" : "NÃO ENCONTRADO");
+  Serial.printf("OLED  : %s\n", oledOk ? "ok (0x3C)" : "NÃO ENCONTRADO");
 }
 
 void loop() {

@@ -30,6 +30,8 @@
 // Display OLED
 #define DISPLAY_PAGE_MS 5000
 #define DISPLAY_CONTRAST 128
+#define DISPLAY_SPLASH_MS 2500         // tela "Iniciando..." no boot
+#define DISPLAY_SPINNER_FRAME_MS 100   // velocidade do spinner
 
 // Diferença de temperatura AHT20 x BMP280 acima da qual avisamos
 #define TEMP_MISMATCH_WARN_C 2.0f
