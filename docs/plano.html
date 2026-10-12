@@ -193,7 +193,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
     <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel</span></div>
   </div>
-  <span class="status">Fases 1 a 4 concluídas · Etapa atual: Fase 5, API local</span>
+  <span class="status">Fases 1 a 5 concluídas · Etapa atual: Fase 6, Nuxt na Vercel</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -507,22 +507,26 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         </div>
       </div>
     </div>
-    <div class="phase now">
+    <div class="phase done">
       <div class="n">05</div>
       <div class="body">
-        <div class="meta"><h3>API local e página mínima no ESP32</h3><span class="chip now">Agora</span><span class="chip">1 dia</span></div>
+        <div class="meta"><h3>API local e página mínima no ESP32</h3><span class="chip done">Concluída</span><span class="chip">1 dia</span></div>
         <ul>
           <li>API <code>/api/v1</code> no ESP32: leitura atual, estado, configuração e reinício. Rotas que alteram algo exigem senha.</li>
           <li>Página única e leve em <code>http://gweather.local</code> (HTML e JS puros, gravada no firmware) para ver os dados sem internet.</li>
           <li>Contrato da API documentado em <code>docs/api-v1.md</code>, o mesmo formato que a nuvem vai usar.</li>
         </ul>
         <p class="accept"><b>Aceite:</b> <code>http://gweather.local</code> no celular mostra os dados atualizando; <code>/api/v1/now</code> responde JSON; alterar configuração sem senha é recusado.</p>
+        <div class="result">
+          <span><b>Resultado na placa:</b> página de 4,6 KB aberta no celular, atualizando a cada 5 s; rotas <code>now</code>, <code>status</code> e <code>config</code> respondendo; <code>PUT</code> sem senha, com valor fora da faixa ou JSON quebrado recusados; alteração parcial é tudo ou nada.</span>
+          <span>Ajuste extra: IPv6 ligado no ESP32 para <code>gweather.local</code> resolver em ~0,01 s no macOS/iOS (antes esperava 5 s).</span>
+        </div>
       </div>
     </div>
-    <div class="phase">
+    <div class="phase now">
       <div class="n">06</div>
       <div class="body">
-        <div class="meta"><h3>Nuvem: Nuxt na Vercel</h3><span class="chip">2–3 dias</span></div>
+        <div class="meta"><h3>Nuvem: Nuxt na Vercel</h3><span class="chip now">Agora</span><span class="chip">2–3 dias</span></div>
         <ul>
           <li>App Nuxt em <code>web/</code> com rotas de servidor (Nitro): <code>POST /api/v1/ingest</code> com token por aparelho e banco Postgres.</li>
           <li>ESP32 envia médias de 10 min por HTTPS e guarda alguns dias de reserva para reenviar o que ficar pendente.</li>
@@ -833,7 +837,7 @@ web/ (fase 6)
 
 <footer>
   <span class="eyebrow">Próximo passo</span>
-  <p><b>Fase 5:</b> API <code>/api/v1</code> no ESP32 e página mínima em <code>gweather.local</code>. Depois, a fase 6 leva o painel para o Nuxt na Vercel. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
+  <p><b>Fase 6:</b> app Nuxt na Vercel com banco Postgres, recebimento de dados e painel com login; o ESP32 passa a enviar médias de 10 min com reserva offline. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
 </footer>
 </div>
 

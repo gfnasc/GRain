@@ -21,12 +21,19 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   - Teste: após vários reinícios, voltou sozinho ao Wi-Fi, hora sincronizada em ~2 s, config preservada.
 - `dev` e `release` compilam (release ~70 % de uma partição de app).
 
+- Fase 5 concluída e validada (celular ok):
+  - `src/webapi.*`: WebServer na porta 80, só com Wi-Fi e portal fechado; rotas `/`, `now`, `status`,
+    `config` (GET/PUT parcial tudo-ou-nada, exige `Content-Type: application/json`), `system/reboot`.
+  - Basic auth `admin` + senha da estação (`portal_pass` na NVS) nas rotas que alteram algo; CORS `*`.
+  - `src/webpage.h`: página mínima de 4,6 KB embutida (PROGMEM).
+  - IPv6 link-local ligado em STA_CONNECTED para o mDNS responder AAAA (sem espera de 5 s no macOS).
+  - Contrato em `../../docs/api-v1.md`.
+
 ## Em andamento
-- Fase 5: API local `/api/v1` (WebServer do core) + página mínima embutida no firmware.
+- Fase 6: app Nuxt em `web/` na Vercel + Postgres; `uplink` no ESP32.
 
 ## Próximos passos
-1. Fase 5: `src/webapi.*`, `docs/api-v1.md`, página mínima; senha nas rotas que alteram algo.
-2. Fase 6: app Nuxt em `web/` na Vercel, Postgres, ingestão e envio pelo ESP32 com reserva offline.
+1. Fase 6: app Nuxt em `web/` na Vercel, Postgres, ingestão e envio pelo ESP32 com reserva offline.
 
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.

@@ -19,8 +19,8 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 | 2 | Scanner I2C e leitura dos sensores | ✅ Concluída |
 | 3 | Display OLED com páginas rotativas | ✅ Concluída |
 | 4 | Wi-Fi, hora pela internet (NTP), `gweather.local`, configuração e console serial | ✅ Concluída |
-| 5 | API local `/api/v1` e página mínima no ESP32 | 🔧 Em andamento |
-| 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | Planejada |
+| 5 | API local `/api/v1` e página mínima no ESP32 | ✅ Concluída |
+| 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | 🔧 Em andamento |
 | 7 | Histórico, gráficos e exportação CSV no painel | Planejada |
 | 8 | Personalização do display pelo painel | Planejada |
 | 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | Planejada |
@@ -147,13 +147,35 @@ Na primeira vez, sem Wi-Fi salvo, o display mostra **"Configurar Wi-Fi"** com o 
 
 O Wi-Fi fica salvo na placa. Para trocar de rede, use o comando `wifi esquecer` no console.
 
+### Página local e API
+
+Com a estação no Wi-Fi, abra **http://gweather.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. A página mostra a leitura atual e o estado da estação, atualizando a cada 5 s, e funciona sem internet.
+
+A mesma porta serve a API `/api/v1`:
+
+| Rota | Descrição |
+|---|---|
+| `GET /api/v1/now` | Leitura atual |
+| `GET /api/v1/status` | Aparelho, Wi-Fi, hora, memória e sensores |
+| `GET /api/v1/config` | Configuração |
+| `PUT /api/v1/config` 🔒 | Altera campos (JSON parcial, tudo ou nada) |
+| `POST /api/v1/system/reboot` 🔒 | Reinicia |
+
+🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
+
+```bash
+curl http://gweather.local/api/v1/now
+curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
+  -d '{"display":{"page_s":8}}' http://gweather.local/api/v1/config
+```
+
 ### Console serial
 
 Com `pio device monitor` aberto, digite `ajuda`:
 
 | Comando | O que faz |
 |---|---|
-| `status` | Rede, IP, hora, altitude, sensores e memória |
+| `status` | Rede, IP, hora, altitude, sensores, memória e senha da estação |
 | `config` | Mostra a configuração gravada (`/config.json`) |
 | `set <chave> <valor>` | Altera e salva, ex.: `set site.floor 10`, `set display.page_s 8`, `set time.tz <-03>3` |
 | `config padrao` | Volta aos valores iniciais de `site.h` |
@@ -233,7 +255,8 @@ Enquanto a rede de configuração estiver aberta, o display fica fixo nas instru
 | Erro `Falta include/site.h` ao compilar | Configuração do local não criada | `cp include/site.h.example include/site.h` |
 | Não aparece a rede GWeather-Setup | Já existe Wi-Fi salvo | Use `wifi portal` no console |
 | Não conecta ao Wi-Fi | Rede de 5 GHz ou senha errada | Use uma rede de 2,4 GHz; `wifi esquecer` e configure de novo |
-| `gweather.local` não abre | Aparelho sem suporte a mDNS ou em outra rede | Use o IP mostrado na página Rede do display |
+| `gweather.local` não abre | Aparelho sem suporte a mDNS (alguns Android) ou em outra rede | Use o IP mostrado na página Rede do display |
+| `PUT` responde 415 | Falta o cabeçalho JSON | Envie `Content-Type: application/json` |
 | Computador não reconhece a placa | Cabo só de carga ou falta de driver | Troque o cabo; instale o driver CP210x ou CH340 |
 
 ---
@@ -245,6 +268,7 @@ GWeather/
 ├── README.md
 ├── LICENSE
 ├── docs/
+│   ├── api-v1.md             Contrato da API
 │   ├── PLANO.md              Plano e fases
 │   └── plano.html            Plano visual com diagrama de ligações
 └── firmware/                 Projeto PlatformIO
@@ -261,7 +285,9 @@ GWeather/
     │   ├── i2c_scan.*        Scanner do barramento I2C
     │   ├── sensors.*         Leitura do AHT20 e do BMP280
     │   ├── weather_math.*    Altitude, pressão ao nível do mar, ponto de orvalho, sensação térmica
-    │   └── display.*         Páginas do OLED
+    │   ├── display.*         Páginas do OLED
+    │   ├── webapi.*          Servidor HTTP e API /api/v1
+    │   └── webpage.h         Página mínima (HTML embutido)
     └── docs/
         ├── hardware.md       Pinagem e periféricos
         └── status.md         Andamento do desenvolvimento
