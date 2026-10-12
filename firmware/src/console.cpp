@@ -28,6 +28,9 @@ static void printHelp() {
       "  nuvem enviar          envia a fila agora\n"
       "  nuvem limpar          descarta a fila de médias\n"
       "  nuvem desligar        apaga endereço e token\n"
+      "  tela ligar|desligar   liga ou desliga o display (até reiniciar)\n"
+      "  carrossel pausar|retomar\n"
+      "  pagina proxima|anterior|<n>  navega entre as páginas do display\n"
       "  wifi portal           abre a rede de configuração sem esquecer o Wi-Fi atual\n"
       "  wifi esquecer         apaga o Wi-Fi salvo e reinicia\n"
       "  reiniciar             reinicia a placa\n");
@@ -124,6 +127,21 @@ static void handle(String line) {
   } else if (cmd == "nuvem" && rest == "desligar") {
     uplinkDisable();
     Serial.println("Envio para a nuvem desligado (endereço e token apagados).");
+  } else if (cmd == "tela" && (rest == "ligar" || rest == "desligar")) {
+    displaySetPower(rest == "ligar");
+    Serial.printf("Tela %s.\n", rest == "ligar" ? "ligada" : "desligada");
+  } else if (cmd == "carrossel" && (rest == "pausar" || rest == "retomar")) {
+    displaySetPaused(rest == "pausar");
+    Serial.printf("Carrossel %s.\n", rest == "pausar" ? "pausado" : "retomado");
+  } else if (cmd == "pagina" && rest.length()) {
+    if (rest == "proxima") displayStep(1);
+    else if (rest == "anterior") displayStep(-1);
+    else if (!displayGoto(rest.toInt() - 1)) {
+      Serial.printf("Use proxima, anterior ou um número de 1 a %d.\n", displayState().count);
+      return;
+    }
+    DisplayState d = displayState();
+    Serial.printf("Página %d de %d: %s\n", d.page + 1, d.count, pageTypeName(settings().pages[d.page].type));
   } else if (cmd == "wifi" && rest == "portal") {
     netOpenPortal();
     Serial.println("Rede de configuração aberta. Veja nome e senha no display.");

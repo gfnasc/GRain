@@ -14,3 +14,20 @@ void displayLoop();
 
 // Reaplica intervalo de página e contraste após mudança na configuração.
 void displayApplySettings();
+
+// --- Controles manuais (página local / console). Não são gravados: valem até reiniciar. ---
+struct DisplayState {
+  bool on;         // tela ligada (false = desligada manualmente)
+  bool paused;     // carrossel pausado
+  bool night;      // modo noturno ativo agora
+  int page;        // página atual (0..count-1)
+  int count;       // número de páginas
+  uint32_t holdS;  // segundos até o carrossel voltar a girar após navegação manual (0 = girando)
+};
+DisplayState displayState();
+void displaySetPower(bool on);
+void displaySetPaused(bool paused);
+// Avança (+1) ou volta (-1) uma página; segura a página por 60 s se o carrossel estiver girando.
+void displayStep(int delta);
+// Vai direto para a página (0..count-1), com a mesma espera de 60 s.
+bool displayGoto(int index);

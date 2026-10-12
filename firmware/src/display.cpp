@@ -19,6 +19,10 @@ static bool s_hasReading = false;
 static int s_page = 0;
 static uint32_t s_pageSince = 0;
 static int s_night = -1;  // -1 = não aplicado, 0 = dia, 1 = noite
+static bool s_manualOff = false;  // tela desligada pela página local / console
+static bool s_paused = false;     // carrossel pausado
+static uint32_t s_holdUntil = 0;  // navegação manual segura a página até este millis()
+static const uint32_t HOLD_MS = 60000;
 
 static int pageCount() { return settings().pageCount ? settings().pageCount : 1; }
 
@@ -42,6 +46,14 @@ static void drawHeader(const char *title) {
       if (i == s_page) s_oled.drawDisc(x, 4, r + (n > 5 ? 1 : 0));
       else s_oled.drawCircle(x, 4, r);
     }
+  }
+  // Carrossel pausado: duas barrinhas antes das bolinhas.
+  if (s_paused) {
+    int x = 128 - (n > 1 ? n * step : 0) - 7;
+    s_oled.drawBox(x, 2, 2, 6);
+    s_oled.drawBox(x + 3, 2, 2, 6);
+    s_oled.drawHLine(0, 11, 128);
+    return;
   }
   // Relógio (depois da sincronização), antes das bolinhas, se couber.
   char hhmm[8];
@@ -382,6 +394,7 @@ static void applyNight() {
   }
   if (night == s_night) return;
   s_night = night;
+  if (s_manualOff) return;  // tela desligada manualmente: o modo noturno só vale ao religar
   if (night && c.nightMode == 0) {
     s_oled.setPowerSave(1);
   } else {
@@ -426,7 +439,14 @@ void displayLoop() {
   if (portal) return;  // tela fixa enquanto a configuração estiver aberta
 
   applyNight();
+  if (s_manualOff) return;
   if (s_night == 1 && settings().nightMode == 0) return;  // tela apagada: não precisa redesenhar
+  if (s_paused) return;
+  if (s_holdUntil && (int32_t)(now - s_holdUntil) < 0) return;  // segurando após navegação manual
+  if (s_holdUntil) {
+    s_holdUntil = 0;
+    s_pageSince = now;
+  }
 
   if ((uint32_t)(now - s_pageSince) >= settings().displayPageMs) {
     s_pageSince = now;
@@ -442,4 +462,59 @@ void displayApplySettings() {
   s_oled.setContrast(settings().displayContrast);
   applyNight();
   render();
+}
+
+DisplayState displayState() {
+  DisplayState d;
+  d.on = !s_manualOff;
+  d.paused = s_paused;
+  d.night = s_night == 1;
+  d.page = s_page;
+  d.count = pageCount();
+  uint32_t now = millis();
+  d.holdS = s_holdUntil && (int32_t)(s_holdUntil - now) > 0 ? (s_holdUntil - now + 999) / 1000 : 0;
+  return d;
+}
+
+void displaySetPower(bool on) {
+  if (!s_ok) return;
+  s_manualOff = !on;
+  if (!on) {
+    s_oled.setPowerSave(1);
+  } else {
+    s_night = -1;  // reaplica o modo noturno (pode estar no horário)
+    s_oled.setPowerSave(0);
+    s_oled.setContrast(settings().displayContrast);
+    applyNight();
+    render();
+  }
+  log_i("[%s] tela %s manualmente", TAG, on ? "ligada" : "desligada");
+}
+
+void displaySetPaused(bool paused) {
+  s_paused = paused;
+  s_holdUntil = 0;
+  s_pageSince = millis();
+  render();
+}
+
+static void showPage(int index) {
+  s_page = index;
+  s_pageSince = millis();
+  if (!s_paused) {
+    s_holdUntil = millis() + HOLD_MS;
+    if (s_holdUntil == 0) s_holdUntil = 1;
+  }
+  render();
+}
+
+void displayStep(int delta) {
+  int n = pageCount();
+  showPage(((s_page + delta) % n + n) % n);
+}
+
+bool displayGoto(int index) {
+  if (index < 0 || index >= pageCount()) return false;
+  showPage(index);
+  return true;
 }

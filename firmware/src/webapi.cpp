@@ -127,6 +127,8 @@ static void handleStatus() {
   cloud["last_http"] = u.lastHttp;
   cloud["last_error"] = u.lastError;
   cloud["config_version"] = u.configVersion;
+  if (u.lastConfigEpoch) cloud["last_config"] = u.lastConfigEpoch;
+  else cloud["last_config"] = nullptr;
   JsonObject s = doc["sensors"].to<JsonObject>();
   s["aht20"] = sensorsAhtPresent() && sensorsLast().ahtOk;
   s["bmp280"] = sensorsBmpPresent() && sensorsLast().bmpOk;
@@ -168,6 +170,58 @@ static void handleReboot() {
   if (s_rebootAt == 0) s_rebootAt = 1;
 }
 
+static void handleFavicon() {
+  s_srv.sendHeader("Cache-Control", "public, max-age=604800");
+  s_srv.send_P(200, "image/svg+xml", WEB_FAVICON_SVG);
+}
+
+static void sendDisplayState(int code) {
+  DisplayState d = displayState();
+  JsonDocument doc;
+  doc["on"] = d.on;
+  doc["paused"] = d.paused;
+  doc["night"] = d.night;
+  doc["page"] = d.page;
+  doc["hold_s"] = d.holdS;
+  JsonArray pages = doc["pages"].to<JsonArray>();
+  for (int i = 0; i < d.count; i++) pages.add(pageTypeName(settings().pages[i].type));
+  doc["page_s"] = settings().displayPageMs / 1000;
+  sendJson(code, doc);
+}
+
+static void handleGetDisplay() { sendDisplayState(200); }
+
+// Controles do display. Sem senha: só afetam a tela até reiniciar.
+//   {"power": true|false} {"paused": true|false} {"page": "next"|"prev"|<índice>}
+static void handlePostDisplay() {
+  if (s_srv.header("Content-Type").indexOf("application/json") < 0)
+    return sendError(415, "tipo_invalido", "use o cabeçalho Content-Type: application/json");
+  JsonDocument in;
+  if (deserializeJson(in, s_srv.arg("plain")) || !in.is<JsonObject>()) return sendError(400, "json_invalido");
+  if (in["power"].is<bool>()) displaySetPower(in["power"]);
+  if (in["paused"].is<bool>()) displaySetPaused(in["paused"]);
+  JsonVariant page = in["page"];
+  if (page.is<const char *>()) {
+    String p = page.as<const char *>();
+    if (p == "next") displayStep(1);
+    else if (p == "prev") displayStep(-1);
+    else return sendError(422, "valor_invalido", "page: next, prev ou o número da página");
+  } else if (page.is<int>()) {
+    if (!displayGoto(page.as<int>())) return sendError(422, "valor_invalido", "page: índice fora da lista");
+  }
+  sendDisplayState(200);
+}
+
+// Envia a fila e busca a configuração da nuvem agora. Sem senha.
+static void handleCloudSync() {
+  if (!uplinkStatus().configured) return sendError(409, "nuvem_desligada", "configure com nuvem url / nuvem token");
+  uplinkSendNow();
+  JsonDocument doc;
+  doc["ok"] = true;
+  doc["detail"] = "sincronização solicitada";
+  sendJson(202, doc);
+}
+
 static void handleOptions() {
   cors();
   s_srv.send(204);
@@ -185,6 +239,11 @@ static void setupRoutes() {
   s_srv.on("/api/v1/config", HTTP_GET, handleGetConfig);
   s_srv.on("/api/v1/config", HTTP_PUT, handlePutConfig);
   s_srv.on("/api/v1/system/reboot", HTTP_POST, handleReboot);
+  s_srv.on("/api/v1/display", HTTP_GET, handleGetDisplay);
+  s_srv.on("/api/v1/display", HTTP_POST, handlePostDisplay);
+  s_srv.on("/api/v1/cloud/sync", HTTP_POST, handleCloudSync);
+  s_srv.on("/favicon.svg", HTTP_GET, handleFavicon);
+  s_srv.on("/favicon.ico", HTTP_GET, handleFavicon);
   s_srv.onNotFound(handleNotFound);
   const char *headers[] = {"Content-Type"};
   s_srv.collectHeaders(headers, 1);

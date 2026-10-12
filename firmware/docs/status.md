@@ -53,8 +53,12 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   - Correção: resposta 204 não pode ter o corpo lido (travava a tarefa).
   - Painel: `/display` com editor e prévia do OLED; ida e volta medida em ~40 s.
 
+- Firmware 0.7.1: favicon na página local; controles do display (`POST /api/v1/display`: página, pausa, tela),
+  `POST /api/v1/cloud/sync`, comandos `tela`, `carrossel`, `pagina`; página local com seções Display,
+  Nuvem e Manutenção. Painel na nuvem com o mesmo ícone (SVG, ICO e apple-touch-icon).
+
 ## Em andamento
-- Fase 8: conferência do usuário no display físico e no painel.
+- Fase 8: fechar documentação (usuário validou).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos

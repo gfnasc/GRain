@@ -149,7 +149,12 @@ O Wi-Fi fica salvo na placa. Para trocar de rede, use o comando `wifi esquecer` 
 
 ### Página local e API
 
-Com a estação no Wi-Fi, abra **http://gweather.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. A página mostra a leitura atual e o estado da estação, atualizando a cada 5 s, e funciona sem internet.
+Com a estação no Wi-Fi, abra **http://gweather.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. A página funciona sem internet e atualiza a cada 5 s:
+
+- **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
+- **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar (a configuração permanente fica no painel na nuvem).
+- **Nuvem:** último envio, médias na fila, versão da configuração e o botão **Sincronizar agora** (envia a fila e busca a configuração na hora).
+- **Manutenção:** reiniciar a estação (pede a senha da estação).
 
 A mesma porta serve a API `/api/v1`:
 
@@ -160,6 +165,9 @@ A mesma porta serve a API `/api/v1`:
 | `GET /api/v1/config` | Configuração |
 | `PUT /api/v1/config` 🔒 | Altera campos (JSON parcial, tudo ou nada) |
 | `POST /api/v1/system/reboot` 🔒 | Reinicia |
+| `GET /api/v1/display` | Estado do display: ligado, pausado, página atual, lista de páginas |
+| `POST /api/v1/display` | `{"page":"next"\|"prev"\|n}`, `{"paused":true}`, `{"power":false}` |
+| `POST /api/v1/cloud/sync` | Envia a fila e busca a configuração da nuvem agora |
 
 🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
 
@@ -201,6 +209,9 @@ Com `pio device monitor` aberto, digite `ajuda`:
 | `nuvem` | Estado do envio: endereço, fila, último envio e último erro |
 | `nuvem url <https://...>` / `nuvem token <token>` | Configura o envio para a nuvem (guardado na NVS) |
 | `nuvem enviar` / `nuvem limpar` / `nuvem desligar` | Envia a fila agora / descarta a fila / apaga endereço e token |
+| `tela ligar` / `tela desligar` | Liga ou desliga o display (até reiniciar) |
+| `carrossel pausar` / `carrossel retomar` | Pausa ou retoma a troca de páginas |
+| `pagina proxima` / `pagina anterior` / `pagina <n>` | Navega entre as páginas do display |
 | `wifi portal` | Abre a rede de configuração sem esquecer o Wi-Fi atual |
 | `wifi esquecer` | Apaga o Wi-Fi salvo e reinicia |
 | `reiniciar` | Reinicia a placa |

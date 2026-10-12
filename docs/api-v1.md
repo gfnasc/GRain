@@ -108,6 +108,30 @@ Respostas: `200` com a configuração nova · `400 json_invalido` · `401` sem s
 ### `POST /api/v1/system/reboot` 🔒
 Responde `202 {"ok": true}` e reinicia a placa meio segundo depois.
 
+### `GET /api/v1/display`
+```json
+{ "on": true, "paused": false, "night": false, "page": 1, "hold_s": 0,
+  "pages": ["clock", "temp", "fields", "network"], "page_s": 7 }
+```
+`hold_s`: segundos até o carrossel voltar a girar depois de uma navegação manual.
+
+### `POST /api/v1/display`
+Controles temporários (valem até reiniciar), sem senha. Corpo JSON com um ou mais campos:
+
+| Campo | Efeito |
+|---|---|
+| `"page": "next"` / `"prev"` / `<índice>` | Navega; com o carrossel girando, segura a página por 60 s |
+| `"paused": true/false` | Pausa ou retoma o carrossel (o display mostra ‖ no cabeçalho) |
+| `"power": true/false` | Liga ou desliga a tela (desligada manualmente vale mais que o modo noturno) |
+
+Responde o estado atualizado (mesmo formato do `GET`). `422` para página fora da lista.
+
+### `POST /api/v1/cloud/sync`
+Envia a fila de médias e consulta a configuração da nuvem imediatamente. `202`; `409` se a nuvem não estiver configurada.
+
+### `GET /favicon.svg`
+Ícone da estação (o mesmo do painel).
+
 ---
 
 ## Nuvem (Nuxt na Vercel)
