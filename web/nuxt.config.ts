@@ -26,5 +26,9 @@ export default defineNuxtConfig({
     // Hash (scrypt) da senha do painel. Definido por NUXT_PANEL_PASSWORD_HASH.
     panelPasswordHash: '',
     // A sessão (cookie criptografado, 30 dias) usa NUXT_SESSION_PASSWORD (nuxt-auth-utils).
+    public: {
+      // Fuso usado para exibir horários e separar os dias (NUXT_PUBLIC_TZ).
+      tz: 'UTC',
+    },
   },
 })

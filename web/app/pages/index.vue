@@ -10,7 +10,6 @@ type Latest = {
 }
 
 const { data, refresh, error } = await useFetch<Latest>('/api/v1/latest')
-const { clear } = useUserSession()
 
 // Atualiza a cada minuto; o ESP32 envia médias de 10 min.
 let timer: ReturnType<typeof setInterval> | undefined
@@ -25,8 +24,9 @@ onBeforeUnmount(() => clearInterval(timer))
 
 const fmt = (v: number | null | undefined, d = 1) =>
   v == null ? '–' : v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: false })
+const tz = useRuntimeConfig().public.tz
 const hhmm = (ts: number) =>
-  new Date(ts * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+  new Date(ts * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: tz })
 
 function ago(iso: string | null | undefined) {
   if (!iso) return 'nunca'
@@ -37,38 +37,17 @@ function ago(iso: string | null | undefined) {
   return h < 48 ? `há ${h} h` : `há ${Math.floor(h / 24)} dias`
 }
 
-// Online se enviou algo nos últimos 15 min (o envio é a cada 10).
-const online = computed(() => {
-  const t = data.value?.device?.last_seen_at
-  return !!t && now.value - new Date(t).getTime() < 15 * 60_000
-})
-
 function uptime(s?: number) {
   if (!s) return '–'
   const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60)
   return `${d ? d + 'd ' : ''}${h}h ${String(m).padStart(2, '0')}m`
 }
 
-async function logout() {
-  await clear()
-  await navigateTo('/login')
-}
 </script>
 
 <template>
   <main class="wrap">
-    <header class="top">
-      <div>
-        <span class="eyebrow">Estação meteorológica</span>
-        <h1>GWeather</h1>
-      </div>
-      <div class="actions">
-        <span v-if="data?.device" class="pill" :class="online ? 'ok' : 'off'">
-          {{ online ? 'Online' : 'Sem notícias' }} · {{ ago(data.device.last_seen_at) }}
-        </span>
-        <button class="btn" type="button" @click="logout">Sair</button>
-      </div>
-    </header>
+    <AppHeader :last-seen-at="data?.device?.last_seen_at ?? null" />
 
     <p v-if="error" class="notice crit">Não foi possível carregar os dados. Tente recarregar a página.</p>
 
@@ -145,13 +124,7 @@ async function logout() {
 
 <style scoped>
 .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 56px; display: grid; gap: 22px; }
-.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; padding-bottom: 16px; border-bottom: 2px solid var(--fg); }
-h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; font-stretch: 118%; }
 h2 { font-size: 1.15rem; font-weight: 700; font-stretch: 108%; }
-.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.pill { font-family: var(--ff-mono); font-size: 0.78rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); }
-.pill.ok { color: var(--ok); border-color: var(--ok); }
-.pill.off { color: var(--warn); border-color: var(--warn); }
 .when { margin: 0; font-size: 0.9rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 4px; min-width: 0; }

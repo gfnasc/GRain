@@ -11,6 +11,11 @@
   --ok: #1f8a52;
   --warn: #b77306;
   --crit: #c0352d;
+  /* séries dos gráficos (paleta validada para daltonismo, modo claro) */
+  --series-temp: #eb6834;
+  --series-dew: #2a78d6;
+  --series-hum: #1baf7a;
+  --series-pres: #4a3aa7;
   --ff-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -28,6 +33,10 @@
     --ok: #3cb878;
     --warn: #e3a33a;
     --crit: #ee6a62;
+    --series-temp: #d95926;
+    --series-dew: #3987e5;
+    --series-hum: #199e70;
+    --series-pres: #9085e9;
     color-scheme: dark;
   }
 }
