@@ -28,6 +28,14 @@ const Reading &sensorsLast();
 uint32_t sensorsLastMs();
 float sensorsAltitude();
 
+// Mínima e máxima de hoje (zera à meia-noite local; só conta com a hora sincronizada).
+struct TodayStats {
+  bool valid = false;
+  float tMin = NAN, tMax = NAN, hMin = NAN, hMax = NAN;
+  uint32_t tMinTs = 0, tMaxTs = 0;  // epoch UTC
+};
+const TodayStats &sensorsToday();
+
 bool sensorsAhtPresent();
 bool sensorsBmpPresent();
 uint8_t sensorsBmpAddress();

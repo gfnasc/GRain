@@ -2,7 +2,7 @@
 
 // Pinos e constantes. Mantenha docs/hardware.md sincronizado.
 
-#define FW_VERSION "0.6.0"
+#define FW_VERSION "0.7.0"
 
 // Barramento I2C (AHT20, BMP280 e OLED compartilham)
 #define PIN_I2C_SDA 21
@@ -53,6 +53,7 @@
 #define UPLINK_QUEUE_MAX 2016              // reserva offline: 14 dias
 #define UPLINK_RETRY_MS 600000
 #define UPLINK_BACKOFF_MAX_MS 1800000      // espera máxima entre tentativas com falha
+#define CLOUD_CONFIG_POLL_MS 60000         // consulta da configuração do display na nuvem
 
 // Diferença de temperatura AHT20 x BMP280 acima da qual avisamos
 #define TEMP_MISMATCH_WARN_C 2.0f

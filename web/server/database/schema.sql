@@ -23,3 +23,10 @@ create table if not exists readings (
 );
 
 create index if not exists readings_ts_idx on readings (ts desc);
+
+-- Fase 8: configuração do display e calibração, editada no painel.
+alter table devices add column if not exists config                 jsonb;
+alter table devices add column if not exists config_version         integer not null default 0;
+alter table devices add column if not exists config_updated_at      timestamptz;
+alter table devices add column if not exists config_applied_version integer;     -- informado pela estação a cada consulta
+alter table devices add column if not exists last_poll_at           timestamptz; -- última consulta de configuração

@@ -5,6 +5,7 @@
 #include <Arduino.h>
 
 #include "config.h"
+#include "settings.h"
 #include "weather_math.h"
 
 static const char *TAG = "sensors";
@@ -20,6 +21,8 @@ static float s_altitudeM = 0;
 static int s_ahtFails = 0;
 static int s_bmpFails = 0;
 static Reading s_lastReading;
+static TodayStats s_today;
+static int s_todayYday = -1;
 static uint32_t s_lastMs = 0;
 
 static bool beginAht() {
@@ -73,8 +76,9 @@ Reading sensorsRead() {
     sensors_event_t hum, temp;
     if (s_aht.getEvent(&hum, &temp) && !isnan(temp.temperature) && !isnan(hum.relative_humidity)) {
       r.ahtOk = true;
-      r.tempC = temp.temperature;
-      r.humPct = hum.relative_humidity;
+      // Calibração configurada no painel (fase 8).
+      r.tempC = temp.temperature + settings().calTemp;
+      r.humPct = constrain(hum.relative_humidity + settings().calHum, 0.0f, 100.0f);
       s_ahtFails = 0;
     } else {
       s_ahtFails++;
@@ -88,7 +92,7 @@ Reading sensorsRead() {
 
   if (s_bmpPresent && s_bmp->takeForcedMeasurement()) {
     float t = s_bmp->readTemperature();
-    float p = s_bmp->readPressure() / 100.0f;
+    float p = s_bmp->readPressure() / 100.0f + settings().calPres;
     if (!isnan(t) && !isnan(p) && p > 300.0f && p < 1100.0f) {
       r.bmpOk = true;
       r.tempBmpC = t;
@@ -110,6 +114,22 @@ Reading sensorsRead() {
     r.dewPointC = dewPointC(r.tempC, r.humPct);
     r.heatIndexC = heatIndexC(r.tempC, r.humPct);
   }
+  // Mínima e máxima do dia (dia local).
+  time_t now = time(nullptr);
+  if (now > 1700000000 && r.ahtOk) {
+    struct tm lt;
+    localtime_r(&now, &lt);
+    if (lt.tm_yday != s_todayYday) {
+      s_today = TodayStats();
+      s_todayYday = lt.tm_yday;
+    }
+    TodayStats &d = s_today;
+    if (!d.valid || r.tempC < d.tMin) { d.tMin = r.tempC; d.tMinTs = now; }
+    if (!d.valid || r.tempC > d.tMax) { d.tMax = r.tempC; d.tMaxTs = now; }
+    if (!d.valid || r.humPct < d.hMin) d.hMin = r.humPct;
+    if (!d.valid || r.humPct > d.hMax) d.hMax = r.humPct;
+    d.valid = true;
+  }
   s_lastReading = r;
   s_lastMs = millis();
   if (s_lastMs == 0) s_lastMs = 1;
@@ -117,6 +137,7 @@ Reading sensorsRead() {
 }
 
 const Reading &sensorsLast() { return s_lastReading; }
+const TodayStats &sensorsToday() { return s_today; }
 uint32_t sensorsLastMs() { return s_lastMs; }
 float sensorsAltitude() { return s_altitudeM; }
 

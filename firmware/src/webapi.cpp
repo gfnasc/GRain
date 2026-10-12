@@ -126,6 +126,7 @@ static void handleStatus() {
   else cloud["last_ok"] = nullptr;
   cloud["last_http"] = u.lastHttp;
   cloud["last_error"] = u.lastError;
+  cloud["config_version"] = u.configVersion;
   JsonObject s = doc["sensors"].to<JsonObject>();
   s["aht20"] = sensorsAhtPresent() && sensorsLast().ahtOk;
   s["bmp280"] = sensorsBmpPresent() && sensorsLast().bmpOk;
