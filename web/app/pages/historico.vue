@@ -110,26 +110,26 @@ const coverage = computed(() => {
 
       <section class="stats">
         <article class="stat">
-          <span class="k">Temperatura (°C)</span>
+          <span class="k">Temperatura</span>
           <div class="mm">
-            <div><small>mín.</small><b>{{ fmt(series.summary.temp.min?.v) }}</b><span v-if="series.summary.temp.min">{{ when(series.summary.temp.min.ts) }}</span></div>
-            <div><small>máx.</small><b>{{ fmt(series.summary.temp.max?.v) }}</b><span v-if="series.summary.temp.max">{{ when(series.summary.temp.max.ts) }}</span></div>
+            <div><small>mín.</small><b>{{ fmt(series.summary.temp.min?.v) }}<small>°C</small></b><span v-if="series.summary.temp.min">{{ when(series.summary.temp.min.ts) }}</span></div>
+            <div><small>máx.</small><b>{{ fmt(series.summary.temp.max?.v) }}<small>°C</small></b><span v-if="series.summary.temp.max">{{ when(series.summary.temp.max.ts) }}</span></div>
           </div>
           <span class="avg">média {{ fmt(series.summary.temp.avg) }} °C</span>
         </article>
         <article class="stat">
-          <span class="k">Umidade (%)</span>
+          <span class="k">Umidade</span>
           <div class="mm">
-            <div><small>mín.</small><b>{{ fmt(series.summary.hum.min?.v, 0) }}</b><span v-if="series.summary.hum.min">{{ when(series.summary.hum.min.ts) }}</span></div>
-            <div><small>máx.</small><b>{{ fmt(series.summary.hum.max?.v, 0) }}</b><span v-if="series.summary.hum.max">{{ when(series.summary.hum.max.ts) }}</span></div>
+            <div><small>mín.</small><b>{{ fmt(series.summary.hum.min?.v, 0) }}<small>%</small></b><span v-if="series.summary.hum.min">{{ when(series.summary.hum.min.ts) }}</span></div>
+            <div><small>máx.</small><b>{{ fmt(series.summary.hum.max?.v, 0) }}<small>%</small></b><span v-if="series.summary.hum.max">{{ when(series.summary.hum.max.ts) }}</span></div>
           </div>
           <span class="avg">média {{ fmt(series.summary.hum.avg, 0) }} %</span>
         </article>
         <article class="stat">
-          <span class="k">Pressão ao nível do mar (hPa)</span>
+          <span class="k">Pressão ao nível do mar</span>
           <div class="mm">
-            <div><small>mín.</small><b>{{ fmt(series.summary.pres.min?.v) }}</b><span v-if="series.summary.pres.min">{{ when(series.summary.pres.min.ts) }}</span></div>
-            <div><small>máx.</small><b>{{ fmt(series.summary.pres.max?.v) }}</b><span v-if="series.summary.pres.max">{{ when(series.summary.pres.max.ts) }}</span></div>
+            <div><small>mín.</small><b>{{ fmt(series.summary.pres.min?.v) }}<small>hPa</small></b><span v-if="series.summary.pres.min">{{ when(series.summary.pres.min.ts) }}</span></div>
+            <div><small>máx.</small><b>{{ fmt(series.summary.pres.max?.v) }}<small>hPa</small></b><span v-if="series.summary.pres.max">{{ when(series.summary.pres.max.ts) }}</span></div>
           </div>
           <span class="avg">média {{ fmt(series.summary.pres.avg) }} hPa</span>
         </article>
@@ -231,7 +231,8 @@ const coverage = computed(() => {
 .mm { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .mm div { display: grid; gap: 1px; }
 .mm small { font-size: 0.75rem; color: var(--muted); }
-.mm b { font-family: var(--ff-display); font-size: 1.45rem; white-space: nowrap; font-weight: 760; font-stretch: 110%; font-variant-numeric: tabular-nums; }
+.mm b small { font-family: var(--ff-body); font-size: 0.85rem; font-weight: 500; margin-left: 3px; }
+.mm b { font-family: var(--ff-display); font-size: clamp(1.15rem, 1.4vw + 0.7rem, 1.45rem); white-space: nowrap; font-weight: 760; font-stretch: 110%; font-variant-numeric: tabular-nums; }
 .mm span { font-family: var(--ff-mono); font-size: 0.72rem; color: var(--muted); }
 .avg { font-size: 0.85rem; color: var(--muted); }
 .charts { display: grid; gap: 14px; }

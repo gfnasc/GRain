@@ -115,7 +115,7 @@ function uptime(s?: number) {
             <dt>Ligada há</dt><dd>{{ uptime(data.device.status?.uptime_s) }}</dd>
             <dt>Fila no ESP32</dt><dd>{{ data.device.status?.queue ?? '–' }}</dd>
           </dl>
-          <p class="muted small">Gráficos e histórico chegam na próxima fase.</p>
+          <p class="small"><NuxtLink to="/historico">Ver gráficos e histórico →</NuxtLink></p>
         </div>
       </section>
     </template>
