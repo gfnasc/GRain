@@ -11,6 +11,7 @@
 #include "netmgr.h"
 #include "sensors.h"
 #include "settings.h"
+#include "uplink.h"
 #include "webpage.h"
 
 static const char *TAG = "webapi";
@@ -116,6 +117,15 @@ static void handleStatus() {
     tm["local"] = nullptr;
     tm["epoch"] = nullptr;
   }
+  const UplinkStatus &u = uplinkStatus();
+  JsonObject cloud = doc["cloud"].to<JsonObject>();
+  cloud["configured"] = u.configured;
+  cloud["url"] = u.url;
+  cloud["queue"] = u.queue;
+  if (u.lastOkEpoch) cloud["last_ok"] = u.lastOkEpoch;
+  else cloud["last_ok"] = nullptr;
+  cloud["last_http"] = u.lastHttp;
+  cloud["last_error"] = u.lastError;
   JsonObject s = doc["sensors"].to<JsonObject>();
   s["aht20"] = sensorsAhtPresent() && sensorsLast().ahtOk;
   s["bmp280"] = sensorsBmpPresent() && sensorsLast().bmpOk;

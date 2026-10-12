@@ -1,0 +1,31 @@
+{
+  "name": "gweather-web",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "device:token": "node --env-file=.env.local scripts/create-device.mjs",
+    "panel:password": "node scripts/hash-password.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "nuxt": "^4.6.1",
+    "nuxt-auth-utils": "0.5.31",
+    "vue": "^3.5.43",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@adonisjs/hash": "^9.1.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@parcel/watcher"
+    ]
+  }
+}

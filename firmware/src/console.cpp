@@ -7,6 +7,7 @@
 #include "netmgr.h"
 #include "sensors.h"
 #include "settings.h"
+#include "uplink.h"
 
 static String s_line;
 
@@ -21,9 +22,30 @@ static void printHelp() {
       "                          site.ground_alt_m, site.floor, site.floor_height_m,\n"
       "                          site.sensor_height_m, display.page_s, display.contrast\n"
       "  config padrao         volta aos valores iniciais (site.h)\n"
+      "  nuvem                 estado do envio para a nuvem\n"
+      "  nuvem url <https://...>  endereço do painel na Vercel\n"
+      "  nuvem token <token>   token da estação (gerado com pnpm device:token)\n"
+      "  nuvem enviar          envia a fila agora\n"
+      "  nuvem limpar          descarta a fila de médias\n"
+      "  nuvem desligar        apaga endereço e token\n"
       "  wifi portal           abre a rede de configuração sem esquecer o Wi-Fi atual\n"
       "  wifi esquecer         apaga o Wi-Fi salvo e reinicia\n"
       "  reiniciar             reinicia a placa\n");
+}
+
+static void printCloud() {
+  const UplinkStatus &u = uplinkStatus();
+  char t[32] = "nunca";
+  if (u.lastOkEpoch) {
+    time_t e = u.lastOkEpoch;
+    struct tm lt;
+    localtime_r(&e, &lt);
+    strftime(t, sizeof t, "%d/%m %H:%M", &lt);
+  }
+  Serial.printf("Nuvem   : %s\n", u.configured ? u.url.c_str() : "não configurada (nuvem url / nuvem token)");
+  Serial.printf("          fila %u médias; último envio ok: %s", u.queue, t);
+  if (u.lastError.length()) Serial.printf("; último erro: %s", u.lastError.c_str());
+  Serial.println();
 }
 
 static void printStatus() {
@@ -39,6 +61,7 @@ static void printStatus() {
   Serial.printf("Endereço: http://%s.local  (API: /api/v1)\n", settings().hostname.c_str());
   Serial.printf("Senha   : %s  (rede de configuração e API, usuário \"admin\")\n", n.apPass.c_str());
   Serial.printf("Hora    : %s\n", netLocalTime(t, sizeof t, "%d/%m/%Y %H:%M:%S") ? t : "aguardando sincronização");
+  printCloud();
   Serial.printf("Altitude: %.1f m\n", settingsAltitudeM());
   Serial.printf("Sensores: AHT20 %s, BMP280 %s\n", sensorsAhtPresent() ? "ok" : "ERRO", sensorsBmpPresent() ? "ok" : "ERRO");
   Serial.printf("Memória : %u bytes livres; LittleFS %u/%u bytes\n", ESP.getFreeHeap(),
@@ -82,6 +105,25 @@ static void handle(String line) {
     if (key.startsWith("site.")) sensorsSetAltitude(settingsAltitudeM());
     if (key.startsWith("display.")) displayApplySettings();
     if (key == "hostname" || key.startsWith("time.")) Serial.println("Reinicie para aplicar (comando: reiniciar).");
+  } else if (cmd == "nuvem" && rest.isEmpty()) {
+    printCloud();
+  } else if (cmd == "nuvem" && rest.startsWith("url ")) {
+    String err;
+    if (uplinkSetUrl(rest.substring(4), err)) Serial.printf("Endereço salvo: %s\n", uplinkStatus().url.c_str());
+    else Serial.printf("Não alterado: %s\n", err.c_str());
+  } else if (cmd == "nuvem" && rest.startsWith("token ")) {
+    String err, tok = rest.substring(6);
+    tok.trim();
+    if (uplinkSetToken(tok, err)) Serial.println("Token salvo na NVS.");
+    else Serial.printf("Não alterado: %s\n", err.c_str());
+  } else if (cmd == "nuvem" && rest == "enviar") {
+    uplinkSendNow();
+    Serial.println("Envio solicitado.");
+  } else if (cmd == "nuvem" && rest == "limpar") {
+    Serial.printf("%u médias descartadas.\n", uplinkClearQueue());
+  } else if (cmd == "nuvem" && rest == "desligar") {
+    uplinkDisable();
+    Serial.println("Envio para a nuvem desligado (endereço e token apagados).");
   } else if (cmd == "wifi" && rest == "portal") {
     netOpenPortal();
     Serial.println("Rede de configuração aberta. Veja nome e senha no display.");

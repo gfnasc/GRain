@@ -1,0 +1,5 @@
+# Remove flags do GCC Xtensa que o clangd (editor) não entende.
+# Gere a base de compilação com: pio run -e dev -t compiledb
+CompileFlags:
+  Remove: [-mlongcalls, -fstrict-volatile-bitfields, -fno-tree-switch-conversion, -mtext-section-literals, -mfix-esp32-psram-cache-issue, -mfix-esp32-psram-cache-strategy=*]
+  Add: [-D__XTENSA__, --target=xtensa]

@@ -6,6 +6,7 @@
 #include "config.h"
 #include "netmgr.h"
 #include "settings.h"
+#include "uplink.h"
 
 static const char *TAG = "display";
 
@@ -141,13 +142,25 @@ static void drawNetwork() {
     snprintf(buf, sizeof buf, "%.14s", n.ssid.c_str());
     drawRow(24, "Wi-Fi", buf);
     drawRow(37, "IP", n.ip.c_str());
-    snprintf(buf, sizeof buf, "%d dBm", n.rssi);
-    drawRow(50, "Sinal", buf);
   } else {
     drawRow(24, "Wi-Fi", "desconectado");
     drawRow(37, "IP", "--");
-    drawRow(50, "Sinal", "--");
   }
+  // Estado do envio para a nuvem.
+  const UplinkStatus &u = uplinkStatus();
+  if (!u.configured) {
+    snprintf(buf, sizeof buf, "desligada");
+  } else if (u.lastError.length()) {
+    snprintf(buf, sizeof buf, "erro (fila %u)", (unsigned)u.queue);
+  } else if (u.lastOkEpoch) {
+    time_t e = u.lastOkEpoch;
+    struct tm lt;
+    localtime_r(&e, &lt);
+    strftime(buf, sizeof buf, "ok %H:%M", &lt);
+  } else {
+    snprintf(buf, sizeof buf, "aguardando");
+  }
+  drawRow(50, "Nuvem", buf);
   if (!netLocalTime(buf, sizeof buf, "%d/%m %H:%M")) snprintf(buf, sizeof buf, "aguardando");
   drawRow(63, "Hora", buf);
 }

@@ -8,6 +8,7 @@
 #include "netmgr.h"
 #include "sensors.h"
 #include "settings.h"
+#include "uplink.h"
 #include "webapi.h"
 
 static const char *TAG = "main";
@@ -57,12 +58,14 @@ void setup() {
   Serial.printf("Altitude do sensor: %.1f m\n", settingsAltitudeM());
 
   netBegin();
+  uplinkBegin();
   Serial.println("Digite \"ajuda\" para ver os comandos.\n");
 }
 
 void loop() {
   netLoop();
   webapiLoop();
+  uplinkLoop();
   consoleLoop();
 
   static uint32_t last = 0;
@@ -72,6 +75,7 @@ void loop() {
     digitalWrite(PIN_LED, HIGH);
     Reading r = sensorsRead();
     printReading(r);
+    uplinkAddReading(r);
     displayUpdate(r);
     digitalWrite(PIN_LED, LOW);
   }
