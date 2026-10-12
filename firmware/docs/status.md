@@ -29,13 +29,27 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   - IPv6 link-local ligado em STA_CONNECTED para o mDNS responder AAAA (sem espera de 5 s no macOS).
   - Contrato em `../../docs/api-v1.md`.
 
+- Fase 6 implementada (em validação):
+  - `web/`: Nuxt 4 na Vercel (projeto `gweather`, deploy automático pelo GitHub com raiz `web/`),
+    Neon Postgres (`devices`, `readings`), `POST /api/v1/ingest` com token por estação (sha256),
+    login com senha única (nuxt-auth-utils), painel com leitura atual, mín./máx. 24 h e últimas médias.
+  - Firmware 0.6.0, `src/uplink.*`: médias de 10 min alinhadas ao relógio (mín. 1/4 do intervalo com dados),
+    fila `/queue.jsonl` em LittleFS (até 2016 médias = 14 dias), lotes de até 48, backoff 1→30 min,
+    HTTPS com raízes de `src/certs.h` (GTS Root R1, GlobalSign Root CA, ISRG Root X1).
+  - URL e token na NVS (`cloud_url`, `cloud_token`); comandos `nuvem ...`; estado em `/api/v1/status`
+    (`cloud`) e na página Rede do OLED.
+  - Primeiro envio real aceito às 16:10 de 12/10.
+  - Flash: release ~83 % da partição de app (TLS adicionou ~165 KB).
+
 ## Em andamento
-- Fase 6: app Nuxt em `web/` na Vercel + Postgres; `uplink` no ESP32.
+- Fase 6: teste de queda (fila retém e reenvia) e conferência do painel no celular fora de casa.
 
 ## Próximos passos
-1. Fase 6: app Nuxt em `web/` na Vercel, Postgres, ingestão e envio pelo ESP32 com reserva offline.
+1. Fechar a fase 6.
+2. Fase 7: gráficos, histórico e CSV no painel (`GET /api/v1/readings`).
 
 ## Problemas conhecidos
+- O envio HTTPS bloqueia o loop por ~1–3 s a cada 10 min (display pausa um instante).
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.
 - Abrir a porta serial no macOS reinicia a placa (DTR/RTS).
 - Durante o portal do WiFiManager a porta 80 é dele; o servidor da API só pode subir com o portal fechado.

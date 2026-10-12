@@ -110,18 +110,45 @@ Responde `202 {"ok": true}` e reinicia a placa meio segundo depois.
 
 ---
 
-## Nuvem (fase 6, planejado)
+## Nuvem (Nuxt na Vercel)
 
-Base: o domínio do app Nuxt na Vercel.
+Base: o domínio do projeto na Vercel. Código em [`web/`](../web).
 
-| Método | Rota | Autenticação | Descrição |
-|---|---|---|---|
-| `POST` | `/api/v1/ingest` | Token do aparelho (`Authorization: Bearer`) | Recebe um lote de leituras de 10 min; ignora horários repetidos |
-| `GET` | `/api/v1/device/config` | Token do aparelho | Configuração que o ESP32 deve aplicar |
-| `GET` | `/api/v1/readings?from=&to=&step=` | Login do painel | Série histórica para os gráficos |
-
-Formato de cada leitura enviada pelo ESP32 (média de 10 min):
+### `POST /api/v1/ingest` 🔑
+Recebe um lote de médias de 10 min do ESP32. Autenticação: `Authorization: Bearer <token da estação>` (o banco guarda só o sha256 do token).
 
 ```json
-{ "ts": 1791830400, "temp": 24.6, "hum": 61.2, "pres_slp": 1013.4, "dew": 16.7 }
+{
+  "readings": [
+    { "ts": 1791831600, "temp": 27.97, "hum": 65.8, "pres_slp": 1010.55, "dew": 21.0 }
+  ],
+  "status": { "fw": "0.6.0", "rssi": -57, "uptime_s": 563, "heap": 220132, "queue": 0 }
+}
 ```
+
+| Campo | Regra |
+|---|---|
+| `ts` | Início do intervalo de 10 min, UTC epoch inteiro, entre 2024-01-01 e agora + 5 min |
+| `temp` | −40 a 85, ou ausente/`null` |
+| `hum` | 0 a 100, ou ausente/`null` |
+| `pres_slp` | 800 a 1100, ou ausente/`null` |
+| `dew` | −60 a 60, ou ausente/`null` |
+| `readings` | Até 500 por lote |
+| `status` | Opcional; guardado como o último estado da estação |
+
+Horários já recebidos são ignorados, então o ESP32 pode reenviar com segurança.
+
+Respostas: `200 {"accepted": 1, "duplicates": 0}` · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
+
+### `GET /api/v1/latest` 🔐
+Exige a sessão do painel. Devolve a estação, a média mais recente, as 12 últimas médias e mínimas/máximas de 24 h.
+
+### `POST /api/auth/login`
+`{"password": "..."}` → `200` e cookie de sessão (30 dias) · `401` senha incorreta.
+
+### Planejado
+
+| Método | Rota | Fase | Descrição |
+|---|---|---|---|
+| `GET` | `/api/v1/readings?from=&to=&step=` | 7 | Série histórica para os gráficos |
+| `GET` | `/api/v1/device/config` | 8 | Configuração que o ESP32 deve aplicar |

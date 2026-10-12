@@ -20,7 +20,7 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 | 3 | Display OLED com páginas rotativas | ✅ Concluída |
 | 4 | Wi-Fi, hora pela internet (NTP), `gweather.local`, configuração e console serial | ✅ Concluída |
 | 5 | API local `/api/v1` e página mínima no ESP32 | ✅ Concluída |
-| 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | 🔧 Em andamento |
+| 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | 🔧 Em validação |
 | 7 | Histórico, gráficos e exportação CSV no painel | Planejada |
 | 8 | Personalização do display pelo painel | Planejada |
 | 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | Planejada |
@@ -169,6 +169,20 @@ curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
   -d '{"display":{"page_s":8}}' http://gweather.local/api/v1/config
 ```
 
+### Painel na nuvem (Nuxt na Vercel)
+
+O ESP32 calcula médias de 10 min, guarda numa fila na placa (reserva de até 14 dias sem internet) e envia por HTTPS para o app Nuxt em [`web/`](web), que grava no Postgres (Neon) e mostra o painel com login.
+
+Para montar a sua nuvem do zero (projeto na Vercel, banco, senha do painel e token da estação), siga [web/README.md](web/README.md). Depois, no console serial do ESP32:
+
+```
+nuvem url https://SEU-PROJETO.vercel.app
+nuvem token <token gerado com pnpm device:token>
+nuvem
+```
+
+O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `desligada`).
+
 ### Console serial
 
 Com `pio device monitor` aberto, digite `ajuda`:
@@ -179,6 +193,9 @@ Com `pio device monitor` aberto, digite `ajuda`:
 | `config` | Mostra a configuração gravada (`/config.json`) |
 | `set <chave> <valor>` | Altera e salva, ex.: `set site.floor 10`, `set display.page_s 8`, `set time.tz <-03>3` |
 | `config padrao` | Volta aos valores iniciais de `site.h` |
+| `nuvem` | Estado do envio: endereço, fila, último envio e último erro |
+| `nuvem url <https://...>` / `nuvem token <token>` | Configura o envio para a nuvem (guardado na NVS) |
+| `nuvem enviar` / `nuvem limpar` / `nuvem desligar` | Envia a fila agora / descarta a fila / apaga endereço e token |
 | `wifi portal` | Abre a rede de configuração sem esquecer o Wi-Fi atual |
 | `wifi esquecer` | Apaga o Wi-Fi salvo e reinicia |
 | `reiniciar` | Reinicia a placa |
@@ -236,7 +253,7 @@ No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depo
 | Temperatura | Temperatura em destaque, umidade e sensação térmica |
 | Pressão | Pressão ao nível do mar em destaque e pressão no local |
 | Detalhes | Ponto de orvalho, temperatura do BMP280, estado dos sensores e tempo ligado |
-| Rede | Nome do Wi-Fi, IP, sinal e data/hora |
+| Rede | Nome do Wi-Fi, IP, estado do envio para a nuvem e data/hora |
 
 Enquanto a rede de configuração estiver aberta, o display fica fixo nas instruções de conexão.
 
@@ -257,6 +274,7 @@ Enquanto a rede de configuração estiver aberta, o display fica fixo nas instru
 | Não conecta ao Wi-Fi | Rede de 5 GHz ou senha errada | Use uma rede de 2,4 GHz; `wifi esquecer` e configure de novo |
 | `gweather.local` não abre | Aparelho sem suporte a mDNS (alguns Android) ou em outra rede | Use o IP mostrado na página Rede do display |
 | `PUT` responde 415 | Falta o cabeçalho JSON | Envie `Content-Type: application/json` |
+| Página Rede mostra `erro` na nuvem | Token errado, URL errada ou internet fora | Comando `nuvem` mostra o último erro; a fila guarda as médias e reenvia depois |
 | Computador não reconhece a placa | Cabo só de carga ou falta de driver | Troque o cabo; instale o driver CP210x ou CH340 |
 
 ---
@@ -267,6 +285,7 @@ Enquanto a rede de configuração estiver aberta, o display fica fixo nas instru
 GWeather/
 ├── README.md
 ├── LICENSE
+├── web/                      Painel Nuxt na Vercel (ver web/README.md)
 ├── docs/
 │   ├── api-v1.md             Contrato da API
 │   ├── PLANO.md              Plano e fases
@@ -287,6 +306,8 @@ GWeather/
     │   ├── weather_math.*    Altitude, pressão ao nível do mar, ponto de orvalho, sensação térmica
     │   ├── display.*         Páginas do OLED
     │   ├── webapi.*          Servidor HTTP e API /api/v1
+    │   ├── uplink.*          Médias de 10 min, fila e envio para a nuvem
+    │   ├── certs.h           Certificados raiz para HTTPS
     │   └── webpage.h         Página mínima (HTML embutido)
     └── docs/
         ├── hardware.md       Pinagem e periféricos
