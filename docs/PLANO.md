@@ -43,8 +43,8 @@ Atenção: no OLED o GND costuma vir antes do VCC. Nunca usar VIN (5 V).
 4. ✅ Wi-Fi (WiFiManager, senha aleatória na NVS), NTP, mDNS `gweather.local`, `/config.json` em LittleFS, console serial, página Rede e relógio no display.
 5. ✅ API local `/api/v1` (now, status, config com PUT parcial e senha, reboot) e página mínima no ESP32; contrato em `docs/api-v1.md`; IPv6 para `gweather.local` responder rápido no macOS/iOS.
 6. ✅ Nuvem: Nuxt na Vercel (`web/`), Postgres, `POST /api/v1/ingest` com token por aparelho, envio pelo ESP32 com reserva offline, painel com login.
-7. 🔧 Histórico, gráficos (24 h / 7 d / 30 d), mínimas e máximas, exportação CSV no painel.
-8. Personalização do display pelo painel; ESP32 busca a configuração na nuvem.
+7. ✅ Histórico, gráficos (24 h / 7 d / 30 d), mínimas e máximas, exportação CSV no painel.
+8. 🔧 Personalização do display pelo painel; ESP32 busca a configuração na nuvem.
 9. Previsão (Zambretti + Open-Meteo) + CallMeBot + agenda + alertas.
 10. Robustez: watchdog, OTA, teste de 72 h.
 

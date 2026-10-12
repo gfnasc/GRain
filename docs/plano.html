@@ -193,7 +193,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
     <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel</span></div>
   </div>
-  <span class="status">Fases 1 a 6 concluídas · Etapa atual: Fase 7, histórico e gráficos</span>
+  <span class="status">Fases 1 a 7 concluídas · Etapa atual: Fase 8, display pelo painel</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -539,18 +539,22 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         </div>
       </div>
     </div>
-    <div class="phase now">
+    <div class="phase done">
       <div class="n">07</div>
       <div class="body">
-        <div class="meta"><h3>Histórico e gráficos</h3><span class="chip now">Agora</span><span class="chip">1–2 dias</span></div>
+        <div class="meta"><h3>Histórico e gráficos</h3><span class="chip done">Concluída</span><span class="chip">1–2 dias</span></div>
         <ul><li>Gráficos de 24 h, 7 e 30 dias; mínima e máxima do dia; filtro por data e exportação em CSV, tudo no Nuxt a partir do banco.</li></ul>
         <p class="accept"><b>Aceite:</b> 24 h de funcionamento geram cerca de 144 pontos, e o gráfico confere com o CSV.</p>
+        <div class="result">
+          <span><b>Resultado:</b> página Histórico com 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e orvalho, umidade e pressão com faixa mín.–máx., lacunas visíveis e tooltip; extremos com horário; resumo por dia; CSV padrão e para Excel.</span>
+          <span>Gráfico e CSV conferidos com os mesmos pontos; paleta validada para daltonismo; conferido no celular. A contagem de ~144 médias em 24 h fica para conferir no primeiro dia completo.</span>
+        </div>
       </div>
     </div>
-    <div class="phase">
+    <div class="phase now">
       <div class="n">08</div>
       <div class="body">
-        <div class="meta"><h3>Personalização do display</h3><span class="chip">1 dia</span></div>
+        <div class="meta"><h3>Personalização do display</h3><span class="chip now">Agora</span><span class="chip">1 dia</span></div>
         <ul><li>Editor no painel: páginas, campos, ordem, tempo de rotação, brilho e horário para desligar à noite, com prévia do OLED. Ajuste fino (offset) dos sensores. O ESP32 busca a configuração na nuvem a cada poucos minutos.</li></ul>
         <p class="accept"><b>Aceite:</b> mudança salva no painel aparece no OLED em até 5 min (ou na hora, pelo botão “aplicar agora” quando estiver na mesma rede) e continua após reiniciar.</p>
       </div>
@@ -841,7 +845,7 @@ web/ (fase 6)
 
 <footer>
   <span class="eyebrow">Próximo passo</span>
-  <p><b>Fase 7:</b> gráficos de 24 h, 7 e 30 dias, mínimas e máximas por dia e exportação CSV no painel. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
+  <p><b>Fase 8:</b> editar no painel as páginas do display, o tempo de rotação, o brilho, o modo noturno e a calibração dos sensores; o ESP32 busca e aplica a configuração. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
 </footer>
 </div>
 

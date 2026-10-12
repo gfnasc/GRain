@@ -41,11 +41,12 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   - Primeiro envio real aceito às 16:10 de 12/10.
   - Flash: release ~83 % da partição de app (TLS adicionou ~165 KB).
 
-- Fase 7 implementada e publicada (em validação): `web/app/pages/historico.vue`, `TimeChart.vue` (uPlot),
+- Fase 7 concluída (conferida no celular): `web/app/pages/historico.vue`, `TimeChart.vue` (uPlot),
   `GET /api/v1/readings|daily|readings.csv`; fuso via `NUXT_PUBLIC_TZ`. Gráfico e CSV conferidos com os mesmos pontos.
 
 ## Em andamento
-- Fase 7: conferência do usuário no celular; após 24 h, conferir ~144 médias no período.
+- Fase 8: configuração do display e calibração editadas no painel; ESP32 busca na nuvem.
+- Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
 1. Fase 7: gráficos, histórico e CSV no painel (`GET /api/v1/readings`).
