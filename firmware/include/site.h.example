@@ -1,0 +1,24 @@
+#pragma once
+
+// Configuração do LOCAL de instalação.
+// Copie este arquivo para include/site.h e ajuste os valores.
+// include/site.h não vai para o git (está no .gitignore).
+//
+// A altitude é usada para converter a pressão medida em pressão ao nível do mar.
+// Cada ~8 m de erro na altitude erra a pressão corrigida em ~1 hPa.
+//
+//   altitude do sensor = SITE_GROUND_ALT_M
+//                      + SITE_FLOOR * SITE_FLOOR_HEIGHT_M
+//                      + SITE_SENSOR_HEIGHT_M
+
+// Altitude do terreno/rua, em metros (Google Earth ou mapa topográfico).
+#define SITE_GROUND_ALT_M 0.0f
+
+// Andar do prédio (0 = térreo / casa).
+#define SITE_FLOOR 0
+
+// Altura de cada andar, piso a piso, em metros (prédio residencial: 2,8 a 3,0).
+#define SITE_FLOOR_HEIGHT_M 2.9f
+
+// Altura do sensor acima do piso, em metros.
+#define SITE_SENSOR_HEIGHT_M 1.0f

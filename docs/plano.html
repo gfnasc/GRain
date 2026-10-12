@@ -1,0 +1,1012 @@
+<title>GWeather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: caderno de bancada, coluna única de leitura com diagrama largo; cobre (trilhas de PCB) como acento, cores de fio como semântica */
+:root{
+  --bg:#F1F4F3; --surface:#FFFFFF; --sunk:#E7ECEA; --fg:#15201C; --muted:#56665F; --line:#D2DBD7;
+  --accent:#A9532A; --accent-soft:#F4E4DA;
+  --board:#1E2B33; --board-fg:#DCE5E9; --board-dim:#7D8E96; --can:#AEB7BC; --can-fg:#2B3439;
+  --mod-sensor:#1F5B57;--mod-oled:#173F70; --mod-fg:#EEE9F7; --screen:#05080A; --screen-fg:#7FD3FF;
+  --w-3v3:#D3322C; --w-gnd:#24292A; --w-sda:#2A63CF; --w-scl:#7A3DC8; --w-btn:#1F8A52; --w-csb:#E2690F; --w-sdo:#D9AE00;
+  --on-3v3:#FFFFFF; --on-gnd:#FFFFFF; --on-sda:#FFFFFF; --on-scl:#FFFFFF; --on-btn:#FFFFFF;
+  --ok:#1F8A52; --warn:#B77306; --crit:#C0352D;
+  --ff-display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --ff-body:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --ff-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1513; --surface:#161E1B; --sunk:#1C2622; --fg:#E2EAE6; --muted:#93A49D; --line:#2A3632;
+    --accent:#E08B5B; --accent-soft:#3A251A;
+    --board:#24343D; --board-fg:#DCE5E9; --board-dim:#7F939C; --can:#8F999E; --can-fg:#151B1E;
+    --mod-sensor:#27706A; --mod-oled:#1E4B83; --mod-fg:#F1ECFA; --screen:#020405; --screen-fg:#8EDBFF;
+    --w-3v3:#F0605A; --w-gnd:#C3CCC8; --w-sda:#5B91F2; --w-scl:#A985F0; --w-btn:#3CB878; --w-csb:#F58A3C; --w-sdo:#F2CC2E;
+    --on-3v3:#1A0605; --on-gnd:#101413; --on-sda:#06101F; --on-scl:#160A2A; --on-btn:#04140B;
+    --ok:#3CB878; --warn:#E3A33A; --crit:#EE6A62;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1513; --surface:#161E1B; --sunk:#1C2622; --fg:#E2EAE6; --muted:#93A49D; --line:#2A3632;
+  --accent:#E08B5B; --accent-soft:#3A251A;
+  --board:#24343D; --board-fg:#DCE5E9; --board-dim:#7F939C; --can:#8F999E; --can-fg:#151B1E;
+  --mod-sensor:#27706A; --mod-oled:#1E4B83; --mod-fg:#F1ECFA; --screen:#020405; --screen-fg:#8EDBFF;
+  --w-3v3:#F0605A; --w-gnd:#C3CCC8; --w-sda:#5B91F2; --w-scl:#A985F0; --w-btn:#3CB878; --w-csb:#F58A3C; --w-sdo:#F2CC2E;
+  --on-3v3:#1A0605; --on-gnd:#101413; --on-sda:#06101F; --on-scl:#160A2A; --on-btn:#04140B;
+  --ok:#3CB878; --warn:#E3A33A; --crit:#EE6A62;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ff-body);font-size:16px;line-height:1.6;font-variation-settings:"wdth" 100}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 80px}
+h1,h2,h3{font-family:var(--ff-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:800;font-stretch:118%;letter-spacing:-.01em}
+h2{font-size:1.65rem;font-weight:760;font-stretch:112%}
+h3{font-size:1.12rem;font-weight:700;font-stretch:106%}
+p{margin:0;max-width:68ch}
+code,.mono{font-family:var(--ff-mono);font-size:.88em}
+code{background:var(--sunk);padding:.08em .35em;border-radius:4px}
+a{color:var(--accent)}
+.eyebrow{font-family:var(--ff-mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.stack-lg{display:flex;flex-direction:column;gap:22px}
+
+/* header */
+header.top{display:grid;gap:18px;padding-block:8px 26px;border-bottom:2px solid var(--fg)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.fact{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fact .k{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fact .v{font-weight:650;font-stretch:108%;font-variant-numeric:tabular-nums}
+.status{display:inline-flex;align-items:center;gap:8px;font-family:var(--ff-mono);font-size:.8rem;background:var(--accent-soft);color:var(--fg);padding:6px 12px;border-radius:999px;width:fit-content}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 16px;padding-block:14px;border-bottom:1px solid var(--line);font-size:.9rem}
+nav.toc a{color:var(--fg);text-decoration:none;border-bottom:1px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{border-color:var(--accent);outline:none}
+
+section{padding-block:44px 8px;scroll-margin-top:16px}
+section > .head{display:grid;gap:8px;margin-bottom:22px}
+
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--sunk)}
+tr:last-child td{border-bottom:none}
+td.num{font-variant-numeric:tabular-nums}
+
+/* nets */
+.net{display:inline-flex;align-items:center;gap:6px;font-family:var(--ff-mono);font-size:.8rem;font-weight:600;padding:1px 8px;border-radius:5px;white-space:nowrap}
+.net.v33{background:var(--w-3v3);color:var(--on-3v3)}
+.net.gnd{background:var(--w-gnd);color:var(--on-gnd)}
+.net.sda{background:var(--w-sda);color:var(--on-sda)}
+.net.scl{background:var(--w-scl);color:var(--on-scl)}
+.net.btn{background:var(--w-btn);color:var(--on-btn)}
+.pin{font-family:var(--ff-mono);font-weight:600;font-size:.85rem;border:1.5px solid var(--fg);padding:0 6px;border-radius:4px;white-space:nowrap}
+
+/* diagram */
+.diagram{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.diagram .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.filters button{font:inherit;font-size:.85rem;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:5px 12px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.filters button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.svgbox{overflow-x:auto}
+.svgbox svg{display:block;min-width:760px;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;padding:12px 14px;border-top:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px}
+#wiring [data-g]{transition:opacity .2s}
+#wiring.filtering [data-g].dim{opacity:.12}
+@media (prefers-reduced-motion:reduce){#wiring [data-g]{transition:none}}
+
+/* callouts */
+.note{border-left:3px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 8px 8px 0;display:grid;gap:4px}
+.note.warn{border-left-color:var(--warn)}
+.note.crit{border-left-color:var(--crit)}
+.note.ok{border-left-color:var(--ok)}
+.note strong{font-stretch:106%}
+
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.cols > *{min-width:0}
+
+/* checklist */
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:s;display:grid;gap:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:28px 2.2em 1fr;gap:10px;align-items:start;padding:10px 14px;border-bottom:1px solid var(--line)}
+ol.steps li:last-child{border-bottom:none}
+ol.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--ff-mono);font-size:.8rem;color:var(--muted);padding-top:3px;grid-column:2;grid-row:1}
+ol.steps li input{grid-column:1;grid-row:1;width:18px;height:18px;margin-top:4px;accent-color:var(--accent)}
+ol.steps li .t{grid-column:3;grid-row:1;min-width:0}
+ol.steps li.group{background:var(--sunk);font-family:var(--ff-mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 14px;display:block;counter-increment:none}
+ol.steps li.group::before{content:none}
+ol.steps li:has(input:checked) .t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.progress{font-family:var(--ff-mono);font-size:.82rem;color:var(--muted)}
+
+/* roadmap */
+.phases{display:grid;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.phase{display:grid;grid-template-columns:72px 1fr;gap:16px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:none}
+.phase .n{font-family:var(--ff-display);font-weight:800;font-stretch:120%;font-size:1.9rem;line-height:1;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase.now{background:var(--accent-soft)}
+.phase.now .n{color:var(--accent)}
+.phase .body{display:grid;gap:6px;min-width:0}
+.phase .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font-family:var(--ff-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chip.now{border-color:var(--accent);color:var(--accent);font-weight:600}
+.chip.done{border-color:var(--ok);color:var(--ok);font-weight:600}
+.phase.done .n{color:var(--ok)}
+.result{font-size:.92rem;background:var(--sunk);border-radius:6px;padding:8px 12px;display:grid;gap:2px}
+.result b{color:var(--ok)}
+.phase ul{margin:0;padding-left:1.1em;display:grid;gap:2px}
+.accept{font-size:.92rem}
+.accept b{color:var(--ok)}
+
+/* calculator */
+.calc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.calc label{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
+.calc input{font:inherit;font-family:var(--ff-mono);font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+.calc input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.calc .out{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;border-top:1px solid var(--line);padding-top:14px}
+.calc .out div{display:grid;gap:2px}
+.calc .out .k{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.calc .out .v{font-family:var(--ff-display);font-weight:760;font-stretch:112%;font-size:1.5rem;font-variant-numeric:tabular-nums}
+
+/* code + message */
+pre{margin:0;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:var(--ff-mono);font-size:.82rem;line-height:1.55}
+.msgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.msg{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:6px;min-width:0}
+.msg .when{font-family:var(--ff-mono);font-size:.78rem;color:var(--accent);font-weight:600}
+.msg .bubble{background:var(--sunk);border-radius:8px 8px 8px 2px;padding:10px 12px;font-size:.9rem;white-space:pre-line;line-height:1.45}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;align-items:stretch}
+.flow .box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;gap:4px;min-width:0}
+.flow .box .k{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.flow .box.future{border-style:dashed}
+
+footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:grid;gap:8px}
+
+@media (max-width:560px){
+  .phase{grid-template-columns:44px 1fr;gap:10px}
+  .phase .n{font-size:1.4rem}
+  h2{font-size:1.4rem}
+}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="stack">
+    <span class="eyebrow">Plano do projeto · v3 · 12/out/2026</span>
+    <h1>GWeather</h1>
+    <p class="muted">ESP32 DevKit v1 com AHT20, BMP280 e OLED SSD1306. Interface web na rede local, registro de logs, mensagens de WhatsApp em horários definidos e caminho preparado para publicar na Vercel depois.</p>
+    <p class="muted"><b>Projeto aberto, feito para um hardware específico:</b> para reproduzir, use exatamente os mesmos módulos e as mesmas ligações descritas aqui. Outras placas, sensores ou displays exigem adaptar o código.</p>
+  </div>
+  <div class="facts">
+    <div class="fact"><span class="k">Placa</span><span class="v">ESP32 DevKit v1</span></div>
+    <div class="fact"><span class="k">Display</span><span class="v">OLED 0,96" I2C</span></div>
+    <div class="fact"><span class="k">Montagem</span><span class="v">Protoboard</span></div>
+    <div class="fact"><span class="k">Sensores</span><span class="v">AHT20 + BMP280</span></div>
+    <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
+    <div class="fact"><span class="k">Nuvem</span><span class="v">Vercel (fase 10)</span></div>
+  </div>
+  <span class="status">Fases 1 e 2 concluídas · Etapa atual: Fase 3, display OLED</span>
+</header>
+
+<nav class="toc" aria-label="Seções">
+  <a href="#visao">Visão geral</a>
+  <a href="#ligacoes">Ligações</a>
+  <a href="#montagem">Montagem passo a passo</a>
+  <a href="#verificacao">Verificação</a>
+  <a href="#fases">Fases</a>
+  <a href="#altitude">Altitude</a>
+  <a href="#whatsapp">WhatsApp</a>
+  <a href="#dados">Dados e API</a>
+  <a href="#vercel">Vercel</a>
+  <a href="#riscos">Riscos</a>
+</nav>
+
+<!-- ============ VISÃO GERAL ============ -->
+<section id="visao">
+  <div class="head">
+    <span class="eyebrow">Visão geral</span>
+    <h2>O que vamos construir e as decisões já tomadas</h2>
+  </div>
+  <div class="stack-lg">
+    <div class="cols">
+      <div class="stack">
+        <h3>Funções</h3>
+        <ul style="margin:0;padding-left:1.1em;display:grid;gap:4px">
+          <li>Medir temperatura, umidade e pressão a cada 5 s.</li>
+          <li>Mostrar os dados em páginas no OLED, configuráveis pela web.</li>
+          <li>Painel web em <code>http://gweather.local</code> com gráficos e histórico.</li>
+          <li>Registrar médias a cada 10 min e permitir consulta e exportação em CSV.</li>
+          <li>Enviar 3 a 4 mensagens por dia (previsão e condições) para os números cadastrados.</li>
+          <li>Mais tarde, enviar os dados para um painel na Vercel, acessível de fora de casa.</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <h3>Quem mede o quê</h3>
+        <div class="tbl"><table>
+          <thead><tr><th>Sensor</th><th>Mede</th><th>Uso no projeto</th></tr></thead>
+          <tbody>
+            <tr><td><b>AHT20</b></td><td>Temperatura, umidade</td><td>Fonte principal de temperatura e única de umidade</td></tr>
+            <tr><td><b>BMP280</b></td><td>Pressão, temperatura</td><td>Pressão para previsão; temperatura só para conferência</td></tr>
+            <tr><td><b>SSD1306</b></td><td>Display 128×64</td><td>Páginas rotativas configuráveis</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Decisão</th><th>Escolha</th><th>Motivo</th></tr></thead>
+      <tbody>
+        <tr><td>Onde roda</td><td>Tudo no ESP32 nesta etapa</td><td>Funciona sem internet e sem servidor</td></tr>
+        <tr><td>Ferramenta</td><td>PlatformIO + Arduino</td><td>Bibliotecas prontas e build reproduzível</td></tr>
+        <tr><td>Ligação dos módulos</td><td>Um único barramento I2C (D21/D22)</td><td>Os três endereços não conflitam</td></tr>
+        <tr><td>Wi-Fi</td><td>WiFiManager (portal de configuração)</td><td>Troca de rede sem recompilar</td></tr>
+        <tr><td>Armazenamento</td><td>LittleFS (logs e config) + NVS (senhas e chaves)</td><td>Sem cartão SD; segredos fora do código</td></tr>
+        <tr><td>Hora</td><td>NTP, fuso de Brasília (<code>&lt;-03&gt;3</code>)</td><td>Logs com horário certo e envios pontuais</td></tr>
+        <tr><td>Previsão</td><td>Tendência de pressão (Zambretti) + Open-Meteo</td><td>Uma funciona offline, a outra traz máxima, mínima e chuva</td></tr>
+        <tr><td>WhatsApp</td><td>CallMeBot, mensagem individual para cada número</td><td>Grátis e simples; envio a grupo não é confirmado</td></tr>
+        <tr><td>Agendamento</td><td>No próprio ESP32</td><td>No plano gratuito da Vercel o cron roda só 1 vez por dia</td></tr>
+        <tr><td>Nuvem</td><td>ESP32 envia dados para a Vercel</td><td>A Vercel não alcança o ESP32 atrás do roteador; não precisa abrir porta</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ LIGAÇÕES ============ -->
+<section id="ligacoes">
+  <div class="head">
+    <span class="eyebrow">Fase 1 · Ligações</span>
+    <h2>Mapa de conexões no ESP32</h2>
+    <p class="muted">Todos os módulos usam os mesmos quatro sinais: <span class="net v33">3V3</span> <span class="net gnd">GND</span> <span class="net sda">SDA</span> <span class="net scl">SCL</span>. Os quatro pinos do ESP32 que usamos ficam no <b>lado direito</b> da placa (vista de cima, antena para cima, USB para baixo). Use os botões para destacar um módulo de cada vez.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="bar">
+      <div class="filters" role="group" aria-label="Destacar módulo">
+        <button type="button" id="f-all" data-f="all" aria-pressed="true">Tudo</button>
+        <button type="button" id="f-aht" data-f="aht" aria-pressed="false">AHT20</button>
+        <button type="button" id="f-bmp" data-f="bmp" aria-pressed="false">BMP280</button>
+        <button type="button" id="f-oled" data-f="oled" aria-pressed="false">OLED</button>      </div>
+      <span class="mono muted" style="font-size:.78rem">ESP32 DevKit v1 · 30 pinos · vista de cima</span>
+    </div>
+    <div class="svgbox">
+      <svg id="wiring" viewBox="0 0 1000 660" role="img" aria-labelledby="wtitle wdesc" xmlns="http://www.w3.org/2000/svg">
+        <title id="wtitle">Diagrama de ligações da estação</title>
+        <desc id="wdesc">ESP32 DevKit v1: 3V3 e GND alimentam os três módulos; D21 é SDA e D22 é SCL, compartilhados por AHT20, BMP280 e OLED. No BMP280, CSB vai ao 3V3 e SDO ao GND.</desc>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--w-3v3)"></i>3V3 (fio vermelho)</span>
+      <span><i style="background:var(--w-gnd)"></i>GND (fio preto)</span>
+      <span><i style="background:var(--w-sda)"></i>SDA · D21 (fio azul)</span>
+      <span><i style="background:var(--w-scl)"></i>SCL · D22 (fio roxo)</span>
+      <span><i style="background:var(--w-csb)"></i>CSB do BMP280 → 3V3 (fio laranja)</span>
+      <span><i style="background:var(--w-sdo)"></i>SDO do BMP280 → GND (fio amarelo)</span>
+      <span>Ponto cheio = conexão. Fio que passa por cima em arco = sem conexão.</span>
+    </div>
+  </div>
+
+  <div class="stack-lg" style="margin-top:24px">
+    <div class="tbl"><table>
+      <thead><tr><th>Pino no ESP32 (serigrafia)</th><th>GPIO</th><th>Sinal</th><th>Vai para</th><th>Cor sugerida</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pin">3V3</span> último pino, lado direito</td><td>–</td><td><span class="net v33">3V3</span></td><td>VIN/VCC de AHT20, BMP280 e OLED; CSB do BMP280</td><td>Vermelho</td></tr>
+        <tr><td><span class="pin">GND</span> penúltimo, lado direito</td><td>–</td><td><span class="net gnd">GND</span></td><td>GND dos três módulos; SDO do BMP280</td><td>Preto</td></tr>
+        <tr><td><span class="pin">D21</span> 5º pino, lado direito</td><td class="num">21</td><td><span class="net sda">SDA</span></td><td>SDA de AHT20, BMP280 e OLED</td><td>Azul</td></tr>
+        <tr><td><span class="pin">D22</span> 2º pino, lado direito</td><td class="num">22</td><td><span class="net scl">SCL</span></td><td>SCL de AHT20, BMP280 e OLED</td><td>Roxo</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="cols">
+      <div class="tbl"><table>
+        <thead><tr><th>Módulo</th><th>Endereço I2C</th><th>Pinos (ordem mais comum)</th></tr></thead>
+        <tbody>
+          <tr><td><b>AHT20</b></td><td class="mono">0x38</td><td class="mono">VIN · GND · SCL · SDA</td></tr>
+          <tr><td><b>BMP280</b></td><td class="mono">0x76</td><td class="mono">VCC · GND · SCL · SDA · CSB · SDO</td></tr>
+          <tr><td><b>OLED SSD1306</b></td><td class="mono">0x3C</td><td class="mono">GND · VCC · SCL · SDA</td></tr>
+        </tbody>
+      </table></div>
+      <div class="stack">
+        <div class="note crit"><strong>Leia a serigrafia de cada módulo antes de ligar.</strong><span>A ordem dos pinos muda entre fabricantes. No OLED é comum o <b>GND vir antes do VCC</b>; inverter os dois pode queimar o display. O diagrama mostra a ordem mais comum, mas vale o que está escrito na placa.</span></div>
+        <div class="note warn"><strong>Use só 3V3, nunca VIN.</strong><span>O pino VIN do ESP32 (lado esquerdo, embaixo) tem 5 V da USB. Os sinais SDA/SCL do ESP32 são de 3,3 V, então tudo é alimentado em 3V3.</span></div>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div class="note"><strong>Por que ligar CSB e SDO no BMP280?</strong><span>CSB em 3V3 força o modo I2C. SDO em GND fixa o endereço em <code>0x76</code> (em 3V3 seria <code>0x77</code>). Muitos módulos já vêm com resistores que fazem isso, mas os dois fios deixam o resultado previsível. Se o seu BMP280 tiver só 4 pinos, ignore esses dois. Os fios têm cores próprias (laranja e amarelo) para lembrar que são configuração, não alimentação, mas chegam aos mesmos trilhos + e −.</span></div>
+      <div class="note"><strong>Placa de 38 pinos?</strong><span>Conte os pinos. O desenho é da versão de 30 pinos (DOIT). Na de 38, as posições mudam, mas os nomes impressos (D21, D22, 3V3, GND) são os mesmos. Siga sempre o nome, não a posição.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MONTAGEM ============ -->
+<section id="montagem">
+  <div class="head">
+    <span class="eyebrow">Fase 1 · Montagem</span>
+    <h2>Montagem na protoboard, fio a fio</h2>
+    <p class="muted">Monte tudo com o USB desconectado. Marque cada passo ao concluir; as marcações ficam salvas só neste navegador.</p>
+  </div>
+
+  <div class="stack-lg">
+    <div class="cols">
+      <div class="stack">
+        <h3>Como organizar a protoboard</h3>
+        <ul style="margin:0;padding-left:1.1em;display:grid;gap:6px">
+          <li><b>Trilhos laterais</b> (linhas com + vermelho e − azul): o + vira o 3V3 e o − vira o GND de toda a montagem.</li>
+          <li><b>Fileiras do meio</b>: cada fileira de 5 furos (a–e ou f–j) é ligada por dentro. Um pino de módulo encaixado numa fileira deixa 4 furos livres para fios.</li>
+          <li><b>Barramento I2C</b>: escolha duas fileiras livres e marque com fita: uma “SDA”, outra “SCL”. Cada uma recebe 4 fios (ESP32 + 3 módulos).</li>
+          <li><b>Distância</b>: ESP32 numa ponta, OLED no meio, <b>AHT20 e BMP280 na ponta oposta</b>. O ESP32 esquenta com o Wi-Fi e pode somar 1 a 3 °C na leitura se o sensor ficar perto.</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <h3>Antes de começar</h3>
+        <div class="note warn"><strong>O ESP32 é largo.</strong><span>Na protoboard de 830 furos, a DevKit v1 atravessa a canaleta central e costuma deixar só uma coluna livre de um lado. Deixe essa coluna livre no <b>lado direito</b> da placa (onde estão 3V3, GND, D21 e D22). Se não sobrar nenhuma, use duas protoboards lado a lado ou jumpers macho-fêmea direto nos pinos.</span></div>
+        <div class="note warn"><strong>Trilho dividido.</strong><span>Em muitas protoboards de 830, a linha vermelha/azul é interrompida no meio. Se a sua for assim, faça uma ponte (vermelho com vermelho, preto com preto) para unir as duas metades.</span></div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline">
+        <h3>Sequência</h3>
+        <span class="progress" id="progress">0 de 23 concluídos</span>
+      </div>
+      <ol class="steps" id="steps">
+        <li class="group">Preparação</li>
+        <li><input type="checkbox" id="s01" aria-label="Passo concluído"><span class="t">Desconecte o cabo USB. Toda a montagem é feita sem energia.</span></li>
+        <li><input type="checkbox" id="s02" aria-label="Passo concluído"><span class="t">Encaixe o ESP32 atravessando a canaleta central, numa das pontas da protoboard, com a coluna livre do lado dos pinos 3V3/GND/D21/D22. Pressione de forma uniforme para não entortar os pinos.</span></li>
+        <li><input type="checkbox" id="s03" aria-label="Passo concluído"><span class="t">Encaixe o OLED no meio da protoboard e o AHT20 e o BMP280 na ponta oposta. Cada pino de módulo deve ficar numa fileira própria, sem dividir fileira com outro módulo.</span></li>
+        <li><input type="checkbox" id="s04" aria-label="Passo concluído"><span class="t">Escolha e marque com fita as fileiras <span class="net sda">SDA</span> e <span class="net scl">SCL</span> do barramento.</span></li>
+
+        <li class="group">ESP32 → trilhos e barramento</li>
+        <li><input type="checkbox" id="s05" aria-label="Passo concluído"><span class="t">Vermelho: <span class="pin">3V3</span> do ESP32 → trilho <b>+</b>.</span></li>
+        <li><input type="checkbox" id="s06" aria-label="Passo concluído"><span class="t">Preto: <span class="pin">GND</span> do ESP32 (lado direito, logo acima do 3V3) → trilho <b>−</b>.</span></li>
+        <li><input type="checkbox" id="s07" aria-label="Passo concluído"><span class="t">Se o trilho for dividido, faça as pontes vermelha e preta entre as metades.</span></li>
+        <li><input type="checkbox" id="s08" aria-label="Passo concluído"><span class="t">Azul: <span class="pin">D21</span> → fileira <span class="net sda">SDA</span>.</span></li>
+        <li><input type="checkbox" id="s09" aria-label="Passo concluído"><span class="t">Roxo:<span class="pin">D22</span> → fileira <span class="net scl">SCL</span>.</span></li>
+
+        <li class="group">AHT20</li>
+        <li><input type="checkbox" id="s10" aria-label="Passo concluído"><span class="t">Vermelho: VIN → trilho <b>+</b>.</span></li>
+        <li><input type="checkbox" id="s11" aria-label="Passo concluído"><span class="t">Preto: GND → trilho <b>−</b>.</span></li>
+        <li><input type="checkbox" id="s12" aria-label="Passo concluído"><span class="t">Azul: SDA → fileira <span class="net sda">SDA</span>.</span></li>
+        <li><input type="checkbox" id="s13" aria-label="Passo concluído"><span class="t">Roxo:SCL → fileira <span class="net scl">SCL</span>.</span></li>
+
+        <li class="group">BMP280</li>
+        <li><input type="checkbox" id="s14" aria-label="Passo concluído"><span class="t">Vermelho: VCC → trilho <b>+</b>.</span></li>
+        <li><input type="checkbox" id="s15" aria-label="Passo concluído"><span class="t">Preto: GND → trilho <b>−</b>.</span></li>
+        <li><input type="checkbox" id="s16" aria-label="Passo concluído"><span class="t">Azul: SDA → fileira <span class="net sda">SDA</span>.</span></li>
+        <li><input type="checkbox" id="s17" aria-label="Passo concluído"><span class="t">Roxo:SCL → fileira <span class="net scl">SCL</span>.</span></li>
+        <li><input type="checkbox" id="s18" aria-label="Passo concluído"><span class="t">Laranja: CSB → trilho <b>+</b> (se existir).</span></li>
+        <li><input type="checkbox" id="s19" aria-label="Passo concluído"><span class="t">Amarelo: SDO → trilho <b>−</b> (se existir).</span></li>
+
+        <li class="group">OLED SSD1306</li>
+        <li><input type="checkbox" id="s20" aria-label="Passo concluído"><span class="t">Confira na placa qual pino é GND e qual é VCC antes de ligar.</span></li>
+        <li><input type="checkbox" id="s21" aria-label="Passo concluído"><span class="t">Vermelho: VCC → trilho <b>+</b>. Preto: GND → trilho <b>−</b>.</span></li>
+        <li><input type="checkbox" id="s22" aria-label="Passo concluído"><span class="t">Azul: SDA → fileira <span class="net sda">SDA</span>.</span></li>
+        <li><input type="checkbox" id="s23" aria-label="Passo concluído"><span class="t">Roxo:SCL → fileira <span class="net scl">SCL</span>.</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VERIFICAÇÃO ============ -->
+<section id="verificacao">
+  <div class="head">
+    <span class="eyebrow">Fase 1 · Verificação</span>
+    <h2>Conferir antes de ligar o USB</h2>
+  </div>
+  <div class="stack-lg">
+    <div class="cols">
+      <div class="stack">
+        <h3>Com o multímetro (modo continuidade, com o bip)</h3>
+        <div class="tbl"><table>
+          <thead><tr><th>Pontas em</th><th>Esperado</th></tr></thead>
+          <tbody>
+            <tr><td>Trilho + e trilho −</td><td><b style="color:var(--crit)">Sem bip.</b> Bip aqui é curto-circuito.</td></tr>
+            <tr><td>Fileira SDA e fileira SCL</td><td>Sem bip</td></tr>
+            <tr><td>SDA ou SCL e trilho −</td><td>Sem bip</td></tr>
+            <tr><td>Pino 3V3 do ESP32 e VCC de cada módulo</td><td>Bip</td></tr>
+            <tr><td>Pino D21 e SDA de cada módulo</td><td>Bip</td></tr>
+            <tr><td>Pino D22 e SCL de cada módulo</td><td>Bip</td></tr>
+          </tbody>
+        </table></div>
+        <p class="muted" style="font-size:.9rem">Sem multímetro? Faça a mesma conferência seguindo cada fio com o dedo, um sinal por vez, usando o diagrama com o filtro do módulo.</p>
+      </div>
+      <div class="stack">
+        <h3>Primeira energização</h3>
+        <ol style="margin:0;padding-left:1.2em;display:grid;gap:6px">
+          <li>Ligue o USB no computador (não na fonte ainda).</li>
+          <li>O LED vermelho de energia do ESP32 deve acender. Alguns módulos também têm LED.</li>
+          <li><b>O OLED fica apagado.</b> É normal: ele só mostra algo depois que o firmware for gravado, na fase 2.</li>
+          <li>O LED azul pode piscar se a placa veio com programa de demonstração. Também é normal.</li>
+          <li>Depois de 30 s, toque de leve nos módulos e no ESP32. Nada pode estar quente.</li>
+        </ol>
+        <div class="note crit"><strong>Se algo esquentar ou o LED não acender</strong><span>Desconecte o USB na hora e procure um fio de 3V3 encostando em GND, ou um módulo com VCC e GND trocados.</span></div>
+        <div class="note ok"><strong>Fase 1 concluída quando</strong><span>a conferência não mostrou curto, o LED de energia acende e nada aquece. A leitura dos endereços I2C acontece na fase 2, com o primeiro programa.</span></div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <h3>Problemas comuns na montagem</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Sintoma</th><th>Causa provável</th><th>O que fazer</th></tr></thead>
+        <tbody>
+          <tr><td>LED do ESP32 não acende</td><td>Cabo USB só de carga, ou curto entre 3V3 e GND</td><td>Troque o cabo; refaça a conferência de curto</td></tr>
+          <tr><td>Computador não reconhece a placa</td><td>Cabo sem dados, ou falta o driver CP210x/CH340</td><td>Outro cabo; driver é instalado na fase 2</td></tr>
+          <tr><td>ESP32 não entra na protoboard</td><td>Placa larga demais</td><td>Duas protoboards lado a lado, ou jumpers macho-fêmea</td></tr>
+          <tr><td>Módulo encaixado frouxo</td><td>Barra de pinos não soldada ou torta</td><td>Soldar a barra de pinos; pinos sem solda dão leitura intermitente</td></tr>
+          <tr><td>Metade da montagem sem energia</td><td>Trilho dividido no meio</td><td>Ponte entre as metades do trilho</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="note"><strong>Em varanda ou área externa</strong><span>Mesmo com a montagem protegida, evite sol direto sobre a protoboard (pode somar mais de 5 °C na leitura) e respingos de chuva. Deixe a fonte USB em local seco.</span></div>
+  </div>
+</section>
+
+<!-- ============ FASES ============ -->
+<section id="fases">
+  <div class="head">
+    <span class="eyebrow">Roteiro</span>
+    <h2>Fases do projeto</h2>
+    <p class="muted">Cada fase termina com um critério de aceite. As fases 2 a 9 somam de 7 a 10 dias de trabalho.</p>
+  </div>
+  <div class="phases">
+    <div class="phase done">
+      <div class="n">01</div>
+      <div class="body">
+        <div class="meta"><h3>Montagem na protoboard</h3><span class="chip done">Concluída</span><span class="chip">½ dia</span></div>
+        <ul><li>Fiação conforme o diagrama, conferência com multímetro e primeira energização.</li></ul>
+        <p class="accept"><b>Aceite:</b> sem curto, LED de energia aceso e nada aquecendo.</p>
+      </div>
+    </div>
+    <div class="phase done">
+      <div class="n">02</div>
+      <div class="body">
+        <div class="meta"><h3>Ambiente, scanner I2C e sensores</h3><span class="chip done">Concluída</span><span class="chip">1 dia</span></div>
+        <ul>
+          <li>VS Code + PlatformIO, driver USB, primeiro “blink”.</li>
+          <li>Scanner I2C. Leitura do AHT20 e do BMP280 a cada 5 s, com conferência do ID do BMP280 (<code>0x58</code>).</li>
+          <li>Cálculos: ponto de orvalho, sensação térmica, pressão ao nível do mar com a altitude do local, incluindo o andar do prédio.</li>
+        </ul>
+        <p class="accept"><b>Aceite:</b> scanner mostra <code>0x38</code>, <code>0x3C</code> e <code>0x76</code>; temperaturas dos dois sensores a ±1,5 °C; umidade sobe quando você sopra no AHT20.</p>
+        <div class="result">
+          <span><b>Resultado na placa (12/10):</b> scanner encontrou <code>0x38</code> AHT20, <code>0x3C</code> OLED e <code>0x76</code> BMP280 (chip id <code>0x58</code>).</span>
+          <span>Primeira leitura: 28,1 °C · 65 % · 939,0 hPa no local · 1013,4 hPa ao nível do mar · diferença BMP280 − AHT20 de −0,07 °C.</span>
+        </div>
+      </div>
+    </div>
+    <div class="phase now">
+      <div class="n">03</div>
+      <div class="body">
+        <div class="meta"><h3>Display OLED</h3><span class="chip now">Agora</span><span class="chip">½ dia</span></div>
+        <ul><li>Biblioteca U8g2, 2 ou 3 páginas fixas com rotação automática.</li></ul>
+        <p class="accept"><b>Aceite:</b> páginas alternam sem piscar e a leitura segue a cada 5 s.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="n">04</div>
+      <div class="body">
+        <div class="meta"><h3>Rede, hora e configuração</h3><span class="chip">½ dia</span></div>
+        <ul><li>WiFiManager (rede “GWeather-Setup” no primeiro uso), reconexão, nome <code>gweather.local</code>, NTP (<code>a.st1.ntp.br</code>), configuração em arquivo e senhas na NVS.</li></ul>
+        <p class="accept"><b>Aceite:</b> após reiniciar, volta ao Wi-Fi sozinho, com hora certa e configuração preservada.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="n">05</div>
+      <div class="body">
+        <div class="meta"><h3>Servidor web e painel local</h3><span class="chip">1–2 dias</span></div>
+        <ul><li>Servidor no ESP32 com a API <code>/api/v1</code>, painel para celular e senha nas telas que alteram algo.</li></ul>
+        <p class="accept"><b>Aceite:</b> <code>http://gweather.local</code> no celular mostra os dados atualizando.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="n">06</div>
+      <div class="body">
+        <div class="meta"><h3>Logs e consulta</h3><span class="chip">1 dia</span></div>
+        <ul><li>Média a cada 10 min em CSV mensal; gráficos de 24 h, 7 e 30 dias; mínima e máxima do dia; filtro por data e download do CSV.</li></ul>
+        <p class="accept"><b>Aceite:</b> 24 h de funcionamento geram cerca de 144 pontos, e o gráfico confere com o CSV.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="n">07</div>
+      <div class="body">
+        <div class="meta"><h3>Personalização do display</h3><span class="chip">1 dia</span></div>
+        <ul><li>Editor na web: páginas, campos, ordem, tempo de rotação, brilho, unidades e horário para desligar à noite, com prévia do OLED. Ajuste fino (offset) de temperatura, umidade e pressão.</li></ul>
+        <p class="accept"><b>Aceite:</b> mudanças feitas na web aparecem no OLED em menos de 2 s e continuam após reiniciar.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="n">08</div>
+      <div class="body">
+        <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip">1–2 dias</span></div>
+        <ul>
+          <li>Previsão por tendência de pressão (Zambretti, últimas 3 h) e Open-Meteo para a latitude e longitude configuradas.</li>
+          <li>Envio via CallMeBot para cada número cadastrado, com fila e nova tentativa em caso de falha.</li>
+          <li>Agenda de 3 a 4 horários e alertas com intervalo mínimo entre eles.</li>
+        </ul>
+        <p class="accept"><b>Aceite:</b> mensagem de teste chega a todos os números; envios nos horários certos, sem duplicar após reiniciar.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="n">09</div>
+      <div class="body">
+        <div class="meta"><h3>Robustez</h3><span class="chip">1 dia</span></div>
+        <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
+        <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no log e memória estável.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="n">10</div>
+      <div class="body">
+        <div class="meta"><h3>Nuvem na Vercel</h3><span class="chip">Futuro</span></div>
+        <ul><li>Recebimento de dados, painel web com login, configuração remota e, se fizer sentido, notificações pela nuvem. Detalhes na seção Vercel.</li></ul>
+        <p class="accept"><b>Aceite:</b> painel acessível fora de casa mostrando os mesmos dados do painel local.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ALTITUDE ============ -->
+<section id="altitude">
+  <div class="head">
+    <span class="eyebrow">Calibração</span>
+    <h2>Altitude do sensor</h2>
+    <p class="muted">O BMP280 mede a pressão onde ele está. Para comparar com previsões e outras estações, convertemos para pressão ao nível do mar, e para isso precisamos da altitude real do sensor. Em prédio, o andar conta: 10 andares, cerca de 29 m, mudam a pressão corrigida em uns 3 hPa, o suficiente para errar a previsão. Os valores abaixo são um exemplo; no firmware eles ficam em <code>include/site.h</code>.</p>
+  </div>
+  <div class="stack-lg">
+    <div class="calc" id="calc">
+      <label for="c-ground">Altitude do terreno (m)<input id="c-ground" type="number" step="1" value="600"></label>
+      <label for="c-floor">Andar<input id="c-floor" type="number" step="1" min="0" value="10"></label>
+      <label for="c-height">Altura por andar (m)<input id="c-height" type="number" step="0.1" value="2.9"></label>
+      <label for="c-sensor">Altura do sensor sobre o piso (m)<input id="c-sensor" type="number" step="0.1" value="1"></label>
+      <label for="c-press">Pressão medida (hPa)<input id="c-press" type="number" step="0.1" value="938.5"></label>
+      <div class="out">
+        <div><span class="k">Altitude do sensor</span><span class="v" id="o-alt">–</span></div>
+        <div><span class="k">Nível do mar (correta)</span><span class="v" id="o-slp">–</span></div>
+        <div><span class="k">Se ignorar o andar</span><span class="v" id="o-slp0">–</span></div>
+        <div><span class="k">Erro evitado</span><span class="v" id="o-err">–</span></div>
+      </div>
+    </div>
+    <div class="cols">
+      <div class="stack">
+        <h3>Como o firmware calcula</h3>
+        <pre>altitude = terreno + andar × altura_andar + altura_sensor
+         = 600 + 10 × 2,9 + 1,0 = 630 m   (exemplo)
+
+P_mar = P_medida / (1 − altitude / 44330) ^ 5,255</pre>
+        <p class="muted" style="font-size:.92rem">Os quatro valores ficam em <code>firmware/include/site.h</code> (fora do git; modelo em <code>site.h.example</code>). Na fase 7 passam a ser editáveis pela web.</p>
+      </div>
+      <div class="stack">
+        <h3>Como acertar os números</h3>
+        <ul style="margin:0;padding-left:1.1em;display:grid;gap:6px">
+          <li><b>Terreno:</b> use a altitude da sua rua, não a média da cidade; ela varia bastante entre bairros. Consulte a altitude da sua rua no Google Earth ou em um mapa topográfico.</li>
+          <li><b>Altura por andar:</b> 2,8 a 3,0 m é o comum em prédios residenciais. Se o térreo for mais alto ou houver mezanino, some a diferença.</li>
+          <li><b>Conferência:</b> compare a pressão corrigida com o QNH do METAR do aeroporto mais próximo, que é pressão ao nível do mar. Ajuste o offset de pressão se a diferença for constante.</li>
+          <li>A tendência de 3 h (subindo, estável, caindo) não depende da altitude; só o valor absoluto depende.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHATSAPP ============ -->
+<section id="whatsapp">
+  <div class="head">
+    <span class="eyebrow">Notificações</span>
+    <h2>WhatsApp via CallMeBot, uma mensagem para cada número</h2>
+    <p class="muted">O CallMeBot envia para números individuais; envio a grupo não é documentado. Cada pessoa ativa a própria chave, e o ESP32 manda a mesma mensagem para cada número, com alguns segundos de intervalo.</p>
+  </div>
+  <div class="stack-lg">
+    <div class="cols">
+      <div class="stack">
+        <h3>Ativação (cada pessoa, no próprio celular)</h3>
+        <ol style="margin:0;padding-left:1.2em;display:grid;gap:6px">
+          <li>Abra <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">a página da API de WhatsApp do CallMeBot</a> e salve o número do bot que aparece lá (ele pode mudar com o tempo).</li>
+          <li>Envie para o bot a mensagem de autorização indicada na página.</li>
+          <li>Aguarde a resposta com a sua <b>apikey</b>. Pode levar alguns minutos.</li>
+          <li>Guarde número + apikey. Elas serão cadastradas na interface na fase 8, e não no código.</li>
+        </ol>
+        <div class="note"><strong>Faça a ativação já</strong><span>Ter as duas chaves antes da fase 8 evita esperar no meio do desenvolvimento.</span></div>
+      </div>
+      <div class="stack">
+        <h3>Como o ESP32 envia</h3>
+        <pre>GET https://api.callmebot.com/whatsapp.php
+    ?phone=+55XXXXXXXXXXX
+    &amp;text=&lt;mensagem codificada&gt;
+    &amp;apikey=&lt;chave da pessoa&gt;</pre>
+        <ul style="margin:0;padding-left:1.1em;display:grid;gap:4px">
+          <li>Uma chamada por destinatário, com 5 s entre elas.</li>
+          <li>Fila com até 3 tentativas e espera crescente em caso de falha.</li>
+          <li>O último envio de cada horário fica salvo, para não repetir após reiniciar.</li>
+          <li>Chaves guardadas na NVS e trocadas pela interface.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stack">
+      <h3>Agenda sugerida</h3>
+      <div class="msgs">
+        <div class="msg"><span class="when">07:00 · Previsão do dia</span><div class="bubble">🌤️ Bom dia! GWeather, 12/10
+Agora: 17,8 °C · 82 % · 1016 hPa
+Hoje: máx 28 °C, mín 16 °C, chuva 10 %
+Pressão estável: tempo firme</div></div>
+        <div class="msg"><span class="when">13:00 · Condições atuais</span><div class="bubble">☀️ GWeather, 13:00
+26,4 °C · sensação 27 °C
+Umidade 48 % · 1013 hPa (caindo devagar)</div></div>
+        <div class="msg"><span class="when">19:00 · Tendência</span><div class="bubble">🌇 GWeather, 19:00
+22,1 °C · 64 %
+Pressão caiu 2,1 hPa em 3 h: chance de chuva à noite</div></div>
+        <div class="msg"><span class="when">22:00 · Resumo do dia (opcional)</span><div class="bubble">📊 Resumo de 12/10
+Máx 27,9 °C às 14:40 · Mín 16,2 °C às 06:10
+Umidade 41–86 %</div></div>
+      </div>
+      <p class="muted" style="font-size:.9rem">Valores ilustrativos. Alertas fora da agenda (calor acima de 35 °C, frio abaixo de 8 °C, queda de 4 hPa em 3 h) respeitam um intervalo mínimo de 3 h entre si.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DADOS ============ -->
+<section id="dados">
+  <div class="head">
+    <span class="eyebrow">Software</span>
+    <h2>Dados, configuração e API</h2>
+  </div>
+  <div class="stack-lg">
+    <div class="cols">
+      <div class="stack">
+        <h3>Estrutura do repositório</h3>
+        <pre>GWeather/
+├── firmware/            PlatformIO (ESP32)
+│   ├── platformio.ini
+│   ├── partitions.csv   OTA ×2 + LittleFS ~1,5 MB
+│   ├── src/
+│   │   ├── main.cpp
+│   │   ├── config.*     configuração + padrões
+│   │   ├── sensors.*    AHT20 + BMP280 + cálculos
+│   │   ├── display.*    páginas do OLED
+│   │   ├── netmgr.*     Wi-Fi, NTP, mDNS
+│   │   ├── logger.*     CSV mensal + cursor de envio
+│   │   ├── webapi.*     /api/v1
+│   │   ├── notifier.*   CallMeBot
+│   │   ├── forecast.*   Zambretti + Open-Meteo
+│   │   ├── scheduler.*  horários
+│   │   └── uplink.*     envio p/ nuvem (fase 10)
+│   └── data/            painel local
+├── web/                 Next.js (fase 10)
+└── docs/api-v1.md       contrato da API</pre>
+      </div>
+      <div class="stack">
+        <h3>Bibliotecas</h3>
+        <pre>lib_deps =
+  adafruit/Adafruit AHTX0
+  adafruit/Adafruit BMP280 Library
+  adafruit/Adafruit Unified Sensor
+  olikraus/U8g2
+  bblanchon/ArduinoJson @ ^7
+  mathieucarbou/ESPAsyncWebServer
+  tzapu/WiFiManager</pre>
+        <h3>Registro (a cada 10 min)</h3>
+        <pre>ts_utc,temp,hum,pres_mar,orvalho
+1760270400,24.6,61.2,1013.4,16.7</pre>
+        <p class="muted" style="font-size:.92rem">Um arquivo por mês, cerca de 110 kB. Cabe mais de um ano na memória. Horários em UTC; o fuso só entra na exibição.</p>
+      </div>
+    </div>
+
+    <div class="stack">
+      <h3>Configuração (<code>/config.json</code>)</h3>
+      <pre>{
+  "schema": 1,
+  "device_id": "gweather-01",
+  "location": {
+    "name": "Sua cidade", "lat": 0.0, "lon": 0.0,
+    "ground_alt_m": 600, "floor": 10, "floor_height_m": 2.9, "sensor_height_m": 1.0
+  },
+  "calibration": { "temp": 0.0, "hum": 0.0, "pres": 0.0 },
+  "display": {
+    "brightness": 128, "rotate_s": 5,
+    "night_off": { "enabled": true, "from": "23:00", "to": "06:00" },
+    "pages": [ { "type": "clock_temp" }, { "type": "fields", "fields": ["temp","hum","pres"] },
+               { "type": "forecast" }, { "type": "minmax" } ]
+  },
+  "log": { "interval_min": 10 },
+  "notify": {
+    "recipients": [ { "name": "Pessoa 1", "phone": "+55..." }, { "name": "Pessoa 2", "phone": "+55..." } ],
+    "schedules": [ { "time": "07:00", "type": "forecast" }, { "time": "13:00", "type": "current" },
+                   { "time": "19:00", "type": "trend" },    { "time": "22:00", "type": "daily_summary" } ],
+    "alerts": { "temp_max": 35, "temp_min": 8, "pres_drop_3h": 4, "min_gap_min": 180 }
+  },
+  "cloud": { "enabled": false, "url": "", "push_interval_min": 10 }
+}</pre>
+      <p class="muted" style="font-size:.92rem">Senha do Wi-Fi, apikeys do CallMeBot, senha do painel e token da nuvem ficam na NVS, nunca neste arquivo nem no git.</p>
+    </div>
+
+    <div class="tbl"><table>
+      <thead><tr><th>Método</th><th>Rota</th><th>Função</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">GET</td><td class="mono">/api/v1/now</td><td>Leitura atual e estado (sinal Wi-Fi, tempo ligado, memória)</td></tr>
+        <tr><td class="mono">GET</td><td class="mono">/api/v1/log?from=&amp;to=&amp;step=</td><td>Série histórica agregada para gráficos</td></tr>
+        <tr><td class="mono">GET</td><td class="mono">/api/v1/log.csv?month=AAAA-MM</td><td>Download do CSV</td></tr>
+        <tr><td class="mono">GET / PUT</td><td class="mono">/api/v1/config</td><td>Ler e salvar configuração</td></tr>
+        <tr><td class="mono">POST</td><td class="mono">/api/v1/display/preview</td><td>Mostrar página no OLED sem salvar</td></tr>
+        <tr><td class="mono">GET</td><td class="mono">/api/v1/forecast</td><td>Previsão do dia</td></tr>
+        <tr><td class="mono">POST</td><td class="mono">/api/v1/notify/test</td><td>Mensagem de teste para os números cadastrados</td></tr>
+        <tr><td class="mono">POST</td><td class="mono">/api/v1/system/reboot</td><td>Reiniciar</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ VERCEL ============ -->
+<section id="vercel">
+  <div class="head">
+    <span class="eyebrow">Fase 10 · Futuro</span>
+    <h2>Expansão para a Vercel</h2>
+    <p class="muted">O ESP32 fica atrás do roteador de casa, então a Vercel não consegue chamá-lo. Quem inicia a conversa é sempre o ESP32: ele envia as leituras e consulta a configuração. Não é preciso abrir porta no roteador.</p>
+  </div>
+  <div class="stack-lg">
+    <div class="flow">
+      <div class="box"><span class="k">ESP32</span><span>Envia lotes de leituras a cada 10 min e consulta a configuração a cada 5 min.</span></div>
+      <div class="box future"><span class="k">API na Vercel</span><span><code>POST /api/v1/ingest</code> com token do aparelho; <code>GET /api/v1/device/config</code>.</span></div>
+      <div class="box future"><span class="k">Banco</span><span>Postgres (Neon, pelo Marketplace) para o histórico; Redis opcional para o “último valor”.</span></div>
+      <div class="box future"><span class="k">Painel</span><span>Next.js com login, gráficos de longo prazo e edição da configuração.</span></div>
+    </div>
+
+    <div class="cols">
+      <div class="stack">
+        <h3>Já preparado nas fases 2 a 9</h3>
+        <ul style="margin:0;padding-left:1.1em;display:grid;gap:4px">
+          <li>API versionada <code>/api/v1</code>, com o mesmo formato no ESP32 e na nuvem.</li>
+          <li><code>device_id</code> e versão de esquema na configuração.</li>
+          <li>Horários em UTC nos logs.</li>
+          <li>Cursor do último registro enviado: dados acumulados offline são reenviados depois.</li>
+          <li>Módulo <code>uplink</code> pronto e desligado (<code>cloud.enabled = false</code>).</li>
+          <li>Painel local sem dependência de internet.</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <h3>Etapas da fase 10</h3>
+        <div class="tbl"><table>
+          <tbody>
+            <tr><td class="mono">10a</td><td>Recebimento de dados e tabela de leituras, sem duplicar o mesmo horário</td></tr>
+            <tr><td class="mono">10b</td><td>Painel Next.js com login</td></tr>
+            <tr><td class="mono">10c</td><td>Configuração editável pela nuvem, aplicada pelo ESP32</td></tr>
+            <tr><td class="mono">10d</td><td>Notificações pela nuvem (opcional, ver nota)</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="note warn"><strong>Agendamento continua no ESP32</strong><span>No plano gratuito (Hobby), o cron da Vercel roda no máximo uma vez por dia e com até 1 h de variação. Para 3 ou 4 horários fixos, o ESP32 com NTP é mais preciso e não custa nada. Mover os envios para a nuvem só faz sentido no plano Pro.</span></div>
+    <div class="cols">
+      <div class="note"><strong>Volume pequeno</strong><span>144 leituras por dia, cerca de 4.300 por mês. Cabe com folga nos planos gratuitos de banco.</span></div>
+      <div class="note"><strong>Segurança</strong><span>Token por aparelho guardado como hash, HTTPS, validação dos valores recebidos, limite de requisições e painel privado por padrão.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RISCOS ============ -->
+<section id="riscos">
+  <div class="head">
+    <span class="eyebrow">Riscos</span>
+    <h2>O que pode dar errado e como evitar</h2>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Risco</th><th>Como evitar</th></tr></thead>
+    <tbody>
+      <tr><td>VCC e GND trocados no OLED</td><td>Ler a serigrafia; conferência com multímetro antes de ligar</td></tr>
+      <tr><td>Temperatura alta por calor do ESP32 ou sol direto</td><td>Sensores na ponta oposta da protoboard, longe do sol; ajuste por offset</td></tr>
+      <tr><td>Pressão corrigida errada</td><td>Altitude com o andar incluído; conferir com o METAR do aeroporto mais próximo</td></tr>
+      <tr><td>CallMeBot fora do ar ou com mudanças</td><td>Envio isolado em um módulo, fácil de trocar; fila com novas tentativas</td></tr>
+      <tr><td>Apikey exposta</td><td>Guardada na NVS, HTTPS nas chamadas, painel com senha, sem abrir porta no roteador</td></tr>
+      <tr><td>Pouca memória ao usar HTTPS</td><td>Envios em tarefa própria, um por vez; memória exibida no painel</td></tr>
+      <tr><td>Queda de energia ou Wi-Fi</td><td>Hora recuperada pelo NTP; lacunas marcadas no log; reenvio para a nuvem pelo cursor</td></tr>
+      <tr><td>Cron limitado na Vercel</td><td>Agendamento mantido no ESP32</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  <span class="eyebrow">Próximo passo</span>
+  <p><b>Confirmar o display da fase 3 e seguir para a fase 4:</b> Wi-Fi, hora pela internet e acesso por <code>gweather.local</code>. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("wiring");
+  function el(tag, attrs, parent, text){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  var C = { v33:"var(--w-3v3)", gnd:"var(--w-gnd)", sda:"var(--w-sda)", scl:"var(--w-scl)", btn:"var(--w-btn)", csb:"var(--w-csb)", sdo:"var(--w-sdo)" };
+  var ON = { v33:"var(--on-3v3)", gnd:"var(--on-gnd)", sda:"var(--on-sda)", scl:"var(--on-scl)", btn:"var(--on-btn)" };
+  var ALL = "aht bmp oled";
+
+  // ---- ESP32 board ----
+  var pinY = function(i){ return 120 + i * 32; };
+  var PL = ["EN","VP","VN","D34","D35","D32","D33","D25","D26","D27","D14","D12","D13","GND","VIN"];
+  var PR = ["D23","D22","TX0","RX0","D21","D19","D18","D5","TX2","RX2","D4","D2","D15","GND","3V3"];
+  var used = { 1:"scl", 4:"sda", 13:"gnd", 14:"v33" };
+  var usedG = { 1:ALL, 4:ALL, 13:ALL, 14:ALL };
+
+  var gb = el("g", {});
+  el("rect", {x:30, y:30, width:260, height:590, rx:12, fill:"var(--board)"}, gb);
+  // WROOM module
+  el("rect", {x:100, y:42, width:120, height:196, rx:4, fill:"var(--can)"}, gb);
+  el("rect", {x:100, y:42, width:120, height:52, rx:4, fill:"var(--board)", stroke:"var(--can)", "stroke-width":2}, gb);
+  el("path", {d:"M112 82 V58 H128 V82 H144 V58 H160 V82 H176 V58 H192 V82 H208", fill:"none", stroke:"var(--accent)", "stroke-width":3, "stroke-linejoin":"round"}, gb);
+  el("text", {x:160, y:150, "text-anchor":"middle", fill:"var(--can-fg)", "font-family":"var(--ff-mono)", "font-size":11, "font-weight":600}, gb, "ESP-WROOM-32");
+  el("text", {x:160, y:168, "text-anchor":"middle", fill:"var(--can-fg)", "font-family":"var(--ff-mono)", "font-size":10}, gb, "antena ↑");
+  // USB + buttons
+  el("rect", {x:132, y:604, width:56, height:34, rx:4, fill:"var(--can)"}, gb);
+  el("text", {x:160, y:653, "text-anchor":"middle", fill:"var(--muted)", "font-family":"var(--ff-mono)", "font-size":11}, gb, "USB");
+  el("rect", {x:44, y:590, width:16, height:16, rx:3, fill:"var(--board-dim)"}, gb);
+  el("text", {x:66, y:602, fill:"var(--board-fg)", "font-family":"var(--ff-mono)", "font-size":9}, gb, "EN");
+  el("rect", {x:260, y:590, width:16, height:16, rx:3, fill:"var(--board-dim)"}, gb);
+  el("text", {x:254, y:602, "text-anchor":"end", fill:"var(--board-fg)", "font-family":"var(--ff-mono)", "font-size":9}, gb, "BOOT");
+  el("text", {x:160, y:210, "text-anchor":"middle", fill:"var(--can-fg)", "font-family":"var(--ff-display)", "font-size":13, "font-weight":700}, gb, "DevKit v1");
+
+  PL.forEach(function(n, i){
+    var y = pinY(i);
+    el("circle", {cx:46, cy:y, r:6, fill:"var(--board)", stroke:"var(--board-dim)", "stroke-width":2}, gb);
+    el("text", {x:60, y:y+4, fill:"var(--board-dim)", "font-family":"var(--ff-mono)", "font-size":11}, gb, n);
+  });
+  PR.forEach(function(n, i){
+    var y = pinY(i), net = used[i];
+    if (net){
+      var g = el("g", {"data-g": usedG[i]}, gb);
+      el("rect", {x:214, y:y-10, width:44, height:20, rx:4, fill:C[net], stroke:"var(--board-fg)", "stroke-width":1}, g);
+      el("text", {x:236, y:y+4, "text-anchor":"middle", fill:ON[net], "font-family":"var(--ff-mono)", "font-size":11, "font-weight":700}, g, n);
+      el("circle", {cx:274, cy:y, r:7, fill:C[net], stroke:"var(--board-fg)", "stroke-width":2}, g);
+    } else {
+      el("circle", {cx:274, cy:y, r:6, fill:"var(--board)", stroke:"var(--board-dim)", "stroke-width":2}, gb);
+      el("text", {x:256, y:y+4, "text-anchor":"end", fill:"var(--board-dim)", "font-family":"var(--ff-mono)", "font-size":11}, gb, n);
+    }
+  });
+
+  // ---- bus lines ----
+  var BUS = { scl:{x:340, top:78}, sda:{x:375, top:78}, gnd:{x:470, top:78}, v33:{x:505, top:78} };
+  var BUSG = { scl:ALL, sda:ALL, gnd:ALL, v33:ALL };
+  var MODX = 600;
+
+  var modules = [
+    { id:"aht", name:"AHT20", sub:"temp + umidade", addr:"0x38", y:84, h:122, fill:"var(--mod-sensor)",
+      pins:[["VIN","v33"],["GND","gnd"],["SCL","scl"],["SDA","sda"]] },
+    { id:"bmp", name:"BMP280", sub:"pressão + temp", addr:"0x76", y:232, h:172, fill:"var(--mod-sensor)",
+      pins:[["VCC","v33"],["GND","gnd"],["SCL","scl"],["SDA","sda"],["CSB","v33","csb"],["SDO","gnd","sdo"]] },
+    { id:"oled", name:"OLED SSD1306", sub:"128×64", addr:"0x3C", y:432, h:124, fill:"var(--mod-oled)",
+      pins:[["GND","gnd"],["VCC","v33"],["SCL","scl"],["SDA","sda"]], screen:true }
+  ];
+  modules.forEach(function(m){ m.pins.forEach(function(p, k){ p.y = m.y + 24 + k*25; }); });
+
+  // ESP wires (from pin to bus) and the button
+  var espWires = [ {net:"scl", y:pinY(1)}, {net:"sda", y:pinY(4)}, {net:"gnd", y:pinY(13)}, {net:"v33", y:pinY(14)} ];
+
+  // bus bottoms = lowest point that touches the line
+  Object.keys(BUS).forEach(function(n){ BUS[n].bottom = BUS[n].top; });
+  espWires.forEach(function(w){ BUS[w.net].bottom = Math.max(BUS[w.net].bottom, w.y); });
+  modules.forEach(function(m){ m.pins.forEach(function(p){ BUS[p[1]].bottom = Math.max(BUS[p[1]].bottom, p.y); }); });
+
+  var wireLayer = el("g", {});
+  var dotLayer = el("g", {});
+
+  // horizontal wire with hops over bus lines it does not connect to
+  function hwire(x1, x2, y, net, groups, skip, color){
+    var cross = [];
+    Object.keys(BUS).forEach(function(n){
+      var b = BUS[n];
+      if (n === skip) return;
+      if (b.x > x1 + 1 && b.x < x2 - 1 && y > b.top && y < b.bottom) cross.push(b.x);
+    });
+    cross.sort(function(a,b){ return a-b; });
+    var d = "M" + x1 + " " + y;
+    cross.forEach(function(xc){ d += " L" + (xc-7) + " " + y + " A7 7 0 0 1 " + (xc+7) + " " + y; });
+    d += " L" + x2 + " " + y;
+    el("path", {d:d, fill:"none", stroke:color || C[net], "stroke-width":4, "stroke-linecap":"round", "data-g":groups}, wireLayer);
+  }
+
+  // bus verticals
+  Object.keys(BUS).forEach(function(n){
+    var b = BUS[n];
+    el("line", {x1:b.x, y1:b.top, x2:b.x, y2:b.bottom, stroke:C[n], "stroke-width":5, "stroke-linecap":"round", "data-g":BUSG[n]}, wireLayer);
+    var lbl = {scl:"SCL", sda:"SDA", gnd:"GND", v33:"3V3"}[n];
+    var g = el("g", {"data-g":BUSG[n]});
+    el("rect", {x:b.x-20, y:b.top-30, width:40, height:20, rx:4, fill:C[n]}, g);
+    el("text", {x:b.x, y:b.top-16, "text-anchor":"middle", fill:ON[n], "font-family":"var(--ff-mono)", "font-size":11, "font-weight":700}, g, lbl);
+  });
+
+  espWires.forEach(function(w){
+    hwire(281, BUS[w.net].x, w.y, w.net, BUSG[w.net], w.net);
+    el("circle", {cx:BUS[w.net].x, cy:w.y, r:6, fill:C[w.net], "data-g":BUSG[w.net]}, dotLayer);
+  });
+
+
+  // modules
+  modules.forEach(function(m){
+    var w = m.screen ? 300 : 200;
+    var g = el("g", {"data-g":m.id});
+    el("rect", {x:MODX, y:m.y, width:w, height:m.h, rx:8, fill:m.fill}, g);
+    el("text", {x:MODX+64, y:m.y+28, fill:"var(--mod-fg)", "font-family":"var(--ff-display)", "font-size":16, "font-weight":760}, g, m.name);
+    el("text", {x:MODX+64, y:m.y+46, fill:"var(--mod-fg)", opacity:.8, "font-family":"var(--ff-mono)", "font-size":10.5}, g, m.sub);
+    el("text", {x:MODX+64, y:m.y+64, fill:"var(--mod-fg)", "font-family":"var(--ff-mono)", "font-size":11, "font-weight":600}, g, "I2C " + m.addr);
+    if (m.screen){
+      el("rect", {x:MODX+198, y:m.y+18, width:88, height:56, rx:3, fill:"var(--screen)"}, g);
+      el("text", {x:MODX+242, y:m.y+42, "text-anchor":"middle", fill:"var(--screen-fg)", "font-family":"var(--ff-mono)", "font-size":13, "font-weight":600}, g, "24.6°C");
+      el("text", {x:MODX+242, y:m.y+60, "text-anchor":"middle", fill:"var(--screen-fg)", "font-family":"var(--ff-mono)", "font-size":10}, g, "61% 1013hPa");
+    }
+    m.pins.forEach(function(p){
+      var net = p[1], y = p.y, wc = C[p[2] || net];
+      el("circle", {cx:MODX, cy:y, r:6, fill:wc, stroke:"var(--mod-fg)", "stroke-width":2}, g);
+      el("text", {x:MODX+14, y:y+4, fill:"var(--mod-fg)", "font-family":"var(--ff-mono)", "font-size":11, "font-weight":600}, g, p[0]);
+      hwire(BUS[net].x, MODX-7, y, net, m.id, net, wc);
+      el("circle", {cx:BUS[net].x, cy:y, r:6, fill:C[net], "data-g":m.id}, dotLayer);
+    });
+  });
+  // optional pins note
+  el("text", {x:MODX+64, y:modules[1].y+90, fill:"var(--mod-fg)", opacity:.8, "font-family":"var(--ff-mono)", "font-size":10, "data-g":"bmp"}, null, "CSB/SDO: se existirem");
+
+  // side notes
+  el("text", {x:870, y:120, fill:"var(--muted)", "font-family":"var(--ff-body)", "font-size":12, "data-g":"aht"}, null, "longe do ESP32");
+  el("text", {x:870, y:136, fill:"var(--muted)", "font-family":"var(--ff-body)", "font-size":12, "data-g":"aht"}, null, "(ponta oposta)");
+  el("text", {x:870, y:300, fill:"var(--muted)", "font-family":"var(--ff-body)", "font-size":12, "data-g":"bmp"}, null, "longe do ESP32");
+  el("text", {x:870, y:316, fill:"var(--muted)", "font-family":"var(--ff-body)", "font-size":12, "data-g":"bmp"}, null, "(ponta oposta)");
+  el("text", {x:600, y:592, fill:"var(--crit)", "font-family":"var(--ff-body)", "font-size":12, "font-weight":700, "data-g":"oled"}, null, "Atenção: no OLED o GND costuma vir antes do VCC");
+
+  // ---- filters ----
+  var buttons = document.querySelectorAll(".filters button");
+  function applyFilter(f){
+    buttons.forEach(function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-f") === f ? "true" : "false"); });
+    svg.classList.toggle("filtering", f !== "all");
+    svg.querySelectorAll("[data-g]").forEach(function(n){
+      var gs = n.getAttribute("data-g").split(" ");
+      n.classList.toggle("dim", f !== "all" && gs.indexOf(f) < 0);
+    });
+  }
+  buttons.forEach(function(b){ b.addEventListener("click", function(){ applyFilter(b.getAttribute("data-f")); }); });
+
+  // ---- checklist ----
+  var KEY = "gweather-steps";
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e){ saved = {}; }
+  var boxes = document.querySelectorAll("#steps input[type=checkbox]");
+  var prog = document.getElementById("progress");
+  function updateProgress(){
+    var n = 0; boxes.forEach(function(b){ if (b.checked) n++; });
+    prog.textContent = n + " de " + boxes.length + " concluídos";
+  }
+  boxes.forEach(function(b){
+    if (saved[b.id]) b.checked = true;
+    b.addEventListener("change", function(){
+      saved[b.id] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch(e){}
+      updateProgress();
+    });
+  });
+  updateProgress();
+
+  // ---- altitude calculator ----
+  var fmt = function(v, d){ return v.toLocaleString("pt-BR", {minimumFractionDigits:d, maximumFractionDigits:d}); };
+  function num(id){ var v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : 0; }
+  function slp(p, h){ return p / Math.pow(1 - h/44330, 5.255); }
+  function calc(){
+    var ground = num("c-ground"), floor = num("c-floor"), fh = num("c-height"), sh = num("c-sensor"), p = num("c-press");
+    var alt = ground + floor * fh + sh;
+    var a = slp(p, alt), b = slp(p, ground + sh);
+    document.getElementById("o-alt").textContent = fmt(alt, 1) + " m";
+    document.getElementById("o-slp").textContent = fmt(a, 1) + " hPa";
+    document.getElementById("o-slp0").textContent = fmt(b, 1) + " hPa";
+    document.getElementById("o-err").textContent = fmt(a - b, 1) + " hPa";
+  }
+  document.querySelectorAll("#calc input").forEach(function(i){ i.addEventListener("input", calc); });
+  calc();
+})();
+</script>
