@@ -3,30 +3,33 @@
 Memória de continuidade entre sessões. O Claude lê isto ao começar e **atualiza ao terminar** cada tarefa.
 Plano geral: `../../docs/PLANO.md` e `../../docs/plano.html`.
 
+## Arquitetura (v4)
+Painel em Nuxt na Vercel (pasta `web/`, fase 6). O ESP32 mede, mostra no OLED, agenda mensagens,
+envia os dados para a nuvem e mantém uma API local + página mínima em `gweather.local`.
+
 ## Estado atual
-- Fase 1 (montagem) concluída.
-- Fase 2 (ambiente, scanner I2C, sensores) testada na placa:
-  - Scanner encontra 0x38 (AHT20), 0x3C (OLED), 0x76 (BMP280, chip id 0x58).
-  - Leitura a cada 5 s: temperatura/umidade (AHT20), temperatura/pressão (BMP280),
-    pressão ao nível do mar, ponto de orvalho, sensação térmica.
-  - Primeira leitura (ambiente interno): 28,1 °C, 65 %, 1013,4 hPa ao nível do mar; BMP − AHT = −0,07 °C.
-- Fase 3 (OLED) concluída e validada na placa: `src/display.*` com U8g2 em buffer completo, 3 páginas
-  (Temperatura, Pressão, Detalhes) trocando a cada 5 s, redesenho a cada nova leitura, indicador de página,
-  vírgula decimal. Log confirma "OLED ok em 0x3C".
-  Tela de abertura "Iniciando..." com spinner animado por 2,5 s (`DISPLAY_SPLASH_MS`); o OLED é
-  inicializado antes do scanner para a abertura cobrir a inicialização.
-  Usuário validou: abertura, páginas, qualidade da imagem (sem piscar, acentos ok), atualização dos valores
-  e o teste do sopro no AHT20 (umidade sobe e volta).
-- Configuração do local separada em `include/site.h` (fora do git; modelo em `include/site.h.example`).
-- Módulos: `src/i2c_scan.*`, `src/sensors.*` (reinicializa sensor após 3 falhas), `src/weather_math.*` (funções puras), `src/display.*`.
-- `dev` e `release` compilam.
+- Fases 1–3 concluídas (montagem, sensores, OLED com abertura e páginas).
+- Fase 4 concluída e validada na placa:
+  - `src/netmgr.*`: WiFiManager não bloqueante; rede "GWeather-Setup" com senha aleatória
+    (gerada após ligar o rádio, guardada na NVS em `gweather/portal_pass`) e mostrada no OLED.
+  - NTP com fuso de `/config.json` (`time.tz`); mDNS `gweather.local` (ping ok a partir do Mac).
+  - `src/settings.*`: `/config.json` em LittleFS, criado com valores de `config.h`/`site.h`.
+  - `src/console.*`: `ajuda`, `status`, `config`, `set`, `config padrao`, `wifi portal|esquecer`, `reiniciar`.
+  - OLED: relógio no cabeçalho, página Rede, tela fixa "Configurar Wi-Fi" com o portal aberto.
+  - Serial: uma linha por leitura.
+  - `partitions.csv`: app0/app1 de 1,44 MB (OTA) + LittleFS 1 MB + coredump.
+  - Teste: após vários reinícios, voltou sozinho ao Wi-Fi, hora sincronizada em ~2 s, config preservada.
+- `dev` e `release` compilam (release ~70 % de uma partição de app).
 
 ## Em andamento
-- _(nada)_
+- Fase 5: API local `/api/v1` (WebServer do core) + página mínima embutida no firmware.
 
 ## Próximos passos
-1. Fase 4: Wi-Fi (WiFiManager), NTP, mDNS `gweather.local`, config em LittleFS + segredos na NVS.
+1. Fase 5: `src/webapi.*`, `docs/api-v1.md`, página mínima; senha nas rotas que alteram algo.
+2. Fase 6: app Nuxt em `web/` na Vercel, Postgres, ingestão e envio pelo ESP32 com reserva offline.
 
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.
+- Abrir a porta serial no macOS reinicia a placa (DTR/RTS).
+- Durante o portal do WiFiManager a porta 80 é dele; o servidor da API só pode subir com o portal fechado.
 - Altitude do terreno em `site.h` é estimada; conferir com a altitude da rua e com o QNH do METAR do aeroporto mais próximo.
