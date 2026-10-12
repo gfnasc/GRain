@@ -17,6 +17,9 @@ struct Reading {
 // Inicializa AHT20 e BMP280. Pode ser chamada de novo para reinicializar.
 void sensorsBegin(TwoWire &bus, float altitudeM);
 
+// Atualiza a altitude usada na correção da pressão.
+void sensorsSetAltitude(float altitudeM);
+
 // Faz uma leitura completa e calcula os valores derivados.
 Reading sensorsRead();
 

@@ -22,3 +22,12 @@
 
 // Altura do sensor acima do piso, em metros.
 #define SITE_SENSOR_HEIGHT_M 1.0f
+
+// Fuso horário no formato POSIX (o sinal é invertido em relação ao UTC):
+//   Brasília (UTC-3): "<-03>3"    Manaus (UTC-4): "<-04>4"
+//   Lisboa: "WET0WEST,M3.5.0/1,M10.5.0"
+#define SITE_TZ "UTC0"
+
+// Os valores acima são só os iniciais: na primeira execução eles são
+// gravados em /config.json na placa e podem ser alterados depois pelo
+// console serial (comando "set") sem recompilar.

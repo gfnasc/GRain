@@ -62,6 +62,8 @@ void sensorsBegin(TwoWire &bus, float altitudeM) {
   beginBmp();
 }
 
+void sensorsSetAltitude(float altitudeM) { s_altitudeM = altitudeM; }
+
 Reading sensorsRead() {
   Reading r;
 

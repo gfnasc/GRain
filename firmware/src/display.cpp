@@ -4,13 +4,15 @@
 #include <U8g2lib.h>
 
 #include "config.h"
+#include "netmgr.h"
+#include "settings.h"
 
 static const char *TAG = "display";
 
 // Buffer completo (F): desenha tudo em RAM e envia de uma vez, sem piscar.
 static U8G2_SSD1306_128X64_NONAME_F_HW_I2C s_oled(U8G2_R0, U8X8_PIN_NONE);
 
-enum Page { PAGE_TEMP, PAGE_PRESSURE, PAGE_DETAILS, PAGE_COUNT };
+enum Page { PAGE_TEMP, PAGE_PRESSURE, PAGE_DETAILS, PAGE_NETWORK, PAGE_COUNT };
 
 static bool s_ok = false;
 static Reading s_last;
@@ -28,6 +30,13 @@ static void fmt1(char *out, size_t n, float v) {
 static void drawHeader(const char *title) {
   s_oled.setFont(u8g2_font_6x10_tf);
   s_oled.drawUTF8(0, 8, title);
+  // Relógio (depois da sincronização), antes das bolinhas.
+  char hhmm[8];
+  if (netLocalTime(hhmm, sizeof hhmm, "%H:%M")) {
+    s_oled.setFont(u8g2_font_5x8_tf);
+    int w = s_oled.getUTF8Width(hhmm);
+    s_oled.drawUTF8(128 - PAGE_COUNT * 7 - 3 - w, 8, hhmm);
+  }
   // Indicador de página: bolinhas no canto direito.
   for (int i = 0; i < PAGE_COUNT; i++) {
     int x = 128 - (PAGE_COUNT - i) * 7 + 2;
@@ -122,6 +131,43 @@ static void drawDetails() {
   drawRow(63, "Ligado há", buf);
 }
 
+static void drawNetwork() {
+  drawHeader("Rede");
+  s_oled.setFont(u8g2_font_6x10_tf);
+  const NetStatus &n = netStatus();
+  char buf[24];
+
+  if (n.connected) {
+    snprintf(buf, sizeof buf, "%.14s", n.ssid.c_str());
+    drawRow(24, "Wi-Fi", buf);
+    drawRow(37, "IP", n.ip.c_str());
+    snprintf(buf, sizeof buf, "%d dBm", n.rssi);
+    drawRow(50, "Sinal", buf);
+  } else {
+    drawRow(24, "Wi-Fi", "desconectado");
+    drawRow(37, "IP", "--");
+    drawRow(50, "Sinal", "--");
+  }
+  if (!netLocalTime(buf, sizeof buf, "%d/%m %H:%M")) snprintf(buf, sizeof buf, "aguardando");
+  drawRow(63, "Hora", buf);
+}
+
+// Tela fixa enquanto a rede de configuração do Wi-Fi estiver aberta.
+static void drawPortal() {
+  const NetStatus &n = netStatus();
+  s_oled.setFont(u8g2_font_6x10_tf);
+  s_oled.drawUTF8(0, 8, "Configurar Wi-Fi");
+  s_oled.drawHLine(0, 11, 128);
+  s_oled.drawUTF8(0, 24, "No celular, conecte em:");
+  s_oled.setFont(u8g2_font_7x13B_tf);
+  s_oled.drawUTF8(0, 37, n.apName.c_str());
+  s_oled.setFont(u8g2_font_6x10_tf);
+  char buf[32];
+  snprintf(buf, sizeof buf, "Senha: %s", n.apPass.c_str());
+  s_oled.drawUTF8(0, 50, buf);
+  s_oled.drawUTF8(0, 63, "Depois: 192.168.4.1");
+}
+
 // --- Tela de abertura: "Iniciando..." com spinner ---
 // O spinner ocupa só os tiles 6..9 x 1..4 (32x32 px), atualizados com
 // updateDisplayArea para não reenviar a tela inteira a cada quadro.
@@ -160,7 +206,9 @@ static void render() {
   if (!s_ok) return;
   if (splashActive()) return drawSplashFull();
   s_oled.clearBuffer();
-  if (!s_hasReading) {
+  if (netStatus().portalActive) {
+    drawPortal();
+  } else if (!s_hasReading) {
     s_oled.setFont(u8g2_font_7x13_tf);
     const char *msg = "Iniciando...";
     s_oled.drawUTF8((128 - s_oled.getUTF8Width(msg)) / 2, 38, msg);
@@ -169,6 +217,7 @@ static void render() {
       case PAGE_TEMP: drawTemp(); break;
       case PAGE_PRESSURE: drawPressure(); break;
       case PAGE_DETAILS: drawDetails(); break;
+      case PAGE_NETWORK: drawNetwork(); break;
     }
   }
   s_oled.sendBuffer();
@@ -183,7 +232,7 @@ bool displayBegin() {
     log_e("[%s] OLED não respondeu em 0x%02X", TAG, ADDR_OLED);
     return false;
   }
-  s_oled.setContrast(DISPLAY_CONTRAST);
+  s_oled.setContrast(settings().displayContrast);
   s_oled.enableUTF8Print();
   s_splashUntil = millis() + DISPLAY_SPLASH_MS;
   if (s_splashUntil == 0) s_splashUntil = 1;
@@ -221,9 +270,26 @@ void displayLoop() {
     return;
   }
 
-  if ((uint32_t)(now - s_pageSince) >= DISPLAY_PAGE_MS) {
+  // Abriu ou fechou a rede de configuração: redesenha na hora.
+  static bool lastPortal = false;
+  bool portal = netStatus().portalActive;
+  if (portal != lastPortal) {
+    lastPortal = portal;
+    s_pageSince = now;
+    render();
+    return;
+  }
+  if (portal) return;  // tela fixa enquanto a configuração estiver aberta
+
+  if ((uint32_t)(now - s_pageSince) >= settings().displayPageMs) {
     s_pageSince = now;
     s_page = (s_page + 1) % PAGE_COUNT;
     render();
   }
+}
+
+void displayApplySettings() {
+  if (!s_ok) return;
+  s_oled.setContrast(settings().displayContrast);
+  render();
 }
