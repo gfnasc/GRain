@@ -239,5 +239,19 @@ Configuração atual (ou a padrão, com `is_default: true`), `version`, `applied
 #### `PUT /api/v1/config` 🔐
 Salva a configuração completa e gera a próxima `version`. `422` com a regra violada em `message`.
 
+#### Notificações 🔐
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/notify` | Agenda, alertas e local; destinatários (sem a chave); últimos 20 envios |
+| `PUT` | `/api/v1/notify` | Salva agenda, alertas e local (validação em `web/shared/utils/notify-config.ts`) |
+| `POST` | `/api/v1/notify/recipients` | `{name, phone, apikey}`; telefone no formato `+5511999999999` |
+| `PATCH` | `/api/v1/notify/recipients/:id` | `{name?, phone?, apikey?, enabled?}` |
+| `DELETE` | `/api/v1/notify/recipients/:id` | Remove |
+| `GET` | `/api/v1/notify/preview?type=` | Monta a mensagem (`forecast`, `current`, `trend`, `summary`) sem enviar |
+| `POST` | `/api/v1/notify/test` | `{type, recipient_id?}`: envia agora e registra como teste |
+
+A chave do CallMeBot nunca é devolvida ao navegador. Cada envio grava um `slot` único (`agenda:<id>:<data>`, `alerta:<tipo>:<ts>`, `teste:<ts>`), o que impede duplicatas.
+
 #### `GET /api/v1/device/config?v=<versão aplicada>` 🔑
-Consultado pelo ESP32 a cada minuto com o token da estação. `204` se a estação já está na versão atual; senão `200 {"version": 3, "config": {...}}`. Cada consulta registra `applied_version` e `last_poll_at`, que o painel usa para confirmar a aplicação e o estado Online.
+Consultado pelo ESP32 a cada minuto com o token da estação. `204` se a estação já está na versão atual; senão `200 {"version": 3, "config": {...}}`. Cada consulta registra `applied_version` e `last_poll_at`, que o painel usa para confirmar a aplicação e o estado Online. A mesma consulta dispara a agenda de mensagens; o `POST /api/v1/ingest` dispara a avaliação dos alertas.

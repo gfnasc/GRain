@@ -57,8 +57,14 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   `POST /api/v1/cloud/sync`, comandos `tela`, `carrossel`, `pagina`; página local com seções Display,
   Nuvem e Manutenção. Painel na nuvem com o mesmo ícone (SVG, ICO e apple-touch-icon).
 
+- Fase 9 implementada na nuvem (em validação), sem mudança no firmware:
+  - Agenda disparada por `GET /api/v1/device/config` (consulta de 1 min da estação); alertas por `POST /api/v1/ingest`.
+  - Mensagens em `web/server/utils/messages.ts` (Open-Meteo, Zambretti, sensação térmica); envio em `notify.ts`.
+  - Tabelas `recipients` e `notifications` (slot único); configuração em `devices.notify`.
+  - Teste: horário criado para 2 min depois disparou no minuto certo e não repetiu.
+
 ## Em andamento
-- Fase 9: previsão e WhatsApp (CallMeBot).
+- Fase 9: cadastrar os destinatários (chaves do CallMeBot) e validar o envio real.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos

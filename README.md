@@ -23,7 +23,7 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 | 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | ✅ Concluída |
 | 7 | Histórico, gráficos e exportação CSV no painel | ✅ Concluída |
 | 8 | Personalização do display pelo painel | ✅ Concluída |
-| 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | 🔧 Em andamento |
+| 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | 🔧 Em validação |
 | 10 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
 
 Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama interativo de ligações e montagem passo a passo: [docs/plano.html](docs/plano.html) (baixe o arquivo e abra no navegador).
@@ -37,7 +37,7 @@ ESP32 ──envia leituras a cada 10 min (HTTPS)──► Nuxt na Vercel (API + 
      (funciona sem internet)                             acessível de qualquer lugar
 ```
 
-O ESP32 mede, mostra no display, agenda as mensagens e envia os dados. O painel fica na nuvem porque um site HTTPS não consegue ler a API HTTP local do ESP32 e porque `gweather.local` só existe dentro de casa.
+O ESP32 mede, mostra no display e envia os dados. As mensagens de WhatsApp saem da nuvem: a consulta que a estação faz a cada minuto serve de relógio para a agenda (o cron gratuito da Vercel só roda 1 vez por dia). O painel fica na nuvem porque um site HTTPS não consegue ler a API HTTP local do ESP32 e porque `gweather.local` só existe dentro de casa.
 
 ---
 
@@ -194,7 +194,23 @@ O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `des
 O painel tem duas seções:
 - **Agora:** média mais recente, mínima e máxima de 24 h, últimas médias e estado da estação.
 - **Display:** escolha das páginas do OLED (até 8, em qualquer ordem), tempo por página, brilho, modo noturno (apagar ou escurecer num horário) e calibração dos sensores, com prévia do OLED. Ao salvar, a estação aplica sozinha em até 1 minuto e o painel mostra quando a versão foi confirmada.
+- **Mensagens:** destinatários do WhatsApp (CallMeBot, uma chave por pessoa, guardada só no banco), agenda de até 8 horários com tipo de mensagem e dias da semana, alertas de calor, frio e queda de pressão, local para a previsão (Open-Meteo), prévia com os dados de agora, envio de teste e registro dos últimos envios.
 - **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e ponto de orvalho, umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel).
+
+### Mensagens no WhatsApp
+
+1. Cada pessoa ativa a própria chave no [CallMeBot](https://www.callmebot.com/blog/free-api-whatsapp-messages/) pelo celular.
+2. No painel, seção **Mensagens**, cadastre nome, número (com DDI) e chave, e use **Enviar teste**.
+3. Ajuste a agenda (padrão: 07:00 previsão do dia, 13:00 condições atuais, 19:00 tendência; 22:00 resumo desligado), os alertas e a latitude/longitude para a previsão.
+
+| Tipo | Conteúdo |
+|---|---|
+| Previsão do dia | Condições de agora, máxima/mínima/chuva do dia (Open-Meteo) e tendência da pressão (Zambretti) |
+| Condições atuais | Temperatura, sensação, umidade e pressão com tendência |
+| Tendência | Variação da pressão em 3 h, interpretação e previsão de amanhã |
+| Resumo do dia | Máxima e mínima com horário, faixa de umidade, pressão média e previsão de amanhã |
+
+A mensagem sai no horário ou até 30 min depois (se a estação estava fora do ar) e nunca é enviada duas vezes. Alertas são avaliados a cada média de 10 min e respeitam um intervalo mínimo entre envios do mesmo tipo.
 
 ### Console serial
 
