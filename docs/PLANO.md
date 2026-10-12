@@ -29,7 +29,7 @@ Atenção: no OLED o GND costuma vir antes do VCC. Nunca usar VIN (5 V).
 ## Fases
 1. ✅ Montagem na protoboard.
 2. ✅ Ambiente PlatformIO, scanner I2C, leitura AHT20 + BMP280 e cálculos.
-3. 🔧 OLED (U8g2), 3 páginas com rotação automática — implementada, aguardando conferência visual.
+3. ✅ OLED (U8g2): abertura com spinner (2,5 s) e 3 páginas com rotação automática.
 4. Wi-Fi (WiFiManager), NTP, mDNS `gweather.local`, config LittleFS + segredos NVS.
 5. Servidor web + painel local + API `/api/v1`.
 6. Logs (média 10 min, CSV mensal, UTC), gráficos, export.

@@ -10,22 +10,22 @@ Plano geral: `../../docs/PLANO.md` e `../../docs/plano.html`.
   - Leitura a cada 5 s: temperatura/umidade (AHT20), temperatura/pressão (BMP280),
     pressão ao nível do mar, ponto de orvalho, sensação térmica.
   - Primeira leitura (ambiente interno): 28,1 °C, 65 %, 1013,4 hPa ao nível do mar; BMP − AHT = −0,07 °C.
-- Fase 3 (OLED) implementada e gravada: `src/display.*` com U8g2 em buffer completo, 3 páginas
+- Fase 3 (OLED) concluída e validada na placa: `src/display.*` com U8g2 em buffer completo, 3 páginas
   (Temperatura, Pressão, Detalhes) trocando a cada 5 s, redesenho a cada nova leitura, indicador de página,
   vírgula decimal. Log confirma "OLED ok em 0x3C".
   Tela de abertura "Iniciando..." com spinner animado por 2,5 s (`DISPLAY_SPLASH_MS`); o OLED é
   inicializado antes do scanner para a abertura cobrir a inicialização.
-  Usuário validou: páginas, qualidade da imagem (sem piscar, acentos ok) e atualização dos valores.
+  Usuário validou: abertura, páginas, qualidade da imagem (sem piscar, acentos ok), atualização dos valores
+  e o teste do sopro no AHT20 (umidade sobe e volta).
 - Configuração do local separada em `include/site.h` (fora do git; modelo em `include/site.h.example`).
 - Módulos: `src/i2c_scan.*`, `src/sensors.*` (reinicializa sensor após 3 falhas), `src/weather_math.*` (funções puras), `src/display.*`.
 - `dev` e `release` compilam.
 
 ## Em andamento
-- Fase 3: falta o usuário conferir a nova tela de abertura com spinner e o teste do sopro no AHT20.
+- _(nada)_
 
 ## Próximos passos
-1. Confirmar o OLED e que a umidade sobe ao soprar no AHT20 (pendente da fase 2).
-2. Fase 4: Wi-Fi (WiFiManager), NTP, mDNS `gweather.local`, config em LittleFS + segredos na NVS.
+1. Fase 4: Wi-Fi (WiFiManager), NTP, mDNS `gweather.local`, config em LittleFS + segredos na NVS.
 
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.

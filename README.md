@@ -17,7 +17,7 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 |---|---|---|
 | 1 | Montagem na protoboard | ✅ Concluída |
 | 2 | Scanner I2C e leitura dos sensores | ✅ Concluída |
-| 3 | Display OLED com páginas rotativas | 🔧 Implementada, em validação |
+| 3 | Display OLED com páginas rotativas | ✅ Concluída |
 | 4 | Wi-Fi, hora pela internet (NTP), `gweather.local` | Planejada |
 | 5 | Servidor web e painel local | Planejada |
 | 6 | Registro de logs, gráficos e exportação CSV | Planejada |
@@ -169,7 +169,7 @@ Diferença BMP-AHT   :  -0.07 °C
 Uma nova leitura sai a cada 5 s. O LED azul da placa pisca a cada leitura.
 
 ### Display
-Três páginas alternam a cada 5 s:
+No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depois, três páginas alternam a cada 5 s:
 
 | Página | Conteúdo |
 |---|---|

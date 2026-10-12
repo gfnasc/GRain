@@ -193,7 +193,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
     <div class="fact"><span class="k">Nuvem</span><span class="v">Vercel (fase 10)</span></div>
   </div>
-  <span class="status">Fases 1 e 2 concluídas · Etapa atual: Fase 3, display OLED</span>
+  <span class="status">Fases 1 a 3 concluídas · Etapa atual: Fase 4, rede e hora</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -476,23 +476,28 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         </ul>
         <p class="accept"><b>Aceite:</b> scanner mostra <code>0x38</code>, <code>0x3C</code> e <code>0x76</code>; temperaturas dos dois sensores a ±1,5 °C; umidade sobe quando você sopra no AHT20.</p>
         <div class="result">
+          <span><b>Sopro no AHT20:</b> umidade subiu e voltou ao normal, como esperado.</span>
           <span><b>Resultado na placa (12/10):</b> scanner encontrou <code>0x38</code> AHT20, <code>0x3C</code> OLED e <code>0x76</code> BMP280 (chip id <code>0x58</code>).</span>
           <span>Primeira leitura: 28,1 °C · 65 % · 939,0 hPa no local · 1013,4 hPa ao nível do mar · diferença BMP280 − AHT20 de −0,07 °C.</span>
         </div>
       </div>
     </div>
-    <div class="phase now">
+    <div class="phase done">
       <div class="n">03</div>
       <div class="body">
-        <div class="meta"><h3>Display OLED</h3><span class="chip now">Agora</span><span class="chip">½ dia</span></div>
+        <div class="meta"><h3>Display OLED</h3><span class="chip done">Concluída</span><span class="chip">½ dia</span></div>
         <ul><li>Biblioteca U8g2, 2 ou 3 páginas fixas com rotação automática.</li></ul>
         <p class="accept"><b>Aceite:</b> páginas alternam sem piscar e a leitura segue a cada 5 s.</p>
+        <div class="result">
+          <span><b>Resultado na placa:</b> abertura “Iniciando...” com spinner animado por 2,5 s; 3 páginas (Temperatura, Pressão, Detalhes) trocando a cada 5 s, com indicador de página e vírgula decimal.</span>
+          <span>Validado: sem piscar, acentos corretos, nada cortado, valores atualizando a cada leitura.</span>
+        </div>
       </div>
     </div>
-    <div class="phase">
+    <div class="phase now">
       <div class="n">04</div>
       <div class="body">
-        <div class="meta"><h3>Rede, hora e configuração</h3><span class="chip">½ dia</span></div>
+        <div class="meta"><h3>Rede, hora e configuração</h3><span class="chip now">Agora</span><span class="chip">½ dia</span></div>
         <ul><li>WiFiManager (rede “GWeather-Setup” no primeiro uso), reconexão, nome <code>gweather.local</code>, NTP (<code>a.st1.ntp.br</code>), configuração em arquivo e senhas na NVS.</li></ul>
         <p class="accept"><b>Aceite:</b> após reiniciar, volta ao Wi-Fi sozinho, com hora certa e configuração preservada.</p>
       </div>
@@ -812,7 +817,7 @@ Umidade 41–86 %</div></div>
 
 <footer>
   <span class="eyebrow">Próximo passo</span>
-  <p><b>Confirmar o display da fase 3 e seguir para a fase 4:</b> Wi-Fi, hora pela internet e acesso por <code>gweather.local</code>. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
+  <p><b>Fase 4:</b> Wi-Fi, hora pela internet e acesso por <code>gweather.local</code>. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
 </footer>
 </div>
 
