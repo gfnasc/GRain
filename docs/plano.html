@@ -193,7 +193,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
     <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel</span></div>
   </div>
-  <span class="status">Fases 1 a 5 concluídas · Etapa atual: Fase 6, Nuxt na Vercel</span>
+  <span class="status">Fases 1 a 6 concluídas · Etapa atual: Fase 7, histórico e gráficos</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -523,22 +523,26 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         </div>
       </div>
     </div>
-    <div class="phase now">
+    <div class="phase done">
       <div class="n">06</div>
       <div class="body">
-        <div class="meta"><h3>Nuvem: Nuxt na Vercel</h3><span class="chip now">Agora</span><span class="chip">2–3 dias</span></div>
+        <div class="meta"><h3>Nuvem: Nuxt na Vercel</h3><span class="chip done">Concluída</span><span class="chip">2–3 dias</span></div>
         <ul>
           <li>App Nuxt em <code>web/</code> com rotas de servidor (Nitro): <code>POST /api/v1/ingest</code> com token por aparelho e banco Postgres.</li>
           <li>ESP32 envia médias de 10 min por HTTPS e guarda alguns dias de reserva para reenviar o que ficar pendente.</li>
           <li>Painel com login mostrando a leitura atual.</li>
         </ul>
         <p class="accept"><b>Aceite:</b> painel na Vercel, aberto no celular fora de casa, mostra a mesma leitura do display; desligar a internet por 1 h não cria buraco no histórico.</p>
+        <div class="result">
+          <span><b>Resultado:</b> painel Nuxt na Vercel com login, banco Neon Postgres e deploy automático pelo GitHub; ESP32 (firmware 0.6.0) envia médias de 10 min por HTTPS com fila de até 14 dias na placa.</span>
+          <span>Queda simulada de 20 min: a fila reteve 2 médias e as reenviou quando a nuvem voltou, sem buraco no banco. Painel conferido no celular pelos dados móveis.</span>
+        </div>
       </div>
     </div>
-    <div class="phase">
+    <div class="phase now">
       <div class="n">07</div>
       <div class="body">
-        <div class="meta"><h3>Histórico e gráficos</h3><span class="chip">1–2 dias</span></div>
+        <div class="meta"><h3>Histórico e gráficos</h3><span class="chip now">Agora</span><span class="chip">1–2 dias</span></div>
         <ul><li>Gráficos de 24 h, 7 e 30 dias; mínima e máxima do dia; filtro por data e exportação em CSV, tudo no Nuxt a partir do banco.</li></ul>
         <p class="accept"><b>Aceite:</b> 24 h de funcionamento geram cerca de 144 pontos, e o gráfico confere com o CSV.</p>
       </div>
@@ -837,7 +841,7 @@ web/ (fase 6)
 
 <footer>
   <span class="eyebrow">Próximo passo</span>
-  <p><b>Fase 6:</b> app Nuxt na Vercel com banco Postgres, recebimento de dados e painel com login; o ESP32 passa a enviar médias de 10 min com reserva offline. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
+  <p><b>Fase 7:</b> gráficos de 24 h, 7 e 30 dias, mínimas e máximas por dia e exportação CSV no painel. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
 </footer>
 </div>
 

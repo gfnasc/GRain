@@ -29,7 +29,7 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   - IPv6 link-local ligado em STA_CONNECTED para o mDNS responder AAAA (sem espera de 5 s no macOS).
   - Contrato em `../../docs/api-v1.md`.
 
-- Fase 6 implementada (em validação):
+- Fase 6 concluída e validada (painel no celular pelos dados móveis; queda simulada sem buraco):
   - `web/`: Nuxt 4 na Vercel (projeto `gweather`, deploy automático pelo GitHub com raiz `web/`),
     Neon Postgres (`devices`, `readings`), `POST /api/v1/ingest` com token por estação (sha256),
     login com senha única (nuxt-auth-utils), painel com leitura atual, mín./máx. 24 h e últimas médias.
@@ -42,11 +42,10 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   - Flash: release ~83 % da partição de app (TLS adicionou ~165 KB).
 
 ## Em andamento
-- Fase 6: teste de queda (fila retém e reenvia) e conferência do painel no celular fora de casa.
+- Fase 7: histórico, gráficos e CSV no painel (`web/`).
 
 ## Próximos passos
-1. Fechar a fase 6.
-2. Fase 7: gráficos, histórico e CSV no painel (`GET /api/v1/readings`).
+1. Fase 7: gráficos, histórico e CSV no painel (`GET /api/v1/readings`).
 
 ## Problemas conhecidos
 - O envio HTTPS bloqueia o loop por ~1–3 s a cada 10 min (display pausa um instante).
