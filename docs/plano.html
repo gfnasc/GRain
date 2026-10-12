@@ -180,9 +180,9 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
 <div class="wrap">
 <header class="top">
   <div class="stack">
-    <span class="eyebrow">Plano do projeto · v3 · 12/out/2026</span>
+    <span class="eyebrow">Plano do projeto · v4 · 12/out/2026</span>
     <h1>GWeather</h1>
-    <p class="muted">ESP32 DevKit v1 com AHT20, BMP280 e OLED SSD1306. Interface web na rede local, registro de logs, mensagens de WhatsApp em horários definidos e caminho preparado para publicar na Vercel depois.</p>
+    <p class="muted">ESP32 DevKit v1 com AHT20, BMP280 e OLED SSD1306. Painel em Nuxt na Vercel, histórico na nuvem, mensagens de WhatsApp em horários definidos e uma página mínima local no próprio ESP32 para quando faltar internet.</p>
     <p class="muted"><b>Projeto aberto, feito para um hardware específico:</b> para reproduzir, use exatamente os mesmos módulos e as mesmas ligações descritas aqui. Outras placas, sensores ou displays exigem adaptar o código.</p>
   </div>
   <div class="facts">
@@ -191,9 +191,9 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Montagem</span><span class="v">Protoboard</span></div>
     <div class="fact"><span class="k">Sensores</span><span class="v">AHT20 + BMP280</span></div>
     <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
-    <div class="fact"><span class="k">Nuvem</span><span class="v">Vercel (fase 10)</span></div>
+    <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel</span></div>
   </div>
-  <span class="status">Fases 1 a 3 concluídas · Etapa atual: Fase 4, rede e hora</span>
+  <span class="status">Fases 1 a 4 concluídas · Etapa atual: Fase 5, API local</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -222,10 +222,10 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         <ul style="margin:0;padding-left:1.1em;display:grid;gap:4px">
           <li>Medir temperatura, umidade e pressão a cada 5 s.</li>
           <li>Mostrar os dados em páginas no OLED, configuráveis pela web.</li>
-          <li>Painel web em <code>http://gweather.local</code> com gráficos e histórico.</li>
-          <li>Registrar médias a cada 10 min e permitir consulta e exportação em CSV.</li>
+          <li>Painel em Nuxt na Vercel, acessível de qualquer lugar, com gráficos e histórico.</li>
+          <li>Enviar médias a cada 10 min para a nuvem, com consulta e exportação em CSV no painel.</li>
           <li>Enviar 3 a 4 mensagens por dia (previsão e condições) para os números cadastrados.</li>
-          <li>Mais tarde, enviar os dados para um painel na Vercel, acessível de fora de casa.</li>
+          <li>Manter uma página mínima em <code>http://gweather.local</code> que funciona mesmo sem internet.</li>
         </ul>
       </div>
       <div class="stack">
@@ -243,16 +243,17 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="tbl"><table>
       <thead><tr><th>Decisão</th><th>Escolha</th><th>Motivo</th></tr></thead>
       <tbody>
-        <tr><td>Onde roda</td><td>Tudo no ESP32 nesta etapa</td><td>Funciona sem internet e sem servidor</td></tr>
+        <tr><td>Onde roda</td><td>Medição, display e agenda no ESP32; painel no Nuxt (Vercel)</td><td>Sem limite de espaço para o painel e acesso de fora de casa</td></tr>
+        <tr><td>Painel</td><td>Nuxt na Vercel, com login; página mínima local no ESP32</td><td>Um site HTTPS na nuvem não consegue ler a API HTTP local; a página mínima cobre a falta de internet</td></tr>
         <tr><td>Ferramenta</td><td>PlatformIO + Arduino</td><td>Bibliotecas prontas e build reproduzível</td></tr>
         <tr><td>Ligação dos módulos</td><td>Um único barramento I2C (D21/D22)</td><td>Os três endereços não conflitam</td></tr>
         <tr><td>Wi-Fi</td><td>WiFiManager (portal de configuração)</td><td>Troca de rede sem recompilar</td></tr>
-        <tr><td>Armazenamento</td><td>LittleFS (logs e config) + NVS (senhas e chaves)</td><td>Sem cartão SD; segredos fora do código</td></tr>
+        <tr><td>Armazenamento</td><td>Histórico no banco da nuvem; ESP32 guarda config (LittleFS), segredos (NVS) e alguns dias de reserva</td><td>Sem cartão SD; nada se perde quando a internet cai</td></tr>
         <tr><td>Hora</td><td>NTP, fuso de Brasília (<code>&lt;-03&gt;3</code>)</td><td>Logs com horário certo e envios pontuais</td></tr>
         <tr><td>Previsão</td><td>Tendência de pressão (Zambretti) + Open-Meteo</td><td>Uma funciona offline, a outra traz máxima, mínima e chuva</td></tr>
         <tr><td>WhatsApp</td><td>CallMeBot, mensagem individual para cada número</td><td>Grátis e simples; envio a grupo não é confirmado</td></tr>
         <tr><td>Agendamento</td><td>No próprio ESP32</td><td>No plano gratuito da Vercel o cron roda só 1 vez por dia</td></tr>
-        <tr><td>Nuvem</td><td>ESP32 envia dados para a Vercel</td><td>A Vercel não alcança o ESP32 atrás do roteador; não precisa abrir porta</td></tr>
+        <tr><td>Comunicação</td><td>ESP32 envia dados para a Vercel e busca a configuração</td><td>A Vercel não alcança o ESP32 atrás do roteador; não precisa abrir porta</td></tr>
       </tbody>
     </table></div>
   </div>
@@ -454,7 +455,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
   <div class="head">
     <span class="eyebrow">Roteiro</span>
     <h2>Fases do projeto</h2>
-    <p class="muted">Cada fase termina com um critério de aceite. As fases 2 a 9 somam de 7 a 10 dias de trabalho.</p>
+    <p class="muted">Cada fase termina com um critério de aceite. Na v4 o painel saiu do ESP32 e foi para um app Nuxt na Vercel; a nuvem deixou de ser a última fase e virou a 6.</p>
   </div>
   <div class="phases">
     <div class="phase done">
@@ -494,64 +495,76 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         </div>
       </div>
     </div>
-    <div class="phase now">
+    <div class="phase done">
       <div class="n">04</div>
       <div class="body">
-        <div class="meta"><h3>Rede, hora e configuração</h3><span class="chip now">Agora</span><span class="chip">½ dia</span></div>
-        <ul><li>WiFiManager (rede “GWeather-Setup” no primeiro uso), reconexão, nome <code>gweather.local</code>, NTP (<code>a.st1.ntp.br</code>), configuração em arquivo e senhas na NVS.</li></ul>
+        <div class="meta"><h3>Rede, hora e configuração</h3><span class="chip done">Concluída</span><span class="chip">½ dia</span></div>
+        <ul><li>WiFiManager (rede “GWeather-Setup” com senha aleatória mostrada no display), reconexão, nome <code>gweather.local</code>, NTP, configuração em <code>/config.json</code> e console de comandos pelo serial.</li></ul>
         <p class="accept"><b>Aceite:</b> após reiniciar, volta ao Wi-Fi sozinho, com hora certa e configuração preservada.</p>
+        <div class="result">
+          <span><b>Resultado na placa:</b> conectou pela rede de configuração; após cada reinício voltou sozinho ao Wi-Fi, sincronizou a hora em cerca de 2 s e manteve a configuração.</span>
+          <span><code>gweather.local</code> responde na rede local. Display ganhou relógio no cabeçalho e a página Rede (Wi-Fi, IP, sinal, hora).</span>
+        </div>
       </div>
     </div>
-    <div class="phase">
+    <div class="phase now">
       <div class="n">05</div>
       <div class="body">
-        <div class="meta"><h3>Servidor web e painel local</h3><span class="chip">1–2 dias</span></div>
-        <ul><li>Servidor no ESP32 com a API <code>/api/v1</code>, painel para celular e senha nas telas que alteram algo.</li></ul>
-        <p class="accept"><b>Aceite:</b> <code>http://gweather.local</code> no celular mostra os dados atualizando.</p>
+        <div class="meta"><h3>API local e página mínima no ESP32</h3><span class="chip now">Agora</span><span class="chip">1 dia</span></div>
+        <ul>
+          <li>API <code>/api/v1</code> no ESP32: leitura atual, estado, configuração e reinício. Rotas que alteram algo exigem senha.</li>
+          <li>Página única e leve em <code>http://gweather.local</code> (HTML e JS puros, gravada no firmware) para ver os dados sem internet.</li>
+          <li>Contrato da API documentado em <code>docs/api-v1.md</code>, o mesmo formato que a nuvem vai usar.</li>
+        </ul>
+        <p class="accept"><b>Aceite:</b> <code>http://gweather.local</code> no celular mostra os dados atualizando; <code>/api/v1/now</code> responde JSON; alterar configuração sem senha é recusado.</p>
       </div>
     </div>
     <div class="phase">
       <div class="n">06</div>
       <div class="body">
-        <div class="meta"><h3>Logs e consulta</h3><span class="chip">1 dia</span></div>
-        <ul><li>Média a cada 10 min em CSV mensal; gráficos de 24 h, 7 e 30 dias; mínima e máxima do dia; filtro por data e download do CSV.</li></ul>
-        <p class="accept"><b>Aceite:</b> 24 h de funcionamento geram cerca de 144 pontos, e o gráfico confere com o CSV.</p>
+        <div class="meta"><h3>Nuvem: Nuxt na Vercel</h3><span class="chip">2–3 dias</span></div>
+        <ul>
+          <li>App Nuxt em <code>web/</code> com rotas de servidor (Nitro): <code>POST /api/v1/ingest</code> com token por aparelho e banco Postgres.</li>
+          <li>ESP32 envia médias de 10 min por HTTPS e guarda alguns dias de reserva para reenviar o que ficar pendente.</li>
+          <li>Painel com login mostrando a leitura atual.</li>
+        </ul>
+        <p class="accept"><b>Aceite:</b> painel na Vercel, aberto no celular fora de casa, mostra a mesma leitura do display; desligar a internet por 1 h não cria buraco no histórico.</p>
       </div>
     </div>
     <div class="phase">
       <div class="n">07</div>
       <div class="body">
-        <div class="meta"><h3>Personalização do display</h3><span class="chip">1 dia</span></div>
-        <ul><li>Editor na web: páginas, campos, ordem, tempo de rotação, brilho, unidades e horário para desligar à noite, com prévia do OLED. Ajuste fino (offset) de temperatura, umidade e pressão.</li></ul>
-        <p class="accept"><b>Aceite:</b> mudanças feitas na web aparecem no OLED em menos de 2 s e continuam após reiniciar.</p>
+        <div class="meta"><h3>Histórico e gráficos</h3><span class="chip">1–2 dias</span></div>
+        <ul><li>Gráficos de 24 h, 7 e 30 dias; mínima e máxima do dia; filtro por data e exportação em CSV, tudo no Nuxt a partir do banco.</li></ul>
+        <p class="accept"><b>Aceite:</b> 24 h de funcionamento geram cerca de 144 pontos, e o gráfico confere com o CSV.</p>
       </div>
     </div>
     <div class="phase">
       <div class="n">08</div>
       <div class="body">
-        <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip">1–2 dias</span></div>
-        <ul>
-          <li>Previsão por tendência de pressão (Zambretti, últimas 3 h) e Open-Meteo para a latitude e longitude configuradas.</li>
-          <li>Envio via CallMeBot para cada número cadastrado, com fila e nova tentativa em caso de falha.</li>
-          <li>Agenda de 3 a 4 horários e alertas com intervalo mínimo entre eles.</li>
-        </ul>
-        <p class="accept"><b>Aceite:</b> mensagem de teste chega a todos os números; envios nos horários certos, sem duplicar após reiniciar.</p>
+        <div class="meta"><h3>Personalização do display</h3><span class="chip">1 dia</span></div>
+        <ul><li>Editor no painel: páginas, campos, ordem, tempo de rotação, brilho e horário para desligar à noite, com prévia do OLED. Ajuste fino (offset) dos sensores. O ESP32 busca a configuração na nuvem a cada poucos minutos.</li></ul>
+        <p class="accept"><b>Aceite:</b> mudança salva no painel aparece no OLED em até 5 min (ou na hora, pelo botão “aplicar agora” quando estiver na mesma rede) e continua após reiniciar.</p>
       </div>
     </div>
     <div class="phase">
       <div class="n">09</div>
       <div class="body">
-        <div class="meta"><h3>Robustez</h3><span class="chip">1 dia</span></div>
-        <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
-        <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no log e memória estável.</p>
+        <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip">1–2 dias</span></div>
+        <ul>
+          <li>Previsão por tendência de pressão (Zambretti, últimas 3 h) e Open-Meteo para a latitude e longitude configuradas.</li>
+          <li>Envio via CallMeBot para cada número cadastrado, com fila e nova tentativa em caso de falha. Agenda no próprio ESP32.</li>
+          <li>Agenda de 3 a 4 horários e alertas com intervalo mínimo entre eles, editáveis no painel.</li>
+        </ul>
+        <p class="accept"><b>Aceite:</b> mensagem de teste chega a todos os números; envios nos horários certos, sem duplicar após reiniciar.</p>
       </div>
     </div>
     <div class="phase">
       <div class="n">10</div>
       <div class="body">
-        <div class="meta"><h3>Nuvem na Vercel</h3><span class="chip">Futuro</span></div>
-        <ul><li>Recebimento de dados, painel web com login, configuração remota e, se fizer sentido, notificações pela nuvem. Detalhes na seção Vercel.</li></ul>
-        <p class="accept"><b>Aceite:</b> painel acessível fora de casa mostrando os mesmos dados do painel local.</p>
+        <div class="meta"><h3>Robustez</h3><span class="chip">1 dia</span></div>
+        <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
+        <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
       </div>
     </div>
   </div>
@@ -585,7 +598,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
          = 600 + 10 × 2,9 + 1,0 = 630 m   (exemplo)
 
 P_mar = P_medida / (1 − altitude / 44330) ^ 5,255</pre>
-        <p class="muted" style="font-size:.92rem">Os quatro valores ficam em <code>firmware/include/site.h</code> (fora do git; modelo em <code>site.h.example</code>). Na fase 7 passam a ser editáveis pela web.</p>
+        <p class="muted" style="font-size:.92rem">Os quatro valores ficam em <code>firmware/include/site.h</code> (fora do git; modelo em <code>site.h.example</code>). Desde a fase 4 podem ser alterados pelo console serial (<code>set site.floor 10</code>); na fase 8, pelo painel.</p>
       </div>
       <div class="stack">
         <h3>Como acertar os números</h3>
@@ -615,9 +628,9 @@ P_mar = P_medida / (1 − altitude / 44330) ^ 5,255</pre>
           <li>Abra <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">a página da API de WhatsApp do CallMeBot</a> e salve o número do bot que aparece lá (ele pode mudar com o tempo).</li>
           <li>Envie para o bot a mensagem de autorização indicada na página.</li>
           <li>Aguarde a resposta com a sua <b>apikey</b>. Pode levar alguns minutos.</li>
-          <li>Guarde número + apikey. Elas serão cadastradas na interface na fase 8, e não no código.</li>
+          <li>Guarde número + apikey. Elas serão cadastradas no painel na fase 9, e não no código.</li>
         </ol>
-        <div class="note"><strong>Faça a ativação já</strong><span>Ter as duas chaves antes da fase 8 evita esperar no meio do desenvolvimento.</span></div>
+        <div class="note"><strong>Faça a ativação já</strong><span>Ter as chaves antes da fase 9 evita esperar no meio do desenvolvimento.</span></div>
       </div>
       <div class="stack">
         <h3>Como o ESP32 envia</h3>
@@ -669,22 +682,25 @@ Umidade 41–86 %</div></div>
         <pre>GWeather/
 ├── firmware/            PlatformIO (ESP32)
 │   ├── platformio.ini
-│   ├── partitions.csv   OTA ×2 + LittleFS ~1,5 MB
-│   ├── src/
-│   │   ├── main.cpp
-│   │   ├── config.*     configuração + padrões
-│   │   ├── sensors.*    AHT20 + BMP280 + cálculos
-│   │   ├── display.*    páginas do OLED
-│   │   ├── netmgr.*     Wi-Fi, NTP, mDNS
-│   │   ├── logger.*     CSV mensal + cursor de envio
-│   │   ├── webapi.*     /api/v1
-│   │   ├── notifier.*   CallMeBot
-│   │   ├── forecast.*   Zambretti + Open-Meteo
-│   │   ├── scheduler.*  horários
-│   │   └── uplink.*     envio p/ nuvem (fase 10)
-│   └── data/            painel local
-├── web/                 Next.js (fase 10)
-└── docs/api-v1.md       contrato da API</pre>
+│   ├── partitions.csv   2 apps de 1,44 MB (OTA) + LittleFS 1 MB
+│   ├── include/         config.h, site.h.example
+│   └── src/
+│       ├── main.cpp
+│       ├── settings.*   /config.json
+│       ├── sensors.*    AHT20 + BMP280 + cálculos
+│       ├── display.*    páginas do OLED
+│       ├── netmgr.*     Wi-Fi, NTP, mDNS
+│       ├── console.*    comandos pelo serial
+│       ├── webapi.*     /api/v1 + página mínima (fase 5)
+│       ├── uplink.*     envio para a nuvem (fase 6)
+│       ├── notifier.*   CallMeBot (fase 9)
+│       ├── forecast.*   Zambretti + Open-Meteo (fase 9)
+│       └── scheduler.*  horários (fase 9)
+├── web/                 Nuxt na Vercel (fase 6)
+└── docs/
+    ├── api-v1.md        contrato da API
+    ├── PLANO.md
+    └── plano.html</pre>
       </div>
       <div class="stack">
         <h3>Bibliotecas</h3>
@@ -693,13 +709,17 @@ Umidade 41–86 %</div></div>
   adafruit/Adafruit BMP280 Library
   adafruit/Adafruit Unified Sensor
   olikraus/U8g2
-  bblanchon/ArduinoJson @ ^7
-  mathieucarbou/ESPAsyncWebServer
-  tzapu/WiFiManager</pre>
+  bblanchon/ArduinoJson
+  tzapu/WiFiManager
+  (WebServer e HTTPClient do próprio ESP32)
+
+web/ (fase 6)
+  Nuxt + Nitro na Vercel
+  Postgres (Neon, pelo Marketplace)</pre>
         <h3>Registro (a cada 10 min)</h3>
-        <pre>ts_utc,temp,hum,pres_mar,orvalho
-1760270400,24.6,61.2,1013.4,16.7</pre>
-        <p class="muted" style="font-size:.92rem">Um arquivo por mês, cerca de 110 kB. Cabe mais de um ano na memória. Horários em UTC; o fuso só entra na exibição.</p>
+        <pre>{ "ts": 1760270400, "temp": 24.6, "hum": 61.2,
+  "pres_slp": 1013.4, "dew": 16.7 }</pre>
+        <p class="muted" style="font-size:.92rem">Enviado em lotes para a nuvem. O ESP32 guarda alguns dias em LittleFS como reserva e reenvia o que ficou pendente. Horários em UTC; o fuso só entra na exibição.</p>
       </div>
     </div>
 
@@ -732,16 +752,15 @@ Umidade 41–86 %</div></div>
     </div>
 
     <div class="tbl"><table>
-      <thead><tr><th>Método</th><th>Rota</th><th>Função</th></tr></thead>
+      <thead><tr><th>Onde</th><th>Método</th><th>Rota</th><th>Função</th></tr></thead>
       <tbody>
-        <tr><td class="mono">GET</td><td class="mono">/api/v1/now</td><td>Leitura atual e estado (sinal Wi-Fi, tempo ligado, memória)</td></tr>
-        <tr><td class="mono">GET</td><td class="mono">/api/v1/log?from=&amp;to=&amp;step=</td><td>Série histórica agregada para gráficos</td></tr>
-        <tr><td class="mono">GET</td><td class="mono">/api/v1/log.csv?month=AAAA-MM</td><td>Download do CSV</td></tr>
-        <tr><td class="mono">GET / PUT</td><td class="mono">/api/v1/config</td><td>Ler e salvar configuração</td></tr>
-        <tr><td class="mono">POST</td><td class="mono">/api/v1/display/preview</td><td>Mostrar página no OLED sem salvar</td></tr>
-        <tr><td class="mono">GET</td><td class="mono">/api/v1/forecast</td><td>Previsão do dia</td></tr>
-        <tr><td class="mono">POST</td><td class="mono">/api/v1/notify/test</td><td>Mensagem de teste para os números cadastrados</td></tr>
-        <tr><td class="mono">POST</td><td class="mono">/api/v1/system/reboot</td><td>Reiniciar</td></tr>
+        <tr><td>ESP32</td><td class="mono">GET</td><td class="mono">/api/v1/now</td><td>Leitura atual</td></tr>
+        <tr><td>ESP32</td><td class="mono">GET</td><td class="mono">/api/v1/status</td><td>Aparelho, rede, hora, memória e sensores</td></tr>
+        <tr><td>ESP32</td><td class="mono">GET / PUT</td><td class="mono">/api/v1/config</td><td>Ler e salvar configuração (PUT com senha)</td></tr>
+        <tr><td>ESP32</td><td class="mono">POST</td><td class="mono">/api/v1/system/reboot</td><td>Reiniciar (com senha)</td></tr>
+        <tr><td>Nuvem</td><td class="mono">POST</td><td class="mono">/api/v1/ingest</td><td>Recebe lotes de leituras do ESP32 (token do aparelho)</td></tr>
+        <tr><td>Nuvem</td><td class="mono">GET</td><td class="mono">/api/v1/device/config</td><td>Configuração que o ESP32 deve aplicar</td></tr>
+        <tr><td>Nuvem</td><td class="mono">GET</td><td class="mono">/api/v1/readings</td><td>Série histórica para os gráficos (login)</td></tr>
       </tbody>
     </table></div>
   </div>
@@ -750,38 +769,35 @@ Umidade 41–86 %</div></div>
 <!-- ============ VERCEL ============ -->
 <section id="vercel">
   <div class="head">
-    <span class="eyebrow">Fase 10 · Futuro</span>
-    <h2>Expansão para a Vercel</h2>
+    <span class="eyebrow">Fases 6 a 8</span>
+    <h2>Nuvem: Nuxt na Vercel</h2>
     <p class="muted">O ESP32 fica atrás do roteador de casa, então a Vercel não consegue chamá-lo. Quem inicia a conversa é sempre o ESP32: ele envia as leituras e consulta a configuração. Não é preciso abrir porta no roteador.</p>
   </div>
   <div class="stack-lg">
     <div class="flow">
       <div class="box"><span class="k">ESP32</span><span>Envia lotes de leituras a cada 10 min e consulta a configuração a cada 5 min.</span></div>
-      <div class="box future"><span class="k">API na Vercel</span><span><code>POST /api/v1/ingest</code> com token do aparelho; <code>GET /api/v1/device/config</code>.</span></div>
+      <div class="box future"><span class="k">API (Nuxt/Nitro)</span><span><code>POST /api/v1/ingest</code> com token do aparelho; <code>GET /api/v1/device/config</code>.</span></div>
       <div class="box future"><span class="k">Banco</span><span>Postgres (Neon, pelo Marketplace) para o histórico; Redis opcional para o “último valor”.</span></div>
-      <div class="box future"><span class="k">Painel</span><span>Next.js com login, gráficos de longo prazo e edição da configuração.</span></div>
+      <div class="box future"><span class="k">Painel</span><span>Nuxt com login, gráficos de longo prazo e edição da configuração.</span></div>
     </div>
 
     <div class="cols">
       <div class="stack">
-        <h3>Já preparado nas fases 2 a 9</h3>
+        <h3>Por que o painel não fica no ESP32</h3>
         <ul style="margin:0;padding-left:1.1em;display:grid;gap:4px">
-          <li>API versionada <code>/api/v1</code>, com o mesmo formato no ESP32 e na nuvem.</li>
-          <li><code>device_id</code> e versão de esquema na configuração.</li>
-          <li>Horários em UTC nos logs.</li>
-          <li>Cursor do último registro enviado: dados acumulados offline são reenviados depois.</li>
-          <li>Módulo <code>uplink</code> pronto e desligado (<code>cloud.enabled = false</code>).</li>
-          <li>Painel local sem dependência de internet.</li>
+          <li>Um site HTTPS na Vercel não pode ler a API HTTP do ESP32: o navegador bloqueia.</li>
+          <li><code>gweather.local</code> só existe dentro de casa; fora dela, só a nuvem é alcançável.</li>
+          <li>Um Nuxt com gráficos ocuparia boa parte do 1 MB de LittleFS, que também guarda a reserva de dados, e cada mudança visual exigiria regravar a placa.</li>
+          <li>Com o painel na nuvem, o ESP32 fica com o que só ele faz: medir, mostrar no display, enviar e agendar.</li>
         </ul>
       </div>
       <div class="stack">
-        <h3>Etapas da fase 10</h3>
+        <h3>Etapas</h3>
         <div class="tbl"><table>
           <tbody>
-            <tr><td class="mono">10a</td><td>Recebimento de dados e tabela de leituras, sem duplicar o mesmo horário</td></tr>
-            <tr><td class="mono">10b</td><td>Painel Next.js com login</td></tr>
-            <tr><td class="mono">10c</td><td>Configuração editável pela nuvem, aplicada pelo ESP32</td></tr>
-            <tr><td class="mono">10d</td><td>Notificações pela nuvem (opcional, ver nota)</td></tr>
+            <tr><td class="mono">6</td><td>Nuxt na Vercel, banco, recebimento de dados sem duplicar horários, envio pelo ESP32 com reserva offline, painel com login</td></tr>
+            <tr><td class="mono">7</td><td>Gráficos, histórico, mínimas e máximas, exportação CSV</td></tr>
+            <tr><td class="mono">8</td><td>Configuração do display editada no painel e aplicada pelo ESP32</td></tr>
           </tbody>
         </table></div>
       </div>
@@ -817,7 +833,7 @@ Umidade 41–86 %</div></div>
 
 <footer>
   <span class="eyebrow">Próximo passo</span>
-  <p><b>Fase 4:</b> Wi-Fi, hora pela internet e acesso por <code>gweather.local</code>. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
+  <p><b>Fase 5:</b> API <code>/api/v1</code> no ESP32 e página mínima em <code>gweather.local</code>. Depois, a fase 6 leva o painel para o Nuxt na Vercel. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
 </footer>
 </div>
 

@@ -24,6 +24,11 @@ Diagrama visual: `../../docs/plano.html` (seção Ligações).
 | BMP280 | I2C | 0x76 (chip id 0x58) | pressão; CSB → 3V3 (fio laranja), SDO → GND (fio amarelo) |
 | OLED SSD1306 128×64 | I2C | 0x3C | 3 páginas rotativas |
 
+## Rede e memória
+- Wi-Fi 2,4 GHz (WiFiManager); rede de configuração "GWeather-Setup" com senha aleatória mostrada no OLED.
+- mDNS: `gweather.local`.
+- Flash 4 MB (`partitions.csv`): app0/app1 de 1,44 MB cada (OTA), LittleFS 1 MB, coredump 64 KB.
+
 ## Restrições conhecidas
 - Tudo em 3,3 V; nunca usar VIN (5 V).
 - I2C a 100 kHz (`I2C_FREQ_HZ`); pode subir para 400 kHz se precisar.

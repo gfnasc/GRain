@@ -1,6 +1,6 @@
 # GWeather
 
-Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e display **OLED SSD1306**. Mede temperatura, umidade e pressão, mostra os dados no display e, nas próximas fases, terá painel web, histórico, mensagens de WhatsApp e publicação na nuvem.
+Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e display **OLED SSD1306**. Mede temperatura, umidade e pressão, mostra os dados no display, conecta ao Wi-Fi com hora pela internet e, nas próximas fases, envia os dados para um painel em **Nuxt na Vercel**, com histórico e mensagens de WhatsApp.
 
 > *ESP32 weather station (AHT20 + BMP280 + SSD1306 OLED). Documentation in Portuguese.*
 
@@ -18,15 +18,26 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 | 1 | Montagem na protoboard | ✅ Concluída |
 | 2 | Scanner I2C e leitura dos sensores | ✅ Concluída |
 | 3 | Display OLED com páginas rotativas | ✅ Concluída |
-| 4 | Wi-Fi, hora pela internet (NTP), `gweather.local` | Planejada |
-| 5 | Servidor web e painel local | Planejada |
-| 6 | Registro de logs, gráficos e exportação CSV | Planejada |
-| 7 | Personalização do display pela web | Planejada |
-| 8 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | Planejada |
-| 9 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
-| 10 | Painel na nuvem (Vercel) | Planejada |
+| 4 | Wi-Fi, hora pela internet (NTP), `gweather.local`, configuração e console serial | ✅ Concluída |
+| 5 | API local `/api/v1` e página mínima no ESP32 | 🔧 Em andamento |
+| 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | Planejada |
+| 7 | Histórico, gráficos e exportação CSV no painel | Planejada |
+| 8 | Personalização do display pelo painel | Planejada |
+| 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | Planejada |
+| 10 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
 
 Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama interativo de ligações e montagem passo a passo: [docs/plano.html](docs/plano.html) (baixe o arquivo e abra no navegador).
+
+### Arquitetura
+
+```
+ESP32 ──envia leituras a cada 10 min (HTTPS)──► Nuxt na Vercel (API + banco)
+  │                                                   │
+  └─ página mínima em gweather.local                  └─ painel completo, com login,
+     (funciona sem internet)                             acessível de qualquer lugar
+```
+
+O ESP32 mede, mostra no display, agenda as mensagens e envia os dados. O painel fica na nuvem porque um site HTTPS não consegue ler a API HTTP local do ESP32 e porque `gweather.local` só existe dentro de casa.
 
 ---
 
@@ -99,6 +110,8 @@ As bibliotecas são instaladas automaticamente pelo PlatformIO, com versões fix
 | Adafruit BMP280 Library | 2.6.8 |
 | Adafruit Unified Sensor | 1.1.15 |
 | U8g2 | 2.36.18 |
+| ArduinoJson | 7.4.3 |
+| WiFiManager | 2.0.17 |
 
 ### Instalação
 
@@ -123,6 +136,31 @@ As bibliotecas são instaladas automaticamente pelo PlatformIO, com versões fix
 
 Se houver mais de uma porta serial, o PlatformIO pergunta qual usar. Para fixar a porta, descomente `upload_port` e `monitor_port` em `platformio.ini`.
 
+### Conectar ao Wi-Fi
+
+Na primeira vez, sem Wi-Fi salvo, o display mostra **"Configurar Wi-Fi"** com o nome de uma rede e uma senha:
+
+1. No celular, conecte na rede **GWeather-Setup** usando a senha do display. Ela é aleatória, gerada uma vez por placa.
+2. A página de configuração abre sozinha. Se não abrir, acesse `http://192.168.4.1`.
+3. Toque em **Configure WiFi**, escolha sua rede (**2,4 GHz**; o ESP32 não conecta em 5 GHz), digite a senha e toque em **Save**.
+4. O display volta às páginas normais, com a hora no canto. Na rede local, a estação responde em `gweather.local`.
+
+O Wi-Fi fica salvo na placa. Para trocar de rede, use o comando `wifi esquecer` no console.
+
+### Console serial
+
+Com `pio device monitor` aberto, digite `ajuda`:
+
+| Comando | O que faz |
+|---|---|
+| `status` | Rede, IP, hora, altitude, sensores e memória |
+| `config` | Mostra a configuração gravada (`/config.json`) |
+| `set <chave> <valor>` | Altera e salva, ex.: `set site.floor 10`, `set display.page_s 8`, `set time.tz <-03>3` |
+| `config padrao` | Volta aos valores iniciais de `site.h` |
+| `wifi portal` | Abre a rede de configuração sem esquecer o Wi-Fi atual |
+| `wifi esquecer` | Apaga o Wi-Fi salvo e reinicia |
+| `reiniciar` | Reinicia a placa |
+
 ### Configuração do local (`include/site.h`)
 
 O BMP280 mede a pressão onde está. Para converter em pressão ao nível do mar, o firmware precisa da altitude real do sensor:
@@ -140,6 +178,10 @@ altitude = SITE_GROUND_ALT_M + SITE_FLOOR × SITE_FLOOR_HEIGHT_M + SITE_SENSOR_H
 
 Cada ~8 m de erro na altitude erra a pressão corrigida em ~1 hPa. Para conferir, compare com o QNH do METAR do aeroporto mais próximo.
 
+`site.h` também define o fuso horário (`SITE_TZ`, formato POSIX; Brasília é `"<-03>3"`).
+
+Esses valores são só os **iniciais**: no primeiro boot eles são gravados em `/config.json` na placa e, depois disso, a configuração gravada prevalece. Para mudar, use `set` no console (sem recompilar) ou `config padrao` para voltar aos valores de `site.h`.
+
 O arquivo `site.h` fica fora do git (`.gitignore`), para que os dados do seu local não sejam publicados. Sem ele, a compilação para com uma mensagem explicando o que fazer.
 
 ---
@@ -156,26 +198,25 @@ O arquivo `site.h` fica fora do git (`.gitignore`), para que os dados do seu loc
 AHT20 : ok (0x38)
 BMP280: ok (0x76), chip id 0x58 = BMP280
 OLED  : ok (0x3C)
-----------------------------------------------
-Temperatura (AHT20) :  28.14 °C
-Umidade     (AHT20) :   65.4 %
-Ponto de orvalho    :   21.0 °C
-Sensação térmica    :   30.3 °C
-Temperatura (BMP280):  28.05 °C
-Pressão no local    :  938.96 hPa
-Pressão nível do mar: 1013.37 hPa
-Diferença BMP-AHT   :  -0.07 °C
+[net] conectado em "MinhaRede", IP 192.168.1.105
+[net] mDNS: gweather.local
+[net] hora sincronizada: 12/10/2026 15:23:12
+Digite "ajuda" para ver os comandos.
+[15:23:16] 28.16 °C  65.4 %  orvalho 21.1 °C  sensação 30.4 °C  |  1010.82 hPa (local 936.60)  BMP 27.82 °C
 ```
-Uma nova leitura sai a cada 5 s. O LED azul da placa pisca a cada leitura.
+Uma linha por leitura, a cada 5 s. O LED azul da placa pisca a cada leitura.
 
 ### Display
-No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depois, três páginas alternam a cada 5 s:
+No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depois, quatro páginas alternam a cada 5 s, com a hora no cabeçalho:
 
 | Página | Conteúdo |
 |---|---|
 | Temperatura | Temperatura em destaque, umidade e sensação térmica |
 | Pressão | Pressão ao nível do mar em destaque e pressão no local |
 | Detalhes | Ponto de orvalho, temperatura do BMP280, estado dos sensores e tempo ligado |
+| Rede | Nome do Wi-Fi, IP, sinal e data/hora |
+
+Enquanto a rede de configuração estiver aberta, o display fica fixo nas instruções de conexão.
 
 ---
 
@@ -190,6 +231,9 @@ No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depo
 | OLED aparece em `0x3D` | Jumper de endereço do módulo | Troque `ADDR_OLED` em `include/config.h` |
 | Temperatura 1–3 °C acima do real | Calor do ESP32 | Afaste os sensores do ESP32 |
 | Erro `Falta include/site.h` ao compilar | Configuração do local não criada | `cp include/site.h.example include/site.h` |
+| Não aparece a rede GWeather-Setup | Já existe Wi-Fi salvo | Use `wifi portal` no console |
+| Não conecta ao Wi-Fi | Rede de 5 GHz ou senha errada | Use uma rede de 2,4 GHz; `wifi esquecer` e configure de novo |
+| `gweather.local` não abre | Aparelho sem suporte a mDNS ou em outra rede | Use o IP mostrado na página Rede do display |
 | Computador não reconhece a placa | Cabo só de carga ou falta de driver | Troque o cabo; instale o driver CP210x ou CH340 |
 
 ---
@@ -199,16 +243,21 @@ No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depo
 ```
 GWeather/
 ├── README.md
+├── LICENSE
 ├── docs/
 │   ├── PLANO.md              Plano e fases
 │   └── plano.html            Plano visual com diagrama de ligações
 └── firmware/                 Projeto PlatformIO
     ├── platformio.ini
+    ├── partitions.csv        2 apps de 1,44 MB (OTA) + 1 MB de LittleFS
     ├── include/
-    │   ├── config.h          Pinos, endereços e intervalos
+    │   ├── config.h          Pinos, endereços, intervalos e rede
     │   └── site.h.example    Modelo da configuração do local
     ├── src/
     │   ├── main.cpp
+    │   ├── settings.*        Configuração em /config.json
+    │   ├── netmgr.*          Wi-Fi, NTP e mDNS
+    │   ├── console.*         Comandos pelo serial
     │   ├── i2c_scan.*        Scanner do barramento I2C
     │   ├── sensors.*         Leitura do AHT20 e do BMP280
     │   ├── weather_math.*    Altitude, pressão ao nível do mar, ponto de orvalho, sensação térmica
