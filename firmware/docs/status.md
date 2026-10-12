@@ -44,7 +44,7 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
 - Fase 7 concluída (conferida no celular): `web/app/pages/historico.vue`, `TimeChart.vue` (uPlot),
   `GET /api/v1/readings|daily|readings.csv`; fuso via `NUXT_PUBLIC_TZ`. Gráfico e CSV conferidos com os mesmos pontos.
 
-- Fase 8 implementada (em validação):
+- Fase 8 concluída e validada pelo usuário:
   - Firmware 0.7.0: `settings` com páginas (`PageCfg`, até 8), modo noturno, calibração e `cloudConfigVersion`
     (schema 2, migra o /config.json antigo); display com páginas Umidade, Relógio, Hoje e Resumo;
     calibração aplicada em `sensors`; mín./máx. do dia (`sensorsToday`).
@@ -58,7 +58,7 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   Nuvem e Manutenção. Painel na nuvem com o mesmo ícone (SVG, ICO e apple-touch-icon).
 
 ## Em andamento
-- Fase 8: fechar documentação (usuário validou).
+- Fase 9: previsão e WhatsApp (CallMeBot).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos

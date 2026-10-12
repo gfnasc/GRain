@@ -193,7 +193,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
     <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel</span></div>
   </div>
-  <span class="status">Fases 1 a 7 concluídas · Etapa atual: Fase 8, display pelo painel</span>
+  <span class="status">Fases 1 a 8 concluídas · Etapa atual: Fase 9, previsão e WhatsApp</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -551,18 +551,22 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         </div>
       </div>
     </div>
-    <div class="phase now">
+    <div class="phase done">
       <div class="n">08</div>
       <div class="body">
-        <div class="meta"><h3>Personalização do display</h3><span class="chip now">Agora</span><span class="chip">1 dia</span></div>
+        <div class="meta"><h3>Personalização do display</h3><span class="chip done">Concluída</span><span class="chip">1 dia</span></div>
         <ul><li>Editor no painel: páginas, campos, ordem, tempo de rotação, brilho e horário para desligar à noite, com prévia do OLED. Ajuste fino (offset) dos sensores. O ESP32 busca a configuração na nuvem a cada poucos minutos.</li></ul>
         <p class="accept"><b>Aceite:</b> mudança salva no painel aparece no OLED em até 5 min (ou na hora, pelo botão “aplicar agora” quando estiver na mesma rede) e continua após reiniciar.</p>
+        <div class="result">
+          <span><b>Resultado:</b> página Display no painel com editor de até 8 páginas (Temperatura, Umidade, Pressão, Relógio, Hoje, Resumo, Detalhes, Rede), tempo por página, brilho, modo noturno e calibração, com prévia do OLED em 1 bit. Estação consulta a cada minuto e aplica em ~40 s; o painel mostra a confirmação.</span>
+          <span>Extras: comunicação com a nuvem em tarefa própria (display não trava), ícone novo no painel e na página local, e controles locais (navegar, pausar, ligar/desligar a tela, sincronizar agora, reiniciar).</span>
+        </div>
       </div>
     </div>
-    <div class="phase">
+    <div class="phase now">
       <div class="n">09</div>
       <div class="body">
-        <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip">1–2 dias</span></div>
+        <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip now">Agora</span><span class="chip">1–2 dias</span></div>
         <ul>
           <li>Previsão por tendência de pressão (Zambretti, últimas 3 h) e Open-Meteo para a latitude e longitude configuradas.</li>
           <li>Envio via CallMeBot para cada número cadastrado, com fila e nova tentativa em caso de falha. Agenda no próprio ESP32.</li>
@@ -845,7 +849,7 @@ web/ (fase 6)
 
 <footer>
   <span class="eyebrow">Próximo passo</span>
-  <p><b>Fase 8:</b> editar no painel as páginas do display, o tempo de rotação, o brilho, o modo noturno e a calibração dos sensores; o ESP32 busca e aplica a configuração. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
+  <p><b>Fase 9:</b> previsão do dia (tendência de pressão e Open-Meteo) e mensagens de WhatsApp via CallMeBot em horários definidos, com alertas. Código e instruções de instalação: <code>README.md</code> do repositório.</p>
 </footer>
 </div>
 
