@@ -21,7 +21,7 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 | 4 | Wi-Fi, hora pela internet (NTP), `gweather.local`, configuração e console serial | ✅ Concluída |
 | 5 | API local `/api/v1` e página mínima no ESP32 | ✅ Concluída |
 | 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | ✅ Concluída |
-| 7 | Histórico, gráficos e exportação CSV no painel | 🔧 Em andamento |
+| 7 | Histórico, gráficos e exportação CSV no painel | 🔧 Em validação |
 | 8 | Personalização do display pelo painel | Planejada |
 | 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | Planejada |
 | 10 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
@@ -182,6 +182,10 @@ nuvem
 ```
 
 O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `desligada`).
+
+O painel tem duas seções:
+- **Agora:** média mais recente, mínima e máxima de 24 h, últimas médias e estado da estação.
+- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e ponto de orvalho, umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel).
 
 ### Console serial
 

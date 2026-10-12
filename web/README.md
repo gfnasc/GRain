@@ -6,6 +6,8 @@ Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pel
 - Nuxt 4 + Nitro (rotas de servidor em `server/api`)
 - Postgres (Neon, pelo Marketplace da Vercel) com `@neondatabase/serverless`
 - Login com senha única via `nuxt-auth-utils` (sessão em cookie criptografado, 30 dias)
+- Gráficos com [uPlot](https://github.com/leeoniya/uPlot)
+- Fuso dos horários e dos dias: `NUXT_PUBLIC_TZ` (ex.: `America/Sao_Paulo`; padrão `UTC`)
 
 ## Rotas
 
@@ -13,6 +15,9 @@ Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pel
 |---|---|---|
 | `POST /api/v1/ingest` | `Authorization: Bearer <token da estação>` | Recebe lote de médias; horários repetidos são ignorados |
 | `GET /api/v1/latest` | Sessão do painel | Leitura mais recente, últimas 12 médias, mín./máx. de 24 h e estado da estação |
+| `GET /api/v1/readings` | Sessão do painel | Série agregada para os gráficos (`?range=24h\|7d\|30d` ou `?from=&to=`) |
+| `GET /api/v1/daily` | Sessão do painel | Resumo por dia |
+| `GET /api/v1/readings.csv` | Sessão do painel | Exportação CSV (`&excel=1` para Excel em português) |
 | `POST /api/auth/login` | — | Login com a senha do painel |
 
 Contrato completo: [../docs/api-v1.md](../docs/api-v1.md).

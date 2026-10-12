@@ -146,9 +146,43 @@ Exige a sessão do painel. Devolve a estação, a média mais recente, as 12 úl
 ### `POST /api/auth/login`
 `{"password": "..."}` → `200` e cookie de sessão (30 dias) · `401` senha incorreta.
 
+### Período (parâmetros comuns às rotas de histórico)
+
+- `?range=24h | 7d | 30d` — relativo a agora (padrão `24h`), ou
+- `?from=AAAA-MM-DD&to=AAAA-MM-DD` — dias inteiros no fuso do painel (`NUXT_PUBLIC_TZ`), até 400 dias.
+
+Período inválido responde `400` com a explicação em `message`.
+
+### `GET /api/v1/readings` 🔐
+Série agregada para os gráficos. A resolução depende do tamanho do período: até 2 dias, médias de 10 min (como chegam); até 10 dias, 1 h; até 45 dias, 3 h; acima disso, 1 dia. Os intervalos são alinhados ao fuso do painel.
+
+```json
+{
+  "from": "2026-10-11T19:40:00.000Z", "to": "2026-10-12T19:40:00.000Z", "step_s": 600,
+  "points": [
+    { "ts": 1791831600, "temp": 27.97, "temp_min": 27.97, "temp_max": 27.97,
+      "hum": 65.8, "hum_min": 65.8, "hum_max": 65.8,
+      "pres": 1010.55, "pres_min": 1010.55, "pres_max": 1010.55, "dew": 21.0, "n": 1 }
+  ],
+  "summary": {
+    "n": 4, "expected": 144,
+    "temp": { "min": { "v": 27.97, "ts": 1791831600 }, "max": { "v": 28.09, "ts": 1791832800 }, "avg": 28.03 },
+    "hum":  { "min": { "...": "..." }, "max": { "...": "..." }, "avg": 66.25 },
+    "pres": { "min": { "...": "..." }, "max": { "...": "..." }, "avg": 1010.57 }
+  }
+}
+```
+
+`n` em cada ponto é a quantidade de médias de 10 min agregadas. Os extremos do `summary` são exatos (não médias), com o horário em que ocorreram; `expected` é quantas médias de 10 min cabem no período.
+
+### `GET /api/v1/daily` 🔐
+Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umidade e pressão, e a quantidade de médias recebidas (`n`, de 144 possíveis).
+
+### `GET /api/v1/readings.csv` 🔐
+Médias de 10 min do período em CSV (download). Colunas: `inicio_utc`, `inicio_local`, `temperatura_c`, `umidade_pct`, `pressao_nivel_mar_hpa`, `ponto_orvalho_c`. Com `&excel=1`: separador `;`, vírgula decimal e BOM UTF-8 para abrir direto no Excel em português.
+
 ### Planejado
 
 | Método | Rota | Fase | Descrição |
 |---|---|---|---|
-| `GET` | `/api/v1/readings?from=&to=&step=` | 7 | Série histórica para os gráficos |
 | `GET` | `/api/v1/device/config` | 8 | Configuração que o ESP32 deve aplicar |
