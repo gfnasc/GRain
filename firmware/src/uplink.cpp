@@ -218,6 +218,8 @@ static int https(const char *method, const String &url, const String &token, con
   client.setTimeout(15);
   HTTPClient http;
   http.setTimeout(15000);
+  http.setConnectTimeout(10000);
+  http.setReuse(false);  // uma conexão por requisição: nada fica pendurado entre consultas
   if (!http.begin(client, url)) return -1;
   http.addHeader("Authorization", "Bearer " + token);
   int code;
@@ -227,8 +229,11 @@ static int https(const char *method, const String &url, const String &token, con
   } else {
     code = http.GET();
   }
-  resp = code > 0 ? http.getString() : http.errorToString(code);
+  // 204 não tem corpo: ler aqui travaria esperando dados que nunca chegam.
+  if (code == 204) resp = "";
+  else resp = code > 0 ? http.getString() : http.errorToString(code);
   http.end();
+  log_d("[%s] %s %s -> %d", TAG, method, url.c_str(), code);
   return code;
 }
 
