@@ -22,7 +22,7 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 | 5 | API local `/api/v1` e página mínima no ESP32 | ✅ Concluída |
 | 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | ✅ Concluída |
 | 7 | Histórico, gráficos e exportação CSV no painel | ✅ Concluída |
-| 8 | Personalização do display pelo painel | 🔧 Em andamento |
+| 8 | Personalização do display pelo painel | 🔧 Em validação |
 | 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | Planejada |
 | 10 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
 
@@ -185,6 +185,7 @@ O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `des
 
 O painel tem duas seções:
 - **Agora:** média mais recente, mínima e máxima de 24 h, últimas médias e estado da estação.
+- **Display:** escolha das páginas do OLED (até 8, em qualquer ordem), tempo por página, brilho, modo noturno (apagar ou escurecer num horário) e calibração dos sensores, com prévia do OLED. Ao salvar, a estação aplica sozinha em até 1 minuto e o painel mostra quando a versão foi confirmada.
 - **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e ponto de orvalho, umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel).
 
 ### Console serial
@@ -250,7 +251,7 @@ Digite "ajuda" para ver os comandos.
 Uma linha por leitura, a cada 5 s. O LED azul da placa pisca a cada leitura.
 
 ### Display
-No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depois, quatro páginas alternam a cada 5 s, com a hora no cabeçalho:
+No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depois, as páginas alternam no tempo configurado. As páginas, a ordem e o tempo de cada uma são escolhidos no painel (seção **Display**). Tipos disponíveis:
 
 | Página | Conteúdo |
 |---|---|
@@ -258,6 +259,12 @@ No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depo
 | Pressão | Pressão ao nível do mar em destaque e pressão no local |
 | Detalhes | Ponto de orvalho, temperatura do BMP280, estado dos sensores e tempo ligado |
 | Rede | Nome do Wi-Fi, IP, estado do envio para a nuvem e data/hora |
+| Umidade | Umidade em destaque e ponto de orvalho |
+| Relógio | Hora grande, dia da semana e data, temperatura e umidade |
+| Hoje | Mínima e máxima do dia (com horário), faixa de umidade e amplitude |
+| Resumo | Até 4 campos à escolha (temperatura, umidade, pressão, orvalho, sensação, temperatura do BMP280, pressão no local) |
+
+Padrão: Temperatura, Pressão, Detalhes e Rede, 5 s cada. A hora aparece no cabeçalho quando cabe. No modo noturno, o display apaga ou escurece no horário escolhido.
 
 Enquanto a rede de configuração estiver aberta, o display fica fixo nas instruções de conexão.
 

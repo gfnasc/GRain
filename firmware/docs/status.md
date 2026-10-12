@@ -44,12 +44,21 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
 - Fase 7 concluída (conferida no celular): `web/app/pages/historico.vue`, `TimeChart.vue` (uPlot),
   `GET /api/v1/readings|daily|readings.csv`; fuso via `NUXT_PUBLIC_TZ`. Gráfico e CSV conferidos com os mesmos pontos.
 
+- Fase 8 implementada (em validação):
+  - Firmware 0.7.0: `settings` com páginas (`PageCfg`, até 8), modo noturno, calibração e `cloudConfigVersion`
+    (schema 2, migra o /config.json antigo); display com páginas Umidade, Relógio, Hoje e Resumo;
+    calibração aplicada em `sensors`; mín./máx. do dia (`sensorsToday`).
+  - Nuvem: tarefa FreeRTOS no núcleo 0 faz envio e consulta (`/api/v1/device/config` a cada 60 s);
+    configuração recebida é aplicada no loop principal (`settingsApplyCloud`).
+  - Correção: resposta 204 não pode ter o corpo lido (travava a tarefa).
+  - Painel: `/display` com editor e prévia do OLED; ida e volta medida em ~40 s.
+
 ## Em andamento
-- Fase 8: configuração do display e calibração editadas no painel; ESP32 busca na nuvem.
+- Fase 8: conferência do usuário no display físico e no painel.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fase 7: gráficos, histórico e CSV no painel (`GET /api/v1/readings`).
+1. Fase 9: previsão (Zambretti + Open-Meteo) e WhatsApp (CallMeBot).
 
 ## Problemas conhecidos
 - O envio HTTPS bloqueia o loop por ~1–3 s a cada 10 min (display pausa um instante).

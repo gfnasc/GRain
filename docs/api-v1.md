@@ -181,8 +181,39 @@ Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umid
 ### `GET /api/v1/readings.csv` 🔐
 Médias de 10 min do período em CSV (download). Colunas: `inicio_utc`, `inicio_local`, `temperatura_c`, `umidade_pct`, `pressao_nivel_mar_hpa`, `ponto_orvalho_c`. Com `&excel=1`: separador `;`, vírgula decimal e BOM UTF-8 para abrir direto no Excel em português.
 
-### Planejado
+### Configuração do display e da calibração
 
-| Método | Rota | Fase | Descrição |
-|---|---|---|---|
-| `GET` | `/api/v1/device/config` | 8 | Configuração que o ESP32 deve aplicar |
+Formato (validado no painel, na nuvem e no ESP32; referência em `web/shared/utils/station-config.ts`):
+
+```json
+{
+  "display": {
+    "page_s": 5,
+    "contrast": 128,
+    "night": { "enabled": false, "from": "23:00", "to": "06:00", "mode": "dim" },
+    "pages": [
+      { "type": "clock" }, { "type": "temp" },
+      { "type": "fields", "fields": ["temp", "hum", "pres", "dew"] }
+    ]
+  },
+  "calibration": { "temp": 0, "hum": 0, "pres": 0 }
+}
+```
+
+| Campo | Regra |
+|---|---|
+| `pages` | 1 a 8; `type`: `temp`, `hum`, `pres`, `clock`, `today`, `fields`, `details`, `network` |
+| `fields` | Só na página `fields`: 1 a 4 de `temp`, `hum`, `pres`, `dew`, `heat_index`, `temp_bmp`, `pres_station` |
+| `page_s` | 2 a 60 (inteiro) |
+| `contrast` | 0 a 255 (inteiro) |
+| `night` | `enabled` booleano; `from`/`to` em `HH:MM` (podem cruzar a meia-noite); `mode` `off` (apagar) ou `dim` (escurecer) |
+| `calibration` | Somado às leituras: `temp` −5 a 5 °C, `hum` −15 a 15 %, `pres` −15 a 15 hPa |
+
+#### `GET /api/v1/config` 🔐
+Configuração atual (ou a padrão, com `is_default: true`), `version`, `applied_version` (informada pela estação) e `last_poll_at`.
+
+#### `PUT /api/v1/config` 🔐
+Salva a configuração completa e gera a próxima `version`. `422` com a regra violada em `message`.
+
+#### `GET /api/v1/device/config?v=<versão aplicada>` 🔑
+Consultado pelo ESP32 a cada minuto com o token da estação. `204` se a estação já está na versão atual; senão `200 {"version": 3, "config": {...}}`. Cada consulta registra `applied_version` e `last_poll_at`, que o painel usa para confirmar a aplicação e o estado Online.
