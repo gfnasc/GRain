@@ -2,6 +2,8 @@
 
 // Pinos e constantes. Mantenha docs/hardware.md sincronizado.
 
+#define FW_VERSION "0.5.0"
+
 // Barramento I2C (AHT20, BMP280 e OLED compartilham)
 #define PIN_I2C_SDA 21
 #define PIN_I2C_SCL 22
@@ -43,6 +45,7 @@
 #define PORTAL_AP_NAME "GWeather-Setup"    // rede de configuração do Wi-Fi
 #define PORTAL_TIMEOUT_S 180               // só quando já existe Wi-Fi salvo
 #define WIFI_RETRY_MS 60000
+#define API_USER "admin"                  // usuário das rotas que alteram algo
 
 // Diferença de temperatura AHT20 x BMP280 acima da qual avisamos
 #define TEMP_MISMATCH_WARN_C 2.0f

@@ -23,6 +23,11 @@ void sensorsSetAltitude(float altitudeM);
 // Faz uma leitura completa e calcula os valores derivados.
 Reading sensorsRead();
 
+// Última leitura feita e o millis() em que foi feita (0 = nenhuma ainda).
+const Reading &sensorsLast();
+uint32_t sensorsLastMs();
+float sensorsAltitude();
+
 bool sensorsAhtPresent();
 bool sensorsBmpPresent();
 uint8_t sensorsBmpAddress();

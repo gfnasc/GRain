@@ -19,6 +19,8 @@ static uint8_t s_bmpChipId = 0;
 static float s_altitudeM = 0;
 static int s_ahtFails = 0;
 static int s_bmpFails = 0;
+static Reading s_lastReading;
+static uint32_t s_lastMs = 0;
 
 static bool beginAht() {
   s_ahtPresent = s_aht.begin(s_bus);
@@ -108,8 +110,15 @@ Reading sensorsRead() {
     r.dewPointC = dewPointC(r.tempC, r.humPct);
     r.heatIndexC = heatIndexC(r.tempC, r.humPct);
   }
+  s_lastReading = r;
+  s_lastMs = millis();
+  if (s_lastMs == 0) s_lastMs = 1;
   return r;
 }
+
+const Reading &sensorsLast() { return s_lastReading; }
+uint32_t sensorsLastMs() { return s_lastMs; }
+float sensorsAltitude() { return s_altitudeM; }
 
 bool sensorsAhtPresent() { return s_ahtPresent; }
 bool sensorsBmpPresent() { return s_bmpPresent; }

@@ -8,6 +8,7 @@
 #include "netmgr.h"
 #include "sensors.h"
 #include "settings.h"
+#include "webapi.h"
 
 static const char *TAG = "main";
 
@@ -33,7 +34,7 @@ void setup() {
   Serial.begin(115200);
   delay(500);
   pinMode(PIN_LED, OUTPUT);
-  log_i("[%s] boot: GWeather", TAG);
+  log_i("[%s] boot: GWeather %s", TAG, FW_VERSION);
 
   settingsBegin();
 
@@ -61,6 +62,7 @@ void setup() {
 
 void loop() {
   netLoop();
+  webapiLoop();
   consoleLoop();
 
   static uint32_t last = 0;

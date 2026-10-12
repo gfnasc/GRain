@@ -111,8 +111,8 @@ static bool parseFloat(const String &v, float lo, float hi, float &out) {
   return true;
 }
 
-bool settingsSet(const String &key, const String &value, String &err) {
-  Settings c = s_cfg;
+// Valida e aplica um campo em c (sem gravar).
+static bool setField(Settings &c, const String &key, const String &value, String &err) {
   float f;
   if (key == "hostname") {
     if (value.isEmpty() || value.length() > 31) { err = "use 1 a 31 caracteres"; return false; }
@@ -148,9 +148,51 @@ bool settingsSet(const String &key, const String &value, String &err) {
     err = "chave desconhecida";
     return false;
   }
+  return true;
+}
+
+bool settingsSet(const String &key, const String &value, String &err) {
+  Settings c = s_cfg;
+  if (!setField(c, key, value, err)) return false;
   s_cfg = c;
   return save();
 }
+
+// Percorre o JSON e transforma cada folha em "secao.chave" = valor.
+static bool applyObject(Settings &c, JsonObjectConst obj, const String &prefix, String &err) {
+  for (JsonPairConst kv : obj) {
+    String key = prefix.isEmpty() ? String(kv.key().c_str()) : prefix + "." + kv.key().c_str();
+    JsonVariantConst v = kv.value();
+    if (v.is<JsonObjectConst>()) {
+      if (!applyObject(c, v.as<JsonObjectConst>(), key, err)) return false;
+      continue;
+    }
+    // Campos somente leitura são ignorados se vierem iguais ao atual.
+    if (key == "schema" || key == "device_id") continue;
+    String value;
+    if (v.is<const char *>()) value = v.as<const char *>();
+    else serializeJson(v, value);
+    String e;
+    if (!setField(c, key, value, e)) {
+      err = key + ": " + e;
+      return false;
+    }
+  }
+  return true;
+}
+
+bool settingsApplyJson(JsonObjectConst obj, String &err) {
+  Settings c = s_cfg;
+  if (!applyObject(c, obj, "", err)) return false;
+  s_cfg = c;
+  if (!save()) {
+    err = "falha ao gravar";
+    return false;
+  }
+  return true;
+}
+
+void settingsToJson(JsonDocument &doc) { toJson(s_cfg, doc); }
 
 bool settingsReset() {
   applyDefaults(s_cfg);

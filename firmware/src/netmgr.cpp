@@ -63,6 +63,11 @@ static void onConnected() {
 
 void netBegin() {
   WiFi.mode(WIFI_STA);  // com o rádio ligado, esp_random() usa entropia de hardware
+  // Com IPv6 (link-local), o mDNS responde também ao pedido AAAA; sem isso o
+  // macOS/iOS espera ~5 s por essa resposta antes de usar o IPv4.
+  // O endereço link-local só pode ser criado depois de associar ao roteador.
+  WiFi.onEvent([](arduino_event_id_t, arduino_event_info_t) { WiFi.enableIpV6(); },
+               ARDUINO_EVENT_WIFI_STA_CONNECTED);
   s_st.apName = PORTAL_AP_NAME;
   s_st.apPass = portalPassword();
 

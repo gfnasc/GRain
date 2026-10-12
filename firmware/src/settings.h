@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 // Configuração persistente em LittleFS (/config.json).
 // Os valores iniciais vêm de include/config.h e include/site.h; depois de
@@ -32,6 +33,13 @@ float settingsAltitudeM();
 // Altera um campo pelo nome (ex.: "site.floor", "display.page_s") e salva.
 // Retorna false e preenche err se a chave ou o valor forem inválidos.
 bool settingsSet(const String &key, const String &value, String &err);
+
+// Aplica várias alterações de uma vez a partir de um JSON parcial no mesmo
+// formato de /config.json. Tudo ou nada: se um campo for inválido, nada muda.
+bool settingsApplyJson(JsonObjectConst obj, String &err);
+
+// Serializa a configuração atual (formato de /config.json).
+void settingsToJson(JsonDocument &doc);
 
 // Volta aos valores iniciais (config.h/site.h) e salva.
 bool settingsReset();

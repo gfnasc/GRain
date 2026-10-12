@@ -7,3 +7,4 @@ include/secrets.h
 *.log
 .DS_Store
 include/site.h
+compile_commands.json

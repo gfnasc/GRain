@@ -36,7 +36,8 @@ static void printStatus() {
     Serial.println("Wi-Fi   : desconectado");
   if (n.portalActive)
     Serial.printf("Portal  : aberto (rede \"%s\", senha %s, http://192.168.4.1)\n", n.apName.c_str(), n.apPass.c_str());
-  Serial.printf("Endereço: http://%s.local\n", settings().hostname.c_str());
+  Serial.printf("Endereço: http://%s.local  (API: /api/v1)\n", settings().hostname.c_str());
+  Serial.printf("Senha   : %s  (rede de configuração e API, usuário \"admin\")\n", n.apPass.c_str());
   Serial.printf("Hora    : %s\n", netLocalTime(t, sizeof t, "%d/%m/%Y %H:%M:%S") ? t : "aguardando sincronização");
   Serial.printf("Altitude: %.1f m\n", settingsAltitudeM());
   Serial.printf("Sensores: AHT20 %s, BMP280 %s\n", sensorsAhtPresent() ? "ok" : "ERRO", sensorsBmpPresent() ? "ok" : "ERRO");
