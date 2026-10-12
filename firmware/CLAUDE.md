@@ -9,6 +9,13 @@ Leia `docs/status.md` (onde paramos) e `docs/hardware.md` (pinos e periféricos)
 - Atualize `docs/status.md` (estado, próximos passos, problemas).
 - Mudou fiação ou pino → `docs/hardware.md` **e** `include/config.h`.
 
+## Ao concluir uma fase
+Atualize toda a documentação do repositório antes de seguir:
+- `../README.md` (tabela "Situação atual" e seções afetadas: hardware, bibliotecas, o que esperar, estrutura).
+- `../docs/PLANO.md` e `../docs/plano.html` (status da fase e resultado); republicar o artefato do plano.
+- `docs/status.md` e `docs/hardware.md`.
+- Conferir que não há dados pessoais, commit e push.
+
 ## Comandos
 ```bash
 pio run -e dev                # compilar

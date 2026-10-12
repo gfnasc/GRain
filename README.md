@@ -217,3 +217,9 @@ GWeather/
         ├── hardware.md       Pinagem e periféricos
         └── status.md         Andamento do desenvolvimento
 ```
+
+---
+
+## Licença
+
+[MIT](LICENSE). Você pode usar, modificar e redistribuir, mantendo o aviso de copyright. O software é fornecido sem garantia.
