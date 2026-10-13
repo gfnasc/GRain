@@ -84,7 +84,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
 .rt b{font:700 1.6rem var(--mono);font-variant-numeric:tabular-nums}
 .rt i{display:block;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
 .rt i span{display:block;height:100%;background:var(--mut)}
-.rt .m span{background:var(--warn)}.rt .a span{background:var(--bad)}.rt .a{border-color:var(--bad)}
+.rt .m i span{background:var(--warn)}.rt .a i span{background:var(--bad)}.rt .a{border-color:var(--bad)}
 .alert{background:var(--bad);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700}
 .save{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,.12)}
 .save.dirty{border-color:var(--warn)}

@@ -76,10 +76,12 @@ export default defineEventHandler(async (event) => {
 
   // Dados de fora (Outdoor): cada envio da estação serve de relógio para a coleta, que roda
   // depois da resposta (waitUntil) para a estação não esperar pelas APIs externas.
-  // Em seguida, a previsão de chuva (a cada 10 min) e a verificação das janelas que terminaram.
+  // A previsão de chuva desta rodada é calculada antes da resposta (é rápida: usa os dados de
+  // fora já coletados), para a estação receber a mesma previsão que o painel mostra. A coleta
+  // de fora e a verificação das janelas que terminaram rodam depois, para a próxima rodada.
+  await computeRain(deviceId).catch((e) => console.warn('previsão de chuva falhou:', (e as Error).message))
   const job = (async () => {
     await collectOutdoor(deviceId).catch((e) => console.warn('coleta Outdoor falhou:', (e as Error).message))
-    await computeRain(deviceId).catch((e) => console.warn('previsão de chuva falhou:', (e as Error).message))
     await verifyRain(deviceId).catch((e) => console.warn('verificação da chuva falhou:', (e as Error).message))
   })()
   if (process.env.VERCEL) waitUntil(job)
@@ -94,7 +96,7 @@ export default defineEventHandler(async (event) => {
     console.warn('desvio da pressão falhou:', (e as Error).message)
   }
 
-  // Última previsão de chuva (feita no envio anterior) para a página e o display da estação.
+  // Previsão de chuva desta rodada para a página e o display da estação.
   let rain: ReturnType<typeof rainForDevice>
   try {
     rain = rainForDevice(await latestRain(deviceId))
