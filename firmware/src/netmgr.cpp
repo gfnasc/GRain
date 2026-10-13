@@ -17,21 +17,49 @@ static bool s_mdnsUp = false;
 static uint32_t s_lastCheck = 0;
 static uint32_t s_disconnectedSince = 0;
 
-// Senha da rede de configuração: aleatória, gerada no primeiro boot e
-// guardada na NVS. Aparece só no display, então só quem vê a estação
-// consegue configurá-la. (Não derivar do MAC: ele é visível no ar.)
+// Senha da estação (rede de configuração e rotas da API que alteram algo): aleatória,
+// gerada no primeiro boot e guardada na NVS; pode ser trocada pela página local ou pelo
+// console. 8 a 63 caracteres, o que o WPA2 da rede de configuração aceita.
+// (Não derivar do MAC: ele é visível no ar.)
+static String randomPassword() {
+  static const char alphabet[] = "abcdefghjkmnpqrstuvwxyz23456789";  // sem 0/o, 1/l/i
+  String pass;
+  for (int i = 0; i < 8; i++) pass += alphabet[esp_random() % (sizeof alphabet - 1)];
+  return pass;
+}
+
+static bool validPassword(const String &p) {
+  if (p.length() < 8 || p.length() > 63) return false;
+  for (char c : p)
+    if (c < 33 || c > 126) return false;  // só caracteres visíveis, sem espaço nem acento
+  return true;
+}
+
 static String portalPassword() {
   Preferences prefs;
   prefs.begin("gweather", false);  // namespace antigo mantido: guarda a senha do portal
   String pass = prefs.getString("portal_pass", "");
-  if (pass.length() != 8) {
-    static const char alphabet[] = "abcdefghjkmnpqrstuvwxyz23456789";  // sem 0/o, 1/l/i
-    pass = "";
-    for (int i = 0; i < 8; i++) pass += alphabet[esp_random() % (sizeof alphabet - 1)];
+  if (!validPassword(pass)) {
+    pass = randomPassword();
     prefs.putString("portal_pass", pass);
   }
   prefs.end();
   return pass;
+}
+
+bool netSetPassword(const String &pass, String &err) {
+  String p = pass.length() ? pass : randomPassword();
+  if (!validPassword(p)) {
+    err = "use de 8 a 63 caracteres, sem espaços nem acentos";
+    return false;
+  }
+  Preferences prefs;
+  prefs.begin("gweather", false);
+  prefs.putString("portal_pass", p);
+  prefs.end();
+  s_st.apPass = p;
+  log_i("[%s] senha da estação trocada", TAG);
+  return true;
 }
 
 static void startMdns() {

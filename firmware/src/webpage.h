@@ -211,6 +211,16 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
       <tr><td>Sensores</td><td id="sens">–</td></tr>
       <tr><td>Firmware</td><td id="fw">–</td></tr>
     </table>
+    <h2>Senha da estação</h2>
+    <div class="box">
+      <span class="mut">Usada para salvar configurações, reiniciar e entrar na rede de configuração do Wi-Fi (GRain-Setup). De 8 a 63 caracteres, sem espaços nem acentos.</span>
+      <div class="f3">
+        <label>Senha atual<input id="pw_cur" type="password" autocomplete="current-password"></label>
+        <label>Nova senha<input id="pw_new" type="password" autocomplete="new-password" minlength="8" maxlength="63"></label>
+        <label>Repita a nova<input id="pw_new2" type="password" autocomplete="new-password" minlength="8" maxlength="63"></label>
+      </div>
+      <div class="row"><button id="pwchg">Trocar senha</button><span class="mut msg" id="pwmsg"></span></div>
+    </div>
     <h2>Manutenção</h2>
     <div class="box">
       <div class="row"><input id="pw_rb" type="password" autocomplete="current-password" placeholder="senha da estação"><button id="reboot">Reiniciar</button></div>
@@ -365,6 +375,20 @@ $("reboot").onclick=async()=>{
   const pw=$("pw_rb").value||$("pw").value;if(!pw){$("rbmsg").innerHTML='<span class="err">Digite a senha da estação.</span>';return}
   try{await post("/api/v1/system/reboot",{},{Authorization:auth(pw)});$("rbmsg").textContent="Reiniciando… a página volta em cerca de 15 s.";$("pw_rb").value=""}
   catch(e){$("rbmsg").innerHTML='<span class="err">'+(e.message.includes("401")?"Senha incorreta.":e.message)+"</span>"}
+};
+$("pwchg").onclick=async()=>{
+  const cur=$("pw_cur").value,nw=$("pw_new").value;
+  if(!cur)return say("pwmsg","Digite a senha atual.",1);
+  if(nw.length<8||nw.length>63||/[^\x21-\x7e]/.test(nw))return say("pwmsg","A nova senha precisa ter de 8 a 63 caracteres, sem espaços nem acentos.",1);
+  if(nw!==$("pw_new2").value)return say("pwmsg","As duas senhas novas não são iguais.",1);
+  try{
+    const r=await fetch("/api/v1/system/password",{method:"POST",headers:{"Content-Type":"application/json",Authorization:auth(cur)},body:JSON.stringify({new:nw})});
+    const j=await r.json().catch(()=>({}));
+    if(r.status===401)throw new Error("Senha atual incorreta.");
+    if(!r.ok)throw new Error(j.detail||j.error||("HTTP "+r.status));
+    ["pw_cur","pw_new","pw_new2"].forEach(id=>$(id).value="");
+    say("pwmsg","Senha trocada. Use a nova a partir de agora.");
+  }catch(e){say("pwmsg",e.message,1)}
 };
 const LV=p=>p>=60?["a","alta"]:p>=30?["m","média"]:["","baixa"];
 function renderRain(r){

@@ -171,6 +171,19 @@ static void handleReboot() {
   if (s_rebootAt == 0) s_rebootAt = 1;
 }
 
+// Troca a senha da estação. Exige a senha atual (Basic) e {"new": "..."}.
+static void handlePassword() {
+  if (!requireAuth()) return;
+  JsonDocument in;
+  if (deserializeJson(in, s_srv.arg("plain")) || !in["new"].is<const char *>()) return sendError(400, "json_invalido", "envie {\"new\": \"...\"}");
+  String err;
+  if (!netSetPassword(in["new"].as<const char *>(), err)) return sendError(422, "valor_invalido", err);
+  JsonDocument doc;
+  doc["ok"] = true;
+  doc["detail"] = "senha trocada";
+  sendJson(200, doc);
+}
+
 static void handleFavicon() {
   s_srv.sendHeader("Cache-Control", "public, max-age=604800");
   s_srv.send_P(200, "image/svg+xml", WEB_FAVICON_SVG);
@@ -283,6 +296,7 @@ static void setupRoutes() {
   s_srv.on("/api/v1/config", HTTP_GET, handleGetConfig);
   s_srv.on("/api/v1/config", HTTP_PUT, handlePutConfig);
   s_srv.on("/api/v1/system/reboot", HTTP_POST, handleReboot);
+  s_srv.on("/api/v1/system/password", HTTP_POST, handlePassword);
   s_srv.on("/api/v1/display", HTTP_GET, handleGetDisplay);
   s_srv.on("/api/v1/display", HTTP_POST, handlePostDisplay);
   s_srv.on("/api/v1/cloud/sync", HTTP_POST, handleCloudSync);

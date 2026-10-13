@@ -128,6 +128,9 @@ Respostas: `200` com a configuração nova · `400 json_invalido` · `401` sem s
 ### `POST /api/v1/system/reboot` 🔒
 Responde `202 {"ok": true}` e reinicia a placa meio segundo depois.
 
+### `POST /api/v1/system/password` 🔒
+Troca a senha da estação (rede de configuração e rotas 🔒). Corpo `{"new": "..."}`, de 8 a 63 caracteres visíveis, sem espaços. Vale na hora. `200` · `401` senha atual errada · `422` senha nova fora da regra.
+
 ### `GET /api/v1/display`
 ```json
 { "on": true, "paused": false, "night": false, "page": 1, "hold_s": 0,

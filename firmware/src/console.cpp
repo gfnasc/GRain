@@ -33,6 +33,8 @@ static void printHelp() {
       "  pagina proxima|anterior|<n>  navega entre as páginas do display\n"
       "  wifi portal           abre a rede de configuração sem esquecer o Wi-Fi atual\n"
       "  wifi esquecer         apaga o Wi-Fi salvo e reinicia\n"
+      "  senha <nova>          troca a senha da estação (8 a 63 caracteres)\n"
+      "  senha aleatoria       gera uma senha nova aleatória\n"
       "  reiniciar             reinicia a placa\n");
 }
 
@@ -148,6 +150,12 @@ static void handle(String line) {
     Serial.println("Rede de configuração aberta. Veja nome e senha no display.");
   } else if (cmd == "wifi" && rest == "esquecer") {
     netForgetWifi();
+  } else if (cmd == "senha" && rest.length()) {
+    String err;
+    if (netSetPassword(rest == "aleatoria" ? String() : rest, err))
+      Serial.printf("Senha da estação trocada para: %s\n", netStatus().apPass.c_str());
+    else
+      Serial.printf("Erro: %s\n", err.c_str());
   } else if (cmd == "reiniciar" || cmd == "reboot") {
     Serial.println("Reiniciando...");
     delay(200);

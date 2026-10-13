@@ -178,13 +178,14 @@ A mesma porta serve a API `/api/v1`:
 | `GET /api/v1/config` | Configuração |
 | `PUT /api/v1/config` 🔒 | Altera campos (JSON parcial, tudo ou nada) |
 | `POST /api/v1/system/reboot` 🔒 | Reinicia |
+| `POST /api/v1/system/password` 🔒 | Troca a senha da estação: `{"new": "..."}` |
 | `GET /api/v1/display` | Estado do display: ligado, pausado, página atual, lista de páginas |
 | `POST /api/v1/display` | `{"page":"next"\|"prev"\|n}`, `{"paused":true}`, `{"power":false}`, `{"alert_test":true}` |
 | `POST /api/v1/cloud/sync` | Envia agora a fila e a cópia da configuração |
 | `GET /api/v1/rain` | Chance de chuva em 1, 2 e 3 h, motivo e estado do alerta |
 | `POST /api/v1/rain/report` | Aviso "Está chovendo aqui" (repassado para a nuvem) |
 
-🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
+🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Ela nasce aleatória e pode ser trocada na aba **Sistema** do app local (pede a atual) ou no console (`senha <nova>`, útil se você esquecer a atual, porque exige o cabo). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
 
 ```bash
 curl http://grain.local/api/v1/now
@@ -267,6 +268,7 @@ Com `pio device monitor` aberto, digite `ajuda`:
 | `pagina proxima` / `pagina anterior` / `pagina <n>` | Navega entre as páginas do display |
 | `wifi portal` | Abre a rede de configuração sem esquecer o Wi-Fi atual |
 | `wifi esquecer` | Apaga o Wi-Fi salvo e reinicia |
+| `senha <nova>` / `senha aleatoria` | Troca a senha da estação (8 a 63 caracteres) ou gera uma aleatória |
 | `reiniciar` | Reinicia a placa |
 
 ### Configuração do local (`include/site.h`)

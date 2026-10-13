@@ -14,6 +14,10 @@ struct NetStatus {
 };
 
 // Inicia Wi-Fi (WiFiManager não bloqueante), mDNS e NTP.
+// Troca a senha da estação (rede de configuração e API). Vazia = nova senha aleatória.
+// 8 a 63 caracteres visíveis, sem espaços. Vale na hora.
+bool netSetPassword(const String &pass, String &err);
+
 // Sem Wi-Fi salvo, abre a rede de configuração "GRain-Setup".
 void netBegin();
 

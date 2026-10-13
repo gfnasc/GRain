@@ -127,6 +127,10 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
     fonte mono, ciano) para não confundir com o painel; barra de salvar com aviso de alterações; ~27 KB.
     Testada no navegador com um proxy só leitura para a estação.
 
+- Firmware 0.11.1: troca da senha da estação (8 a 63 caracteres; NVS `portal_pass`): aba Sistema do app local
+  (pede a atual), `POST /api/v1/system/password` e console `senha <nova>` / `senha aleatoria`. Senha definida pelo
+  usuário. Senha do painel também trocada a pedido (hash na Vercel, texto em web/.panel-password.txt).
+
 ## Em andamento
 - Fase 15: validação do usuário (página Chuva no display, alerta, botão "Está chovendo aqui", app local em abas).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
