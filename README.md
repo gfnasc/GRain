@@ -29,7 +29,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 12 | Configurações só no ESP32; painel só para visualização | ✅ Concluída |
 | 13 | Outdoor: dados externos (METAR e Open-Meteo) | ✅ Concluída |
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
-| 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | 🔧 Em validação |
+| 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | ✅ Concluída |
 | 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |
 | 17 | Chuva v2: método combinado com aprendizado | Planejada |
 | 18 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
