@@ -115,7 +115,8 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
     Painel: card na Agora, aba Chuva (métodos, gráfico com trechos de chuva, placar, explicação).
     Primeiras previsões em produção às 10:30 de 13/10: M1 52–79 %, M2 73–94 % (queda real de pressão + TAF
     com TSRA), M3 8–44 %; o placar vai dizer quem acerta.
-  - 15b compilado (firmware 0.11.0, release 85,3 %), ainda NÃO gravado: a placa saiu do USB do Mac.
+  - 15b gravado (firmware 0.11.0, release 85,6 %) após reconectar o cabo; previsão chegando na estação
+    (/api/v1/rain fresh) e teste de alerta ok (ativo 72 % em 1 h durante o teste).
     Página "Chuva" (PG_RAIN), alerta (`rain_alert`: enabled, threshold, hours, mode) com inversão do SSD1306
     (0xA7/0xA6) ao disparar, guarda-chuva no cabeçalho, tela com gotas animadas (updateDisplayArea nos tiles 0..5)
     a cada duas páginas, histerese de 10 pontos, respeita modo noturno; teste de 12 s. Página local com card de chuva,
@@ -127,8 +128,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
     Testada no navegador com um proxy só leitura para a estação.
 
 ## Em andamento
-- Fase 15: gravar o firmware 0.11.0 e validar. A porta serial ficou presa (CP2102 aparece no USB via hub,
-  mas o nó /dev/cu.usbserial-0001 é antigo: tcsetattr dá erro 22); precisa reconectar o cabo, de preferência direto no Mac.
+- Fase 15: validação do usuário (página Chuva no display, alerta, botão "Está chovendo aqui", app local em abas).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
@@ -137,5 +137,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.
 - Abrir a porta serial no macOS reinicia a placa (DTR/RTS).
+- Se a placa for reconectada (ou passar por hub), o nó /dev/cu.usbserial-0001 pode ficar velho (erro 22 no
+  tcsetattr): reconectar o cabo direto no Mac resolve.
 - Durante o portal do WiFiManager a porta 80 é dele; o servidor da API só pode subir com o portal fechado.
 - Altitude do terreno em `site.h` é estimada; conferir com a altitude da rua e com o QNH do METAR do aeroporto mais próximo.
