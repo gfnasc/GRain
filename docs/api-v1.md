@@ -57,14 +57,15 @@ Status: `200`; `503` se ainda não houve nenhuma leitura.
 
 ```json
 {
-  "device": { "id": "grain-a1b2c3", "firmware": "0.13.2", "uptime_s": 24,
+  "device": { "id": "grain-a1b2c3", "firmware": "0.14.0", "uptime_s": 24,
               "heap_free": 226656, "heap_min": 222612, "reset_reason": "atualização pelo Wi-Fi", "boots": 4, "ota": true,
               "fs_used": 8192, "fs_total": 1048576 },
   "wifi": { "connected": true, "ssid": "MinhaRede", "ip": "192.168.1.105", "rssi": -45,
             "hostname": "grain.local" },
   "time": { "synced": true, "tz": "<-03>3", "local": "2026-10-12T15:33:51", "epoch": 1791830031 },
   "cloud": { "configured": true, "url": "https://SEU-PROJETO.vercel.app", "queue": 0, "last_ok": 1791830000,
-             "last_http": 200, "last_error": "", "interval_s": 300, "config_sent": 1791830000, "config_pending": false },
+             "last_http": 200, "last_error": "", "interval_s": 300, "config_sent": 1791830000, "config_pending": false,
+             "tests": { "h72": { "end": 1792178722, "state": "andamento" }, "d30": { "end": 1794511522, "state": "andamento" } } },
   "sensors": { "aht20": true, "bmp280": true }
 }
 ```
@@ -157,14 +158,16 @@ Chance de chuva recebida da nuvem e estado do alerta no display.
 ```json
 { "fresh": true, "at": 1791898200, "age_s": 312, "p": [8, 18, 44], "m": ["M3", "M3", "M3"],
   "reason": "modelo: 36 % na hora mais provável (13:00), energia para trovoada (CAPE 1760)",
-  "methods": { "m1": [10, 15, 20], "m2": [67, 83, 90], "m3": [8, 18, 44] },
+  "methods": { "m1": [10, 15, 20], "m2": [21, 32, 40], "m2t": [14, 21, 26], "m3": [75, 75, 75], "m4": [31, 32, 34] },
   "alert": { "active": false, "hours": 0, "pct": 0, "enabled": true, "threshold": 60, "window": 2 },
-  "last_report": null, "report_pending": false }
+  "last_report": null, "report_pending": false, "last_no_rain": null, "no_rain_pending": false }
 ```
-`fresh`: previsão com até 35 min (depois a estação deixa de mostrar). `p`/`m`: destaque de cada janela; `methods`: os três métodos (`null` se o método não teve dados na rodada).
+`fresh`: previsão com até 35 min (depois a estação deixa de mostrar). `p`/`m`: destaque de cada janela; `methods`: os cinco métodos, M1, M2, M2T (M2 treinado), M3 e M4 (combinado treinado), com `null` se o método não teve dados na rodada.
+
+`cloud.tests` (em `/api/v1/status`): fim previsto (epoch UTC, `null` antes de começar) e situação (`andamento`, `falhou`, `sucesso`, `aguardando`) dos testes de robustez (72 h) e da chuva (30 dias), recebidos da nuvem a cada envio.
 
 ### `POST /api/v1/rain/report`
-Aviso "Está chovendo aqui": a estação repassa para a nuvem (`POST /api/v1/device/rain-report`), tentando de novo a cada minuto se falhar. `202`; `409` se a nuvem não estiver configurada.
+Aviso "Está chovendo aqui" (corpo vazio) ou "Não choveu hoje" (`{"kind": "nao_choveu_hoje"}`): a estação repassa para a nuvem (`POST /api/v1/device/rain-report`), tentando de novo a cada minuto se falhar. `202`; `409` se a nuvem não estiver configurada.
 
 ### `POST /api/v1/cloud/sync`
 Envia agora a fila de médias e a cópia da configuração. `202`; `409` se a nuvem não estiver configurada.
@@ -206,7 +209,7 @@ Recebe um lote de médias de 5 min do ESP32 (de 10 min antes do firmware 0.12.0)
 
 Horários já recebidos são ignorados, então o ESP32 pode reenviar com segurança.
 
-Respostas: `200 {"accepted": 1, "duplicates": 0, "pres_offset": 2.29, "rain": {"at": 1791898200, "p": [8, 18, 44], "m": ["M3", "M3", "M3"], "r": "modelo: ...", "all": {"m1": [10, 15, 20], "m2": [67, 83, 90], "m3": [8, 18, 44]}}}`. `pres_offset`: desvio QNH − pressão sem calibração, mediana de 7 dias (só com 12 pares ou mais). `rain`: previsão de chuva desta rodada (calculada antes da resposta; 1, 2 e 3 h, método em destaque e motivo curto), para a página local e o display · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
+Respostas: `200 {"accepted": 1, "duplicates": 0, "pres_offset": 2.29, "rain": {"at": 1791898200, "p": [8, 18, 44], "m": ["M3", "M3", "M3"], "r": "modelo: ...", "all": {"m1": [10, 15, 20], "m2": [67, 83, 90], "m2t": [60, 80, 88], "m3": [8, 18, 44], "m4": [25, 40, 61]}}, "tests": {"h72": {"end": 1792178722, "state": "andamento"}, "d30": {"end": 1794511522, "state": "andamento"}}}`. `pres_offset`: desvio QNH − pressão sem calibração, mediana de 7 dias (só com 12 pares ou mais). `rain`: previsão de chuva desta rodada (calculada antes da resposta; 1, 2 e 3 h, método em destaque e motivo curto), para a página local e o display · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
 
 ### `GET /api/v1/latest` 🔐
 Exige a sessão do painel. Devolve a estação (com `place`: `sacada`, `escritorio` ou `null`), a média mais recente, as 12 últimas médias e mínimas/máximas de 24 h, sem o período na sacada.
@@ -278,15 +281,15 @@ Previsão de hoje e amanhã (Open-Meteo: máxima, mínima, chance de chuva e con
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `GET` | `/api/v1/rain` | Última previsão: os três métodos (`methods.m1..m3`, índice 0..2 = 1, 2 e 3 h, com `prob` 0–1 e `reason`), o destaque de cada janela (`best`) e se foi escolhido pelo placar; avisos das últimas 24 h |
+| `GET` | `/api/v1/rain` | Última previsão: os cinco métodos (`methods.m1`, `m2`, `m2t`, `m3`, `m4`, índice 0..2 = 1, 2 e 3 h, com `prob` 0–1 e `reason`), o destaque de cada janela (`best`) e se foi escolhido pelo placar; avisos das últimas 24 h |
 | `GET` | `/api/v1/rain/history?range=24h\|7d&h=1..3` | Probabilidade (%) de cada método ao longo do tempo para a janela escolhida e os trechos em que choveu (`rain`: `from`, `to`, `sources`) |
-| `GET` | `/api/v1/rain/score` | Placar de 30 dias por método e janela: `n`, `events`, `brier`, `skill`, `hits`, `false_alarms`, `misses`, `reliability` (faixas de 20 %) |
-| `POST` | `/api/v1/rain/report` | Aviso "Está chovendo aqui" pelo painel (um por intervalo de 10 min) |
+| `GET` | `/api/v1/rain/score` | Placar de 30 dias por método e janela: `n`, `events`, `brier`, `skill`, `hits`, `false_alarms`, `misses`, `reliability` (faixas de 20 %); `trial` (teste de 30 dias: `started_at`, `ends_at`, `state`, `coverage` do M2T e do M4, `rain_hours`, `scores` desde o começo) e `learned` (pesos do M2T e do M4 por janela, com o peso de partida de cada sinal) |
+| `POST` | `/api/v1/rain/report` | Aviso "Está chovendo aqui" pelo painel (um por intervalo de 10 min); `{"kind": "nao_choveu_hoje"}` marca "Não choveu hoje" e `{"kind": "nao_choveu_hoje", "undo": true}` desfaz |
 
-`POST /api/v1/device/rain-report` 🔑 recebe o mesmo aviso vindo da página local da estação. No banco, `rain_reports.raining = false` registra um "não choveu", que desconta METAR de chuva a até 30 min.
+`POST /api/v1/device/rain-report` 🔑 recebe os mesmos avisos vindos da página local da estação. No banco, `rain_reports.raining = false` registra um "não choveu": sem `covers_from`, desconta METAR de chuva a até 30 min; com `covers_from` ("Não choveu hoje"), desconta toda chuva do METAR desde a meia-noite local e confere de novo as previsões do dia (os treinados refazem os pesos).
 
 ### `GET /api/v1/health?hours=72` 🔐
-Saúde para o teste de robustez, contada a partir da gravação do firmware atual (até `hours`): `since`, `observed_h`, `fw`, `uptime_s`, `last_reset`, `boots`, `restarts` (horário e motivo), `gaps` (intervalos de mais de 15 min sem média), `coverage` (% das médias de 5 min esperadas), `heap_min` (primeiro, último e menor valor) e `rssi` (média e pior). Vem do `status_log`, gravado a cada envio e guardado por 30 dias.
+Saúde para o teste de robustez, contada a partir da gravação do firmware atual ou do início oficial marcado para ele (`pnpm trial:start`), nas primeiras `hours` horas (depois o resultado fica congelado): `started_at`, `ends_at`, `state` (`andamento`, `falhou`, `sucesso`), `mem_ok`, `since`, `observed_h`, `fw`, `uptime_s`, `last_reset`, `boots`, `restarts` (horário e motivo), `gaps` (intervalos de mais de 15 min sem média), `coverage` (% das médias de 5 min esperadas), `heap_min` (referência 30 min depois do início, último e menor valor) e `rssi` (média e pior). Vem do `status_log`, gravado a cada envio e guardado por 30 dias.
 
 ### `GET /api/v1/indoor` 🔐
 O ambiente da estação: `now` (última média fora da sacada), `comfort` (`label`, `level` ok/atenção/alerta, faixas de temperatura e umidade), `dry` (umidade abaixo de 40 %), `mold` (horas com umidade ≥ 70 % nos últimos 3 dias), `window` (`action`: abrir, fechar ou tanto faz, e `reason`) e `lag` (atraso em horas e fração da variação de fora que chega dentro, por correlação hora a hora em 7 dias; `null` com `lag_needed_h` enquanto faltar dado).

@@ -156,17 +156,24 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   Depois da reinicialização pela OTA, o mDNS não anuncia o AAAA e o macOS espera 5 s em grain.local; tentativa de
   reanunciar no GOT_IP6 não resolveu e foi desfeita; o usuário acessa pelo IP. Teste de 72 h começou às 15:11 de 13/10.
 
+- Fase 18 (implementada, em teste): firmware 0.14.0 (OTA). App local: tabela com os cinco métodos (M1, M2, M2T, M3,
+  M4), botão "Não choveu hoje" (com confirmação; `POST /api/v1/rain/report {"kind":"nao_choveu_hoje"}`), aba Sistema
+  com os prazos dos testes (`cloud.tests`, vindo da nuvem a cada envio). Nuvem: M2T e M4 por regressão logística
+  com prior nos pesos fixos (`rainlearn.ts`, treino a cada 3 h em `rain_models`), "Não choveu hoje" com
+  `rain_reports.covers_from`, testes em `trials` + `utils/trials.ts`, mostradores com contagem regressiva no painel.
+  Teste geral antes do início: estação no 0.14.0 sem erros, cinco métodos na estação e no painel, treino rodando,
+  "Não choveu hoje" de ponta a ponta (estação → nuvem → painel → desfazer), todos os endpoints do painel 200.
+
 ## Em andamento
-- Decisão do usuário (13/10): a Fase 17 fica em aberto e a Fase 18 é executada já, para que o teste de 72 h (17) e o
-  teste de 30 dias do M2 treinado e do M4 (18) comecem oficialmente juntos. Se a 18 precisar mudar o firmware, a
-  gravação (OTA) é feita uma vez no fim da 18 e marca o início oficial dos dois testes; depois disso, nenhuma
-  gravação durante as 72 h.
+- Testes longos começaram oficialmente juntos em 13/10 às 16:25:22 (hora local), no reinício depois do teste geral
+  (`pnpm trial:start`): robustez (Fase 17) até 16/10 16:25; chuva (Fase 18) até 12/11 16:25. Não gravar firmware
+  nem reiniciar a estação durante as 72 h (reinício conta como falha; gravação recomeça o de 72 h).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fase 16: Indoor (conforto, ar seco, mofo, abra/feche a janela, atraso térmico).
-2. Fase 17: robustez (watchdog, OTA, teste de 72 h), antes do M4.
-3. Fase 18: Chuva v2 (M2 treinado: estação + aeroporto; M4 combinado; teste de 30 dias). 4. Fase 19: WhatsApp.
+1. Fechar a Fase 17 em 16/10 se o teste de 72 h passar (aba Estação).
+2. Fechar a Fase 18 em 12/11: placar do teste (M2T e M4 contra M1–M3), cobertura ≥ 90 %, pelo menos 5 horas de chuva.
+3. Fase 19: WhatsApp (configurado na página local).
 
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.

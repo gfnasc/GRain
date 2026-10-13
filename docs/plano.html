@@ -209,7 +209,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Foco</span><span class="v">Chuva em 1–3 h</span></div>
     <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel · só leitura</span></div>
   </div>
-  <span class="status">Fases 1 a 8 e 11 a 16 concluídas · Fase 17 em aberto · Etapa atual: Fase 18 (os testes da 17 e da 18 começam juntos)</span>
+  <span class="status">Fases 1 a 8 e 11 a 16 concluídas · Fases 17 e 18 implementadas, em teste desde 13/10 16:25 (72 h e 30 dias)</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -343,6 +343,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         <tr><td><code>forecast_snapshots</code> <span class="chip v5">nova</span></td><td>O que o modelo previa a cada hora para as horas seguintes, para comparar com o que aconteceu.</td></tr>
         <tr><td><code>rain_predictions</code> <span class="chip v5">nova</span></td><td>Probabilidade de cada método para cada janela de 1 h, 2 h e 3 h, com os dados usados no cálculo. São cerca de 2 mil linhas por dia (~70 MB por ano), dentro do plano gratuito do Neon.</td></tr>
         <tr><td><code>rain_truth</code> <span class="chip v5">nova</span></td><td>Chuva observada: METAR e o botão “Está chovendo aqui”.</td></tr>
+        <tr><td><code>rain_models</code>, <code>trials</code> <span class="chip v5">nova</span></td><td>Pesos aprendidos do M2T e do M4 por janela (Fase 18) e início dos testes longos (72 h e 30 dias).</td></tr>
         <tr><td><code>devices.site</code>, <code>devices.station_config</code> <span class="chip v5">nova</span></td><td>Localização e cópia da configuração enviadas pela estação, além do aeroporto detectado.</td></tr>
         <tr><td><code>devices.config*</code>, <code>notify</code>, <code>recipients</code>, <code>notifications</code> <span class="chip">removidas</span></td><td>Edição de configuração pelo painel e WhatsApp saem. O WhatsApp volta na última fase, com novo desenho.</td></tr>
       </tbody>
@@ -826,23 +827,26 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
       <div class="phase now">
         <div class="n">17</div>
         <div class="body">
-          <div class="meta"><h3>Robustez (antiga Fase 10)</h3><span class="chip now">Em aberto</span><span class="chip">1 dia + 72 h</span></div>
+          <div class="meta"><h3>Robustez (antiga Fase 10)</h3><span class="chip now">Teste de 72 h em andamento</span><span class="chip">1 dia + 72 h</span></div>
           <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li><li>Vem antes do M4 para fechar as pontas soltas antes do teste longo de 30 dias.</li></ul>
           <div class="result">
-            <span><b>Resultado:</b> firmware 0.13 com watchdog de 60 s, gravação pelo Wi-Fi protegida pela senha da estação (testada; cerca de 50 s, com progresso no display), autocura (30 min sem Wi-Fi ou 6 h de nuvem falhando), motivo do último reinício e contador de reinícios, e “!” no display quando algo falha. No painel, a seção “Saúde desde a última gravação” acompanha o teste de 72 h, que começa oficialmente junto com o teste de 30 dias da Fase 18.</span>
+            <span><b>Resultado:</b> firmware 0.13 com watchdog de 60 s, gravação pelo Wi-Fi protegida pela senha da estação (testada; cerca de 50 s, com progresso no display), autocura (30 min sem Wi-Fi ou 6 h de nuvem falhando), motivo do último reinício e contador de reinícios, e “!” no display quando algo falha. O teste de 72 h começou oficialmente junto com o de 30 dias da Fase 18, em 13/10 às 16:25, e termina em 16/10 às 16:25. A aba Estação mostra a contagem regressiva até terminar com sucesso, e a aba Sistema do app local mostra os prazos dos dois testes.</span>
           </div>
           <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
         </div>
       </div>
-      <div class="phase next">
+      <div class="phase now">
         <div class="n">18</div>
         <div class="body">
-          <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip">2 dias + teste de 30 dias</span></div>
+          <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip now">Teste de 30 dias em andamento</span><span class="chip">2 dias + teste de 30 dias</span></div>
           <ul>
             <li><b>M2 treinado</b>: só estação + aeroporto (sem o modelo), com os pesos aprendidos no próprio local. Nas primeiras observações, o M2 com pesos fixos já batia com a previsão do Google.</li>
             <li><b>M4</b> combinado: estação + aeroporto + modelo. Os dois aprendem com os ingredientes guardados em cada previsão e com o que aconteceu (METAR e o botão “Está chovendo aqui”), depois de cerca de 20 a 30 chuvas.</li>
             <li>M5 (radar) como experimento, se houver uma fonte gratuita viável.</li>
           </ul>
+          <div class="result">
+            <span><b>Resultado:</b> M2T e M4 calculados a cada 10 min por regressão logística por janela sobre os sinais do M1/M2 (e o M3, no M4), puxada para os pesos fixos: sem dados, o M2T é igual ao M2 e o M4 é a média do M2 e do M3. Treino a cada 3 h com as previsões conferidas. Botão “Não choveu hoje” no painel e na estação, para tirar do placar a chuva que o aeroporto registra mas não chega aqui. Firmware 0.14.0 com os cinco métodos e os prazos dos testes. Na aba Chuva: mostrador do teste com contagem regressiva e os critérios de aceite, gráfico com M2T, M3 e M4 (M1 e M2 opcionais) e a tabela do que os treinados aprenderam. Teste de 13/10 16:25 a 12/11 16:25. O M5 (radar) fica para depois do teste.</span>
+          </div>
           <p class="accept"><b>Aceite:</b> num teste de 30 dias, o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, e o M2 treinado melhor que o M2 de pesos fixos.</p>
         </div>
       </div>

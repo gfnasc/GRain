@@ -135,6 +135,16 @@ static void handleStatus() {
   if (u.configSentEpoch) cloud["config_sent"] = u.configSentEpoch;
   else cloud["config_sent"] = nullptr;
   cloud["config_pending"] = u.configPending;
+  // Testes longos (a nuvem manda o fim previsto e a situação a cada envio).
+  Trials t = uplinkTrials();
+  JsonObject tests = cloud["tests"].to<JsonObject>();
+  for (int i = 0; i < 2; i++) {
+    const TrialInfo &x = i ? t.d30 : t.h72;
+    JsonObject o = tests[i ? "d30" : "h72"].to<JsonObject>();
+    if (x.end) o["end"] = x.end;
+    else o["end"] = nullptr;
+    o["state"] = x.state;
+  }
   JsonObject s = doc["sensors"].to<JsonObject>();
   s["aht20"] = sensorsAhtPresent() && sensorsLast().ahtOk;
   s["bmp280"] = sensorsBmpPresent() && sensorsLast().bmpOk;
@@ -259,13 +269,12 @@ static void handleRain() {
     }
     doc["reason"] = r.reason;
     JsonObject all = doc["methods"].to<JsonObject>();
-    static const char *KEYS[3] = {"m1", "m2", "m3"};
-    for (int m = 0; m < 3; m++) {
+    for (int m = 0; m < RAIN_METHODS; m++) {
       if (!r.allOk[m]) {
-        all[KEYS[m]] = nullptr;
+        all[RAIN_METHOD_KEYS[m]] = nullptr;
         continue;
       }
-      JsonArray a = all[KEYS[m]].to<JsonArray>();
+      JsonArray a = all[RAIN_METHOD_KEYS[m]].to<JsonArray>();
       for (int i = 0; i < 3; i++) a.add(r.all[m][i]);
     }
   }
@@ -281,13 +290,19 @@ static void handleRain() {
   if (u.reportEpoch) doc["last_report"] = u.reportEpoch;
   else doc["last_report"] = nullptr;
   doc["report_pending"] = u.reportPending;
+  if (u.noRainEpoch) doc["last_no_rain"] = u.noRainEpoch;
+  else doc["last_no_rain"] = nullptr;
+  doc["no_rain_pending"] = u.noRainPending;
   sendJson(200, doc);
 }
 
-// Botão "Está chovendo aqui": a estação repassa para a nuvem. Sem senha.
+// Botões "Está chovendo aqui" e "Não choveu hoje" ({"kind":"nao_choveu_hoje"}): a estação
+// repassa para a nuvem. Sem senha.
 static void handleRainReport() {
   if (!uplinkStatus().configured) return sendError(409, "nuvem_desligada", "configure com nuvem url / nuvem token");
-  uplinkReportRain();
+  JsonDocument in;
+  bool noRain = s_srv.hasArg("plain") && !deserializeJson(in, s_srv.arg("plain")) && String(in["kind"] | "") == "nao_choveu_hoje";
+  uplinkReportRain(noRain);
   JsonDocument doc;
   doc["ok"] = true;
   doc["detail"] = "aviso enviado para a nuvem";

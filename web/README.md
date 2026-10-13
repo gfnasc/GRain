@@ -19,15 +19,15 @@ Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pel
 | `GET /api/v1/readings` | Sessão do painel | Série agregada para os gráficos (`?range=24h\|7d\|30d` ou `?from=&to=`) e períodos de cada local |
 | `GET /api/v1/daily` | Sessão do painel | Resumo por dia |
 | `GET /api/v1/readings.csv` | Sessão do painel | Exportação CSV com a coluna `local` (`&excel=1` para Excel em português) |
-| `GET /api/v1/health` | Sessão do painel | Saúde da estação desde a última gravação (teste de 72 h) |
+| `GET /api/v1/health` | Sessão do painel | Teste de robustez (72 h): situação, prazo e saúde desde a gravação ou o início oficial |
 | `GET /api/v1/indoor` | Sessão do painel | Conforto, ar seco, mofo, janela e atraso térmico do ambiente da estação |
 | `GET /api/v1/sync` | Sessão do painel | Horários das últimas e próximas atualizações (contadores) |
 | `GET /api/v1/station` | Sessão do painel | Estado da estação e cópia da configuração (somente leitura) |
 | `GET /api/v1/outdoor` | Sessão do painel | Condições de fora: METAR do aeroporto mais próximo ou Open-Meteo |
 | `GET /api/v1/forecast` | Sessão do painel | Previsão de hoje e amanhã e tendência da pressão |
-| `GET /api/v1/rain`, `/rain/history`, `/rain/score` | Sessão do painel | Chuva em 1, 2 e 3 h (três métodos), histórico das previsões e placar |
-| `POST /api/v1/rain/report` | Sessão do painel | Aviso "Está chovendo aqui" |
-| `POST /api/v1/device/rain-report` | Token da estação | O mesmo aviso, vindo da página local |
+| `GET /api/v1/rain`, `/rain/history`, `/rain/score` | Sessão do painel | Chuva em 1, 2 e 3 h (cinco métodos), histórico, placar, teste de 30 dias e pesos aprendidos |
+| `POST /api/v1/rain/report` | Sessão do painel | Avisos "Está chovendo aqui" e "Não choveu hoje" (com desfazer) |
+| `POST /api/v1/device/rain-report` | Token da estação | Os mesmos avisos, vindos da página local |
 | `POST /api/auth/login` | — | Login com a senha do painel |
 
 Contrato completo: [../docs/api-v1.md](../docs/api-v1.md).
@@ -72,6 +72,12 @@ Registrar onde a estação está (opcional; sem registro, nada é marcado):
 ```bash
 pnpm placement escritorio            # a partir de agora; ou passe um horário ISO
 pnpm placement                       # lista os períodos
+```
+
+Início oficial dos testes longos (robustez de 72 h e chuva de 30 dias), depois de reiniciar a estação e esperar o primeiro envio:
+
+```bash
+pnpm trial:start                     # primeiro envio depois do último reinício; ou passe um horário ISO
 ```
 
 `.env.local`, `.panel-password.txt` e `.device-token-*.txt` ficam fora do git.

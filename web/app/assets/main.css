@@ -17,9 +17,13 @@
   --series-hum: #1baf7a;
   --series-pres: #4a3aa7;
   --series-out: #b0337e;
+  /* chuva: M2T, M3 e M4 (os que o gráfico mostra por padrão) são as três primeiras cores da
+     paleta, que passam em todos os pares; M1 e M2 aparecem só quando ligados */
   --series-m1: #4a3aa7;
-  --series-m2: #1baf7a;
+  --series-m2: #e87ba4;
+  --series-m2t: #2a78d6;
   --series-m3: #eb6834;
+  --series-m4: #1baf7a;
   --ff-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -43,8 +47,10 @@
     --series-pres: #9085e9;
     --series-out: #d65ba3;
     --series-m1: #9085e9;
-    --series-m2: #199e70;
+    --series-m2: #d55181;
+    --series-m2t: #3987e5;
     --series-m3: #d95926;
+    --series-m4: #199e70;
     color-scheme: dark;
   }
 }

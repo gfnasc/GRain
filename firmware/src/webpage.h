@@ -76,7 +76,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
 .pg b{font:700 1.05rem var(--mono)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{font-size:.82rem;padding:4px 10px;border-radius:999px}
-.err{color:var(--bad);font-weight:600}
+.err{color:var(--bad);font-weight:600}.ok{color:var(--ok)}
 .okc{color:var(--ok);font-weight:600}
 .msg{min-height:1.2em}
 .rt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -89,7 +89,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
 .mt th,.mt td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 .mt th{font:600 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .mt td:first-child,.mt th:first-child{text-align:left;color:var(--fg)}
-.mt td small{display:block;color:var(--mut);font-size:.72rem}
+.mt td small,#t-sistema td small{display:block;color:var(--mut);font-size:.72rem}
 .mt tr:last-child td{border-bottom:0}
 .mt td.best{font-weight:700;box-shadow:inset 0 -2px 0 var(--acc)}
 .alert{background:var(--bad);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700}
@@ -118,15 +118,17 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
       <div class="rt" id="rt"><div><span class="mut">1 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">2 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">3 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div></div>
       <span class="mut"><span id="rwhy"></span><span id="rnext"></span></span>
       <table class="mt" id="mt" hidden>
-        <thead><tr><th>Os três métodos</th><th>1 h</th><th>2 h</th><th>3 h</th></tr></thead>
+        <thead><tr><th>Os cinco métodos</th><th>1 h</th><th>2 h</th><th>3 h</th></tr></thead>
         <tbody>
           <tr><td>M1<small>só o barômetro da estação</small></td><td></td><td></td><td></td></tr>
           <tr><td>M2<small>barômetro + aeroporto (METAR e TAF)</small></td><td></td><td></td><td></td></tr>
+          <tr><td>M2T<small>o M2 com pesos aprendidos</small></td><td></td><td></td><td></td></tr>
           <tr><td>M3<small>modelo numérico (Open-Meteo)</small></td><td></td><td></td><td></td></tr>
+          <tr><td>M4<small>combinado, pesos aprendidos</small></td><td></td><td></td><td></td></tr>
         </tbody>
       </table>
       <span class="mut" id="mthelp" hidden>Os mostradores acima usam o método em destaque (sublinhado): o modelo, até o placar ter dados; depois, o que mais acertou em cada janela. Detalhes e placar no painel, aba Chuva.</span>
-      <div class="row"><button id="rrep">☂ Está chovendo aqui</button><span class="mut msg" id="rmsg"></span></div>
+      <div class="row"><button id="rrep">☂ Está chovendo aqui</button><button id="rnone">☀ Não choveu hoje</button><span class="mut msg" id="rmsg"></span></div>
     </div>
     <h2>Sensores agora</h2>
     <div class="grid">
@@ -209,6 +211,11 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
   </section>
 
   <section class="tab" id="t-sistema">
+    <h2>Testes em andamento</h2>
+    <table>
+      <tr><td>Robustez (72 h)<small>sem reinícios, sem buracos, memória estável</small></td><td id="x_h72">–</td></tr>
+      <tr><td>Chuva (30 dias)<small>M2T e M4 no placar</small></td><td id="x_d30">–</td></tr>
+    </table>
     <h2>Nuvem</h2>
     <div class="box">
       <table>
@@ -419,13 +426,15 @@ $("pwchg").onclick=async()=>{
   }catch(e){say("pwmsg",e.message,1)}
 };
 // Contadores: relógio da estação (epoch do /status) acertado a cada leitura e contado aqui a cada segundo.
-let devOff=null,ivl=300,rainAt=0,pageAt=Date.now()+5000;
+let devOff=null,ivl=300,rainAt=0,pageAt=Date.now()+5000,tests=null;
 const mmss=s=>s<=0?"agora":Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
 function timers(){
   const pg=Math.max(0,Math.ceil((pageAt-Date.now())/1000));$("n_page").textContent="em "+pg+" s";
   if(devOff==null)return;
   const e=Date.now()/1000+devOff,ns=Math.ceil(e/ivl)*ivl-e,ttl=mmss(ns);
   $("n_send").textContent="em "+ttl+" (a cada "+ivl/60+" min)";$("osend").textContent="envio em "+ttl;
+  for(const k of ["h72","d30"]){const t=tests&&tests[k],el=$("x_"+k);if(!t)continue;
+    el.innerHTML=!t.end?"aguardando início":t.state==="sucesso"?'<b class="ok">passou</b>':(t.state==="falhou"?'<span class="err">com falha</span> · ':"")+"faltam "+dur(Math.max(0,t.end-e))}
   if(rainAt){const nr=rainAt+600-e;const t=nr>0?"em "+mmss(Math.max(nr,ns)):"no próximo envio ("+mmss(ns)+")";$("n_rain").textContent=t;$("rnext").textContent=" · próxima "+t}
 }
 setInterval(timers,1000);
@@ -436,13 +445,17 @@ function renderRain(r){
     t.className=l[0];t.children[1].textContent=p==null?"–":p+"%";t.children[2].firstChild.style.width=(p||0)+"%";t.children[3].textContent=p==null?"–":l[1]+(r.m?" · "+r.m[i]:"")}
   $("rwhy").textContent=r.fresh?(r.reason+" · calculada há "+Math.round(r.age_s/60)+" min"):(r.at?"Previsão antiga (há "+Math.round(r.age_s/60)+" min): aguardando a nuvem.":"Aguardando a primeira previsão da nuvem (chega com o próximo envio).");
   const ms=r.fresh&&r.methods,rows=$("mt").tBodies[0].rows;$("mt").hidden=!ms;$("mthelp").hidden=!ms;
-  if(ms)["m1","m2","m3"].forEach((k,j)=>{const v=ms[k];for(let i=0;i<3;i++){const c=rows[j].cells[i+1];c.textContent=v?v[i]+"%":"–";c.className=r.m&&r.m[i]===k.toUpperCase()?"best":""}});
+  if(ms)["m1","m2","m2t","m3","m4"].forEach((k,j)=>{const v=ms[k];for(let i=0;i<3;i++){const c=rows[j].cells[i+1];c.textContent=v?v[i]+"%":"–";c.className=r.m&&r.m[i]===k.toUpperCase()?"best":""}});
   const al=r.alert;$("ralert").hidden=!al.active;if(al.active)$("ralert").textContent="☂ Alerta: "+al.pct+"% de chance de chuva em até "+al.hours+" h";
-  if(!$("rmsg").dataset.busy)$("rmsg").textContent=r.report_pending?"enviando aviso…":(r.last_report?"último aviso às "+hm(r.last_report):"");
+  if(!$("rmsg").dataset.busy)$("rmsg").textContent=r.report_pending||r.no_rain_pending?"enviando aviso…":[r.last_report?"chuva avisada às "+hm(r.last_report):"",r.last_no_rain?"“não choveu hoje” às "+hm(r.last_no_rain):""].filter(Boolean).join(" · ");
 }
 $("rrep").onclick=async()=>{$("rrep").disabled=true;$("rmsg").dataset.busy=1;
   try{await post("/api/v1/rain/report");say("rmsg","Aviso registrado. Obrigado: isso entra no placar.")}catch(e){say("rmsg",e.message,1)}
   setTimeout(()=>{delete $("rmsg").dataset.busy;$("rrep").disabled=false},8000)};
+$("rnone").onclick=async()=>{if(!confirm("Marcar que não choveu aqui hoje? As chuvas que o aeroporto registrou desde a meia-noite deixam de contar no placar e no treino."))return;
+  $("rnone").disabled=true;$("rmsg").dataset.busy=1;
+  try{await post("/api/v1/rain/report",{kind:"nao_choveu_hoje"});say("rmsg","Registrado: hoje não choveu aqui. A nuvem confere o dia de novo.")}catch(e){say("rmsg",e.message,1)}
+  setTimeout(()=>{delete $("rmsg").dataset.busy;$("rnone").disabled=false},8000)};
 $("a_test").onclick=()=>act({alert_test:true});
 async function tick(){
   pageAt=Date.now()+5000;
@@ -451,6 +464,7 @@ async function tick(){
     try{renderRain(rn)}catch(e){$("rwhy").textContent="Previsão indisponível nesta versão do firmware."}
     if(st.time.epoch)devOff=st.time.epoch-Date.now()/1000;
     if(st.cloud.interval_s)ivl=st.cloud.interval_s;
+    tests=st.cloud.tests||null;
     rainAt=rn&&rn.at?rn.at:0;
     $("temp").innerHTML=unit(now.temp,1,"°C");
     $("hum").innerHTML=unit(now.hum,0,"%");

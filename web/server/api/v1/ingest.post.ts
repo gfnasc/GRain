@@ -71,6 +71,7 @@ export default defineEventHandler(async (event) => {
                 ${int(st.rssi)}, ${int(st.queue)}, ${int(st.boots)}, ${typeof st.reset === 'string' ? st.reset.slice(0, 48) : null})
         on conflict do nothing`
       if (Math.random() < 0.02) await sql`delete from status_log where ts < now() - interval '30 days'`
+      if (typeof st.fw === 'string') await startTrials(deviceId, st.fw)
     } catch (e) {
       console.warn('registro de saúde falhou:', (e as Error).message)
     }
@@ -99,6 +100,7 @@ export default defineEventHandler(async (event) => {
   const job = (async () => {
     await collectOutdoor(deviceId).catch((e) => console.warn('coleta Outdoor falhou:', (e as Error).message))
     await verifyRain(deviceId).catch((e) => console.warn('verificação da chuva falhou:', (e as Error).message))
+    await trainRain(deviceId).catch((e) => console.warn('treino da chuva falhou:', (e as Error).message))
   })()
   if (process.env.VERCEL) waitUntil(job)
   else await job
@@ -120,5 +122,13 @@ export default defineEventHandler(async (event) => {
     console.warn('previsão de chuva para a estação falhou:', (e as Error).message)
   }
 
-  return { accepted, duplicates: ts.length - accepted, ...(presOffset != null ? { pres_offset: presOffset } : {}), ...(rain ? { rain } : {}) }
+  // Testes longos (robustez de 72 h e chuva de 30 dias): fim previsto e se seguem sem falha.
+  let tests: Awaited<ReturnType<typeof trialsForDevice>> | undefined
+  try {
+    tests = await trialsForDevice(deviceId)
+  } catch (e) {
+    console.warn('testes para a estação falharam:', (e as Error).message)
+  }
+
+  return { accepted, duplicates: ts.length - accepted, ...(presOffset != null ? { pres_offset: presOffset } : {}), ...(rain ? { rain } : {}), ...(tests ? { tests } : {}) }
 })

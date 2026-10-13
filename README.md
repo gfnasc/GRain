@@ -31,8 +31,8 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
 | 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | ✅ Concluída |
 | 16 | Indoor: conforto, ar seco, mofo, janela, atraso térmico | ✅ Concluída |
-| 17 | Robustez: watchdog, OTA, teste de 72 h | 🔧 Em aberto (teste começa junto com o da 18) |
-| 18 | Chuva v2: M2 treinado (estação + aeroporto) e M4 combinado, com aprendizado (teste de 30 dias) | 🔧 Próxima |
+| 17 | Robustez: watchdog, OTA, teste de 72 h | 🧪 Teste de 72 h em andamento (desde 13/10) |
+| 18 | Chuva v2: M2 treinado (estação + aeroporto) e M4 combinado, com aprendizado (teste de 30 dias) | 🧪 Implementada; teste de 30 dias em andamento (desde 13/10) |
 | 19 | WhatsApp, configurado no ESP32 | Planejada |
 
 Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama interativo de ligações e montagem passo a passo: [docs/plano.html](docs/plano.html) (baixe o arquivo e abra no navegador).
@@ -231,15 +231,19 @@ Sem localização, o painel mostra só o Indoor. A localização e o aeroporto d
 
 ### Chuva nas próximas 1, 2 e 3 horas
 
-A cada envio da estação (10 min), a nuvem calcula três métodos, do menos ao mais completo, e guarda cada previsão:
+A cada 10 min (um envio sim, outro não), a nuvem calcula cinco métodos, do menos ao mais completo, e guarda cada previsão:
 
 | Método | Usa |
 |---|---|
 | M1 · Barômetro | Queda da pressão da estação em 1 h e 3 h, descontada a maré barométrica diária (nos trópicos a pressão cai ~3 hPa entre 10h e 16h todo dia, sem relação com chuva), e nível da pressão |
 | M2 · Barômetro + aeroporto | M1 + METAR (chuva ou trovoada no aeroporto ou perto dele, nuvens CB/TCU, ar perto de saturar, teto baixo, rajadas) + TAF (previsão do aeroporto) |
+| M2T · M2 treinado | Os mesmos sinais do M2, com o peso de cada um aprendido pelo placar local |
 | M3 · Modelo numérico | Open-Meteo: probabilidade por hora, chuva prevista em blocos de 15 min e CAPE (energia para trovoada) |
+| M4 · Combinado treinado | Estação + aeroporto + modelo, com pesos aprendidos pelo placar |
 
-Quando a janela termina, a previsão é conferida: choveu se o METAR registrou chuva (fora "nas proximidades") ou se alguém tocou em **Está chovendo aqui** (no painel ou na página local); sem METAR, vale a chuva medida pelo modelo. Uma observação local de **"não choveu"** desconta um METAR de chuva a até 30 min dela (o aeroporto às vezes registra poucas gotas ou chuva que evapora antes do chão). O placar de 30 dias mostra o erro de cada método; o destaque (card, página local e OLED) é o método de menor erro quando o placar tem dados suficientes (100 previsões e 5 chuvas) e, até lá, o modelo. Os pesos dos métodos são fixos por enquanto; a fase 18 cria um método combinado que aprende com o placar.
+Quando a janela termina, a previsão é conferida: choveu se alguém tocou em **Está chovendo aqui** (no painel ou na página local) ou se o METAR registrou chuva (fora "nas proximidades"); sem METAR, vale a chuva medida pelo modelo. O aeroporto às vezes registra poucas gotas ou chuva que evapora antes do chão: o botão **Não choveu hoje** (painel e página local, com confirmação; no painel dá para desfazer) tira do placar toda chuva do METAR desde a meia-noite e confere de novo as previsões do dia. O placar de 30 dias mostra o erro de cada método; o destaque (card, página local e OLED) é, entre os métodos com dados suficientes (100 previsões e 5 chuvas), o de menor erro e, até lá, o modelo.
+
+**Como o M2T e o M4 aprendem:** cada regra do M1/M2 é um sinal com nome (pressão caindo, chovendo no aeroporto, TAF prevê chuva...). Uma regressão logística por janela (1, 2 e 3 h) reaprende o peso de cada sinal com as previsões conferidas dos últimos 60 dias, refeita a cada 3 h. O ponto de partida são os pesos fixos (o M2T começa igual ao M2; o M4, como a média do M2 e do M3), e cada peso é puxado de volta para ele, então com pouca chuva conferida os métodos ficam perto do original e só muda o que o placar sustenta. A aba Chuva mostra quanto cada peso mudou e o teste de 30 dias (contagem regressiva, cobertura das rodadas e quem lidera).
 
 ### Pressão calibrada pelo aeroporto
 
@@ -253,7 +257,8 @@ No painel, o gráfico de pressão mostra a estação e o QNH do aeroporto juntos
 - **Autocura:** reinicia depois de 30 min sem Wi-Fi ou 6 h com a nuvem falhando (com o Wi-Fi funcionando).
 - **Diagnóstico:** a estação guarda o motivo do último reinício (energia, watchdog, travamento, atualização pelo Wi-Fi, sem Wi-Fi...) e conta os reinícios; os dois aparecem na aba Sistema do app local e vão para a nuvem a cada envio, junto com a memória livre e o sinal.
 - **Aviso no display:** um "!" no cabeçalho quando falta leitura de sensor, Wi-Fi ou nuvem.
-- **Saúde no painel:** a aba Estação tem a seção "Saúde desde a última gravação", com a checklist do teste de 72 h (tempo observado, reinícios e motivos, buracos de mais de 15 min no histórico, memória estável) e o sinal Wi-Fi.
+- **Teste de robustez no painel:** a aba Estação mostra o teste de 72 h com contagem regressiva até terminar com sucesso, barra de progresso e critérios (sem reinícios, sem buracos de mais de 15 min no histórico, memória estável), além de memória e sinal Wi-Fi. A aba Sistema do app local mostra os prazos dos dois testes (72 h e 30 dias).
+- **Início oficial dos testes:** `pnpm trial:start` (em `web/`) marca o primeiro envio depois do último reinício como início dos dois testes; usado depois do teste geral da fase 18.
 
 ### Tempos de sincronização
 
@@ -262,7 +267,8 @@ No painel, o gráfico de pressão mostra a estação e o QNH do aeroporto juntos
 | Leitura dos sensores (estação) | a cada 5 s |
 | Média enviada para a nuvem | a cada 5 min (intervalos :00, :05, :10...), logo que o intervalo fecha; com falha, tenta de novo em 1, 2, 4... até 30 min, e a fila guarda até 14 dias |
 | Cópia da configuração para a nuvem | em todo envio e na hora (~2 s) quando algo muda na estação, ao ligar e no "Sincronizar agora" |
-| Aviso "Está chovendo aqui" (estação → nuvem) | na hora; se falhar, de novo a cada 1 min |
+| Avisos "Está chovendo aqui" e "Não choveu hoje" (estação → nuvem) | na hora; se falhar, de novo a cada 1 min |
+| Treino do M2T e do M4 | a cada 3 h (depois de um envio), com as previsões conferidas dos últimos 60 dias |
 | Previsão de chuva | a cada 10 min (a cada dois envios), antes da resposta: estação e painel recebem a mesma rodada |
 | Ajuste da pressão (nuvem → estação) | volta em todo envio; a estação só grava se mudar 0,05 hPa ou mais |
 | METAR do aeroporto | conferido a cada envio (5 min); o aeroporto publica de hora em hora ou antes, se o tempo mudar |

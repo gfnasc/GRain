@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Aba Estação: estado da estação e cópia da configuração enviada por ela.
+// Aba Estação: estado da estação, cópia da configuração enviada por ela e o teste de robustez.
+import type { TrialState } from '~/components/TrialCountdown.vue'
 // Somente leitura; a configuração é feita na página local do ESP32 (grain.local).
 useHead({ title: 'Estação · GRain' })
 
@@ -21,22 +22,22 @@ const rainPreview = computed(() => ({
   threshold: cfg.value?.rain_alert?.enabled ? cfg.value.rain_alert.threshold : null,
 }))
 type Health = {
-  hours: number; since: string; observed_h: number; samples: number; fw: string | null; uptime_s: number | null; last_reset: string | null; boots: number | null
+  hours: number; since: string; started_at: string | null; ends_at: string | null; state: TrialState; mem_ok: boolean; observed_h: number; samples: number; fw: string | null; uptime_s: number | null; last_reset: string | null; boots: number | null
   restarts: { ts: string; reason: string | null }[]; gaps: { from: string; to: string; minutes: number }[]; coverage: number | null
-  heap_min: { first: number; last: number; lowest: number } | null; heap_now: number | null; rssi: { avg: number; min: number } | null
+  heap_min: { first: number | null; last: number; lowest: number } | null; heap_now: number | null; rssi: { avg: number; min: number } | null
 }
 const { data: health } = await useFetch<Health>('/api/v1/health', { query: { hours: 72 } })
 const kb = (v: number | null | undefined) => (v == null ? '–' : `${Math.round(v / 1024)} KB`)
+// Teste de robustez: cada critério fica ✓ quando cumprido, ✕ quando falhou e … enquanto o prazo corre.
 const checks = computed(() => {
   const h = health.value
   if (!h) return []
-  const full = h.observed_h >= 72
-  const memOk = !!h.heap_min && h.heap_min.last >= h.heap_min.first * 0.9 && h.heap_min.lowest > 40_000
+  const done = h.state === 'sucesso'
   return [
-    { ok: full, label: `72 h de observação (${h.observed_h.toLocaleString('pt-BR')} h até agora)` },
-    { ok: h.restarts.length === 0, label: h.restarts.length ? `${h.restarts.length} reinício(s) no período` : 'Sem reinícios no período' },
-    { ok: h.gaps.length === 0, label: h.gaps.length ? `${h.gaps.length} buraco(s) de mais de 15 min no histórico` : 'Sem buracos no histórico' },
-    { ok: memOk, label: h.heap_min ? `Memória estável (menor livre: ${kb(h.heap_min.first)} no início, ${kb(h.heap_min.last)} agora)` : 'Memória: aguardando dados' },
+    { ok: h.observed_h >= h.hours ? true : null, label: `${h.hours} h de observação (${h.observed_h.toLocaleString('pt-BR')} h até agora)` },
+    { ok: h.restarts.length ? false : done ? true : null, label: h.restarts.length ? `${h.restarts.length} reinício(s) no período` : 'Sem reinícios até agora' },
+    { ok: h.gaps.length ? false : done ? true : null, label: h.gaps.length ? `${h.gaps.length} buraco(s) de mais de 15 min no histórico` : 'Sem buracos no histórico até agora' },
+    { ok: !h.mem_ok ? false : done ? true : null, label: h.heap_min?.first ? `Memória estável (menor livre: ${kb(h.heap_min.first)} 30 min depois do início, ${kb(h.heap_min.last)} agora)` : 'Memória: referência sai 30 min depois do início' },
   ]
 })
 const ALERT_MODE = { both: 'ícone no cabeçalho e tela no carrossel', icon: 'só o ícone no cabeçalho', screen: 'só a tela no carrossel' } as const
@@ -195,12 +196,18 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
           </div>
         </aside>
       </div>
+      <TrialCountdown
+        v-if="health"
+        :title="`Teste de robustez (${health.hours} h)`"
+        :state="health.state"
+        :started-at="health.started_at"
+        :ends-at="health.ends_at"
+        :checks="checks"
+        waiting="Aguardando a primeira mensagem da estação."
+        :note="`Firmware ${health.fw ?? '–'}. Conta desde o início oficial (ou desde a gravação, sem início marcado); gravar outro firmware recomeça a contagem. Termina com sucesso se chegar ao fim sem reinícios, sem buracos e com a memória estável.`"
+      />
       <section v-if="health" class="block health">
-        <h3>Saúde desde a última gravação (teste de {{ health.hours }} h)</h3>
-        <p class="muted small">Contando desde {{ when(health.since) }}, quando o firmware {{ health.fw }} entrou. Gravar outro firmware recomeça a contagem.</p>
-        <ul class="checks">
-          <li v-for="c in checks" :key="c.label" :class="c.ok ? 'ok' : 'wait'"><span aria-hidden="true">{{ c.ok ? '✓' : '…' }}</span>{{ c.label }}</li>
-        </ul>
+        <h3>Saúde no período do teste</h3>
         <dl class="kv">
           <dt>Ligada há</dt><dd>{{ uptime(health.uptime_s ?? undefined) }}</dd>
           <dt>Último reinício</dt><dd>{{ health.last_reset ?? '–' }}</dd>
@@ -247,11 +254,6 @@ h3 { font-size: 1.05rem; font-weight: 700; font-stretch: 106%; }
 .kv dd { text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .kv dt:last-of-type, .kv dd:last-of-type { border-bottom: none; }
 .health { margin-top: 4px; }
-.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.checks li { display: flex; gap: 8px; align-items: baseline; font-size: 0.95rem; }
-.checks li span { width: 18px; text-align: center; font-weight: 700; }
-.checks li.ok span { color: var(--ok); }
-.checks li.wait span { color: var(--warn); }
 .list { display: grid; gap: 2px; font-size: 0.88rem; }
 .list span { color: var(--muted); font-family: var(--ff-mono); font-size: 0.8rem; }
 .notice { background: var(--surface); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; display: grid; gap: 4px; margin: 0; }

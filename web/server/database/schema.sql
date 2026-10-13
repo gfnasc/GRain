@@ -135,3 +135,33 @@ create table if not exists status_log (
   reset     text,
   primary key (device_id, ts)
 );
+
+-- Fase 18: métodos treinados. M2T (estação + aeroporto) e M4 (estação + aeroporto + modelo)
+-- aprendem os pesos com as previsões já conferidas; os pesos ficam aqui (refeitos a cada 3 h).
+alter table rain_predictions drop constraint if exists rain_predictions_method_check;
+alter table rain_predictions add constraint rain_predictions_method_check check (method in ('m1', 'm2', 'm2t', 'm3', 'm4'));
+create table if not exists rain_models (
+  device_id  text        not null references devices(id) on delete cascade,
+  method     text        not null check (method in ('m2t', 'm4')),
+  horizon_h  smallint    not null check (horizon_h between 1 and 3),
+  weights    jsonb       not null,                 -- peso de cada termo (nome → valor)
+  n          integer     not null,                 -- previsões conferidas usadas no treino
+  events     integer     not null,                 -- delas, com chuva
+  trained_at timestamptz not null default now(),
+  primary key (device_id, method, horizon_h)
+);
+
+-- Testes longos: o da chuva (30 dias) começa na primeira mensagem do firmware que o inicia e
+-- fica guardado aqui (o status_log só guarda 30 dias). O de robustez (72 h) é contado do
+-- status_log, desde a gravação do firmware atual.
+create table if not exists trials (
+  device_id  text        not null references devices(id) on delete cascade,
+  key        text        not null,                 -- 'chuva' ou 'robustez' (início oficial marcado à mão)
+  started_at timestamptz not null,
+  fw         text,
+  primary key (device_id, key)
+);
+
+-- Botão "Não choveu hoje": um "não choveu" que vale de covers_from (meia-noite local) até o
+-- aviso, em vez dos 30 min em volta. Um "Está chovendo aqui" continua valendo mais.
+alter table rain_reports add column if not exists covers_from timestamptz;

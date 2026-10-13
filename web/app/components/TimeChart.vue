@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
   mql?.removeEventListener('change', build)
   plot?.destroy()
 })
-watch(() => [props.points, props.step, props.xMin, props.xMax, props.periods], build)
+watch(() => [props.points, props.step, props.xMin, props.xMax, props.periods, props.series], build)
 </script>
 
 <template>

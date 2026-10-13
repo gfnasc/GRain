@@ -104,7 +104,7 @@ export async function indoorInsights(deviceId: string): Promise<IndoorInsights> 
     const now = o.now
     const [w] = (await sql`
       select wx from outdoor_obs o where device_id = ${deviceId} and source = 'metar' and obs_at > now() - interval '90 minutes'
-        and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and abs(extract(epoch from n.ts - o.obs_at)) <= 1800)
+        and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and (case when n.covers_from is null then abs(extract(epoch from n.ts - o.obs_at)) <= 1800 else o.obs_at >= n.covers_from and o.obs_at < n.ts + interval '10 minutes' end))
       order by obs_at desc limit 1`) as { wx: string | null }[]
     const raining = metarIsRaining(w?.wx ?? null)
     const rain1h = rain?.best[0]?.prob ?? 0

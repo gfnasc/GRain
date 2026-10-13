@@ -1,4 +1,4 @@
-// Probabilidade prevista por método ao longo do tempo (para uma janela de 1, 2 ou 3 h) e os
+// Probabilidade prevista por método (M1, M2, M2T, M3, M4) ao longo do tempo (para uma janela de 1, 2 ou 3 h) e os
 // trechos em que choveu (METAR, aviso no painel/estação ou, sem METAR, o modelo). Exige login.
 //   ?range=24h|7d|30d (ou from/to)  &h=1|2|3
 
@@ -14,15 +14,16 @@ export default defineEventHandler(async (event) => {
 
   const rows = (await sql`
     select extract(epoch from issued_at)::bigint as ts,
-      max(prob) filter (where method = 'm1') as m1, max(prob) filter (where method = 'm2') as m2, max(prob) filter (where method = 'm3') as m3
+      max(prob) filter (where method = 'm1') as m1, max(prob) filter (where method = 'm2') as m2, max(prob) filter (where method = 'm2t') as m2t,
+      max(prob) filter (where method = 'm3') as m3, max(prob) filter (where method = 'm4') as m4
     from rain_predictions where device_id = ${deviceId} and horizon_h = ${h} and issued_at >= ${from} and issued_at < ${to}
-    group by 1 order by 1`) as { ts: string; m1: number | null; m2: number | null; m3: number | null }[]
+    group by 1 order by 1`) as { ts: string; m1: number | null; m2: number | null; m2t: number | null; m3: number | null; m4: number | null }[]
 
   // Trechos de chuva: METAR com chuva (±30 min da observação), avisos (10 min) e modelo (hora anterior).
   const marks = (await sql`
     select extract(epoch from obs_at)::bigint - 1800 as a, extract(epoch from obs_at)::bigint + 1800 as b, 'aeroporto' as src
       from outdoor_obs o where device_id = ${deviceId} and source = 'metar' and obs_at >= ${from} and obs_at < ${to} and wx ~ ${METAR_RAIN_SQL}
-        and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and abs(extract(epoch from n.ts - o.obs_at)) <= 1800)
+        and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and (case when n.covers_from is null then abs(extract(epoch from n.ts - o.obs_at)) <= 1800 else o.obs_at >= n.covers_from and o.obs_at < n.ts + interval '10 minutes' end))
     union all
     select extract(epoch from ts)::bigint, extract(epoch from ts)::bigint + 600, 'aviso'
       from rain_reports where device_id = ${deviceId} and raining and ts >= ${from} and ts < ${to}
@@ -42,5 +43,5 @@ export default defineEventHandler(async (event) => {
   }
 
   const pc = (v: number | null) => (v == null ? null : Math.round(v * 100))
-  return { from: range.from, to: range.to, h, points: rows.map((r) => ({ ts: Number(r.ts), m1: pc(r.m1), m2: pc(r.m2), m3: pc(r.m3) })), rain }
+  return { from: range.from, to: range.to, h, points: rows.map((r) => ({ ts: Number(r.ts), m1: pc(r.m1), m2: pc(r.m2), m2t: pc(r.m2t), m3: pc(r.m3), m4: pc(r.m4) })), rain }
 })

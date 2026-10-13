@@ -30,6 +30,8 @@ static bool s_forceSend = false;
 static String s_configCopy;        // JSON da cópia da configuração (montado no loop principal)
 static float s_pendingOffset = NAN; // desvio da pressão sugerido pela nuvem, a aplicar no loop principal
 static RainForecast s_rain;
+static Trials s_trials;
+const char *const RAIN_METHOD_KEYS[RAIN_METHODS] = {"m1", "m2", "m2t", "m3", "m4"};
 static uint32_t s_reportRetryAt = 0;  // espera entre tentativas do aviso de chuva
 
 static int https(const char *method, const String &url, const String &token, const String &body, String &resp);
@@ -217,25 +219,39 @@ RainForecast uplinkRain() {
   return s_rain;
 }
 
-void uplinkReportRain() {
+Trials uplinkTrials() {
   Lock l;
-  s_st.reportPending = true;
+  return s_trials;
+}
+
+void uplinkReportRain(bool noRainToday) {
+  Lock l;
+  if (noRainToday) s_st.noRainPending = true;
+  else s_st.reportPending = true;
 }
 
 static void sendReport() {
   String url, token;
+  bool noRain;
   {
     Lock l;
     url = s_st.url + "/api/v1/device/rain-report";
     token = s_token;
+    noRain = !s_st.reportPending && s_st.noRainPending;  // um de cada vez; "chovendo" primeiro
   }
   String resp;
-  int code = https("POST", url, token, "{}", resp);
+  int code = https("POST", url, token, noRain ? "{\"kind\":\"nao_choveu_hoje\"}" : "{}", resp);
   Lock l;
   if (code == 200) {
-    s_st.reportPending = false;
-    s_st.reportEpoch = (uint32_t)time(nullptr);
-    log_i("[%s] aviso de chuva enviado", TAG);
+    if (noRain) {
+      s_st.noRainPending = false;
+      s_st.noRainEpoch = (uint32_t)time(nullptr);
+    } else {
+      s_st.reportPending = false;
+      s_st.reportEpoch = (uint32_t)time(nullptr);
+    }
+    log_i("[%s] aviso %s enviado", TAG, noRain ? "\"não choveu hoje\"" : "de chuva");
+    if (s_st.reportPending || s_st.noRainPending) s_reportRetryAt = 0;
   } else {
     s_reportRetryAt = millis() + 60000;
     if (s_reportRetryAt == 0) s_reportRetryAt = 1;
@@ -346,12 +362,19 @@ static void sendBatch() {
           strlcpy(s_rain.method[i], rain["m"][i] | "", sizeof s_rain.method[i]);
         }
         s_rain.reason = rain["r"] | "";
-        static const char *KEYS[3] = {"m1", "m2", "m3"};
-        for (int m = 0; m < 3; m++) {
-          JsonArray a = rain["all"][KEYS[m]];
+        for (int m = 0; m < RAIN_METHODS; m++) {
+          JsonArray a = rain["all"][RAIN_METHOD_KEYS[m]];
           s_rain.allOk[m] = a.size() == 3;
           for (int i = 0; i < 3; i++) s_rain.all[m][i] = s_rain.allOk[m] ? constrain((int)(a[i] | 0), 0, 100) : 0;
         }
+      }
+      JsonObject tests = r["tests"];
+      if (!tests.isNull()) {
+        s_trials.h72.end = tests["h72"]["end"] | 0;
+        strlcpy(s_trials.h72.state, tests["h72"]["state"] | "", sizeof s_trials.h72.state);
+        s_trials.d30.end = tests["d30"]["end"] | 0;
+        strlcpy(s_trials.d30.state, tests["d30"]["state"] | "", sizeof s_trials.d30.state);
+        s_trials.at = s_st.lastOkEpoch;
       }
     }
     if (s_st.queue) s_forceSend = true;  // ainda há pendências: continua
@@ -379,7 +402,7 @@ static void netTask(void *) {
     {
       Lock l;
       configured = s_st.configured;
-      reportDue = s_st.reportPending && (!s_reportRetryAt || (int32_t)(millis() - s_reportRetryAt) >= 0);
+      reportDue = (s_st.reportPending || s_st.noRainPending) && (!s_reportRetryAt || (int32_t)(millis() - s_reportRetryAt) >= 0);
       bool backoffOk = !s_backoffMs || (int32_t)(millis() - s_nextAttemptMs) >= 0;
       bool work = s_st.queue > 0 || s_st.configPending;
       sendDue = work && backoffOk && (s_forceSend || s_st.configPending || s_backoffMs);
