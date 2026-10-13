@@ -164,7 +164,7 @@ Para não confundir com o painel, o app local tem cara de aparelho: cabeçalho e
 
 - **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
 - **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar.
-- **Chuva nas próximas horas:** chance em 1, 2 e 3 h (calculada na nuvem e recebida a cada envio), motivo, aviso quando o alerta está ativo e o botão **Está chovendo aqui** (a estação repassa para a nuvem).
+- **Chuva nas próximas horas:** chance em 1, 2 e 3 h (calculada na nuvem e recebida a cada envio), motivo, a tabela dos três métodos (M1, M2 e M3, com o destaque sublinhado), aviso quando o alerta está ativo e o botão **Está chovendo aqui** (a estação repassa para a nuvem).
 - **Configurações** (pedem a senha da estação para salvar): páginas do display (até 8, em qualquer ordem, com os campos da página Resumo), tempo por página, brilho, modo noturno, alerta de chuva (limite, janela e forma, com botão **Testar alerta**), calibração dos sensores (com a calibração automática da pressão pelo aeroporto) e localização (latitude, longitude e nome, usados pelos dados de fora). Não há prévia na página: os botões de página da seção Display mostram cada página direto no OLED.
 - **Nuvem:** último envio, médias na fila, quando a cópia da configuração chegou ao painel e o botão **Sincronizar agora** (envia a fila e a cópia na hora).
 - **Manutenção:** reiniciar a estação (usa a mesma senha).

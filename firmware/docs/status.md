@@ -139,6 +139,8 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   abas Agora e Chuva (também é o relógio de atualização da página), cobertura por intervalos de 10 min, pares da
   pressão com as médias dos 10 min anteriores. Previsão de chuva segue a cada 10 min (volume no banco).
 
+- Firmware 0.12.1: os três métodos no app local (tabela no card de chuva); a nuvem manda `rain.all` no ingest.
+
 ## Em andamento
 - Fase 16: Indoor (aguardando o usuário iniciar).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
