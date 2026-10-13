@@ -233,7 +233,7 @@ A cada envio da estação (10 min), a nuvem calcula três métodos, do menos ao 
 | M2 · Barômetro + aeroporto | M1 + METAR (chuva ou trovoada no aeroporto ou perto dele, nuvens CB/TCU, ar perto de saturar, teto baixo, rajadas) + TAF (previsão do aeroporto) |
 | M3 · Modelo numérico | Open-Meteo: probabilidade por hora, chuva prevista em blocos de 15 min e CAPE (energia para trovoada) |
 
-Quando a janela termina, a previsão é conferida: choveu se o METAR registrou chuva (fora "nas proximidades") ou se alguém tocou em **Está chovendo aqui** (no painel ou na página local); sem METAR, vale a chuva medida pelo modelo. O placar de 30 dias mostra o erro de cada método; o destaque (card, página local e OLED) é o método de menor erro quando o placar tem dados suficientes (100 previsões e 5 chuvas) e, até lá, o modelo. Os pesos dos métodos são fixos por enquanto; a fase 18 cria um método combinado que aprende com o placar.
+Quando a janela termina, a previsão é conferida: choveu se o METAR registrou chuva (fora "nas proximidades") ou se alguém tocou em **Está chovendo aqui** (no painel ou na página local); sem METAR, vale a chuva medida pelo modelo. Uma observação local de **"não choveu"** desconta um METAR de chuva a até 30 min dela (o aeroporto às vezes registra poucas gotas ou chuva que evapora antes do chão). O placar de 30 dias mostra o erro de cada método; o destaque (card, página local e OLED) é o método de menor erro quando o placar tem dados suficientes (100 previsões e 5 chuvas) e, até lá, o modelo. Os pesos dos métodos são fixos por enquanto; a fase 18 cria um método combinado que aprende com o placar.
 
 ### Pressão calibrada pelo aeroporto
 

@@ -144,7 +144,9 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 - Fase 16 (em validação, só nuvem): `web/server/utils/indoor.ts` + `GET /api/v1/indoor` + card "No escritório"
   na aba Agora (conforto, janela, ar seco, mofo pelas horas de umidade ≥ 70 % em 72 h, atraso térmico por correlação
   hora a hora Indoor × Outdoor com defasagem de 0 a 8 h, mínimo de 24 pares); resumo por dia com Outdoor.
-  Primeira chuva conferível: METAR das 14:00 de 13/10 com -RA (M2/M3 davam chance alta; M1, baixa).
+  METAR das 14:00 de 13/10 registrou -RA, mas o usuário viu que não choveu (nem no aeroporto, visível da janela):
+  `rain_reports.raining` (false = "não choveu") desconta METAR de chuva a até 30 min; registrado e as 27 previsões
+  afetadas reconferidas como sem chuva (M2/M3 erraram, M1 acertou).
 
 ## Em andamento
 - Fase 16: validação do usuário (uma semana de uso; atraso térmico depois de 24 h de dados).

@@ -281,7 +281,7 @@ Previsão de hoje e amanhã (Open-Meteo: máxima, mínima, chance de chuva e con
 | `GET` | `/api/v1/rain/score` | Placar de 30 dias por método e janela: `n`, `events`, `brier`, `skill`, `hits`, `false_alarms`, `misses`, `reliability` (faixas de 20 %) |
 | `POST` | `/api/v1/rain/report` | Aviso "Está chovendo aqui" pelo painel (um por intervalo de 10 min) |
 
-`POST /api/v1/device/rain-report` 🔑 recebe o mesmo aviso vindo da página local da estação.
+`POST /api/v1/device/rain-report` 🔑 recebe o mesmo aviso vindo da página local da estação. No banco, `rain_reports.raining = false` registra um "não choveu", que desconta METAR de chuva a até 30 min.
 
 ### `GET /api/v1/indoor` 🔐
 O ambiente da estação: `now` (última média fora da sacada), `comfort` (`label`, `level` ok/atenção/alerta, faixas de temperatura e umidade), `dry` (umidade abaixo de 40 %), `mold` (horas com umidade ≥ 70 % nos últimos 3 dias), `window` (`action`: abrir, fechar ou tanto faz, e `reason`) e `lag` (atraso em horas e fração da variação de fora que chega dentro, por correlação hora a hora em 7 dias; `null` com `lag_needed_h` enquanto faltar dado).
