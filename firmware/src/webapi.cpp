@@ -126,9 +126,9 @@ static void handleStatus() {
   else cloud["last_ok"] = nullptr;
   cloud["last_http"] = u.lastHttp;
   cloud["last_error"] = u.lastError;
-  cloud["config_version"] = u.configVersion;
-  if (u.lastConfigEpoch) cloud["last_config"] = u.lastConfigEpoch;
-  else cloud["last_config"] = nullptr;
+  if (u.configSentEpoch) cloud["config_sent"] = u.configSentEpoch;
+  else cloud["config_sent"] = nullptr;
+  cloud["config_pending"] = u.configPending;
   JsonObject s = doc["sensors"].to<JsonObject>();
   s["aht20"] = sensorsAhtPresent() && sensorsLast().ahtOk;
   s["bmp280"] = sensorsBmpPresent() && sensorsLast().bmpOk;
@@ -212,7 +212,7 @@ static void handlePostDisplay() {
   sendDisplayState(200);
 }
 
-// Envia a fila e busca a configuração da nuvem agora. Sem senha.
+// Envia agora a fila e a cópia da configuração. Sem senha.
 static void handleCloudSync() {
   if (!uplinkStatus().configured) return sendError(409, "nuvem_desligada", "configure com nuvem url / nuvem token");
   uplinkSendNow();

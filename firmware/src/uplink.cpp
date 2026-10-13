@@ -10,7 +10,6 @@
 
 #include "certs.h"
 #include "config.h"
-#include "display.h"
 #include "netmgr.h"
 #include "settings.h"
 
@@ -26,9 +25,7 @@ static String s_token;
 static uint32_t s_nextAttemptMs = 0;
 static uint32_t s_backoffMs = 0;
 static bool s_forceSend = false;
-static bool s_forcePoll = false;
-static String s_pendingConfig;     // corpo recebido da nuvem, a aplicar no loop principal
-static uint32_t s_pendingVersion = 0;
+static String s_configCopy;        // JSON da cópia da configuração (montado no loop principal)
 
 struct Lock {
   Lock() { xSemaphoreTake(s_lock, portMAX_DELAY); }
@@ -147,7 +144,7 @@ static void loadConfig() {
   s_token = tok;
   s_st.configured = url.length() && tok.length();
   s_backoffMs = 0;
-  s_forcePoll = true;
+  s_st.configPending = true;  // endereço ou token novos: manda a cópia de novo
 }
 
 bool uplinkSetUrl(const String &url, String &err) {
@@ -191,7 +188,7 @@ void uplinkDisable() {
 void uplinkSendNow() {
   Lock l;
   s_forceSend = true;
-  s_forcePoll = true;
+  s_st.configPending = true;
   s_backoffMs = 0;
   s_nextAttemptMs = 0;
 }
@@ -249,30 +246,30 @@ static void sendBatch() {
     Lock l;
     url = s_st.url + "/api/v1/ingest";
     token = s_token;
-    File f = LittleFS.open(QUEUE, "r");
-    if (!f) {
-      s_st.queue = 0;
-      return;
-    }
     JsonDocument doc;
     JsonArray arr = doc["readings"].to<JsonArray>();
-    while (f.available() && n < UPLINK_BATCH_MAX) {
-      String line = f.readStringUntil('\n');
-      line.trim();
-      if (!line.length()) continue;
-      JsonDocument item;
-      n++;  // linha corrompida também conta, para ser descartada junto
-      if (!deserializeJson(item, line)) arr.add(item);
+    File f = LittleFS.open(QUEUE, "r");
+    if (f) {
+      while (f.available() && n < UPLINK_BATCH_MAX) {
+        String line = f.readStringUntil('\n');
+        line.trim();
+        if (!line.length()) continue;
+        JsonDocument item;
+        n++;  // linha corrompida também conta, para ser descartada junto
+        if (!deserializeJson(item, line)) arr.add(item);
+      }
+      f.close();
+    } else {
+      s_st.queue = 0;
     }
-    f.close();
-    if (n == 0) return;
+    if (n == 0 && !s_st.configPending) return;
+    if (s_configCopy.length()) doc["config"] = serialized(s_configCopy);
     JsonObject st = doc["status"].to<JsonObject>();
     st["fw"] = FW_VERSION;
     st["rssi"] = WiFi.RSSI();
     st["uptime_s"] = millis() / 1000;
     st["heap"] = ESP.getFreeHeap();
     st["queue"] = s_st.queue > n ? s_st.queue - n : 0;  // pendências depois deste lote
-    st["config_v"] = s_st.configVersion;
     serializeJson(doc, body);
   }
 
@@ -282,8 +279,12 @@ static void sendBatch() {
   Lock l;
   s_st.lastHttp = code;
   if (code == 200) {
-    dropLines(n);
+    if (n) dropLines(n);
     s_st.lastOkEpoch = (uint32_t)time(nullptr);
+    if (body.indexOf("\"config\":") >= 0) {
+      s_st.configSentEpoch = s_st.lastOkEpoch;
+      s_st.configPending = false;
+    }
     s_st.lastError = "";
     s_backoffMs = 0;
     s_nextAttemptMs = 0;
@@ -302,44 +303,17 @@ static void sendBatch() {
   }
 }
 
-static void pollConfig() {
-  String url, token;
-  {
-    Lock l;
-    url = s_st.url + "/api/v1/device/config?v=" + String(s_st.configVersion);
-    token = s_token;
-  }
-  String resp;
-  int code = https("GET", url, token, "", resp);
-  Lock l;
-  if (code == 204 || code == 200) s_st.lastConfigEpoch = (uint32_t)time(nullptr);
-  if (code == 200) {
-    JsonDocument doc;
-    if (deserializeJson(doc, resp) || !doc["version"].is<uint32_t>()) {
-      log_w("[%s] configuração da nuvem ilegível", TAG);
-      return;
-    }
-    s_pendingVersion = doc["version"];
-    s_pendingConfig = resp;
-    log_i("[%s] nova configuração da nuvem: versão %u", TAG, s_pendingVersion);
-  } else if (code != 204) {
-    log_w("[%s] consulta de configuração falhou (%d)", TAG, code);
-  }
-}
-
 static void netTask(void *) {
-  uint32_t lastPoll = 0;
   for (;;) {
     vTaskDelay(pdMS_TO_TICKS(500));
     const NetStatus &n = netStatus();
-    bool configured, sendDue, pollDue;
+    bool configured, sendDue;
     {
       Lock l;
       configured = s_st.configured;
-      uint32_t now = millis();
-      bool backoffOk = !s_backoffMs || (int32_t)(now - s_nextAttemptMs) >= 0;
-      sendDue = s_st.queue > 0 && backoffOk && (s_forceSend || s_backoffMs);
-      pollDue = s_forcePoll || (uint32_t)(now - lastPoll) >= CLOUD_CONFIG_POLL_MS;
+      bool backoffOk = !s_backoffMs || (int32_t)(millis() - s_nextAttemptMs) >= 0;
+      bool work = s_st.queue > 0 || s_st.configPending;
+      sendDue = work && backoffOk && (s_forceSend || s_st.configPending || s_backoffMs);
     }
     if (!configured || !n.connected || !n.timeSynced) continue;  // TLS precisa da hora certa
     if (sendDue) {
@@ -349,52 +323,34 @@ static void netTask(void *) {
       }
       sendBatch();
     }
-    if (pollDue) {
-      {
-        Lock l;
-        s_forcePoll = false;
-      }
-      lastPoll = millis();
-      pollConfig();
-    }
   }
 }
 
 void uplinkBegin() {
   s_lock = xSemaphoreCreateMutex();
   loadConfig();
+  uplinkLoop();  // monta a primeira cópia da configuração
   {
     Lock l;
     s_st.queue = countLines();
     s_forceSend = s_st.queue > 0;  // pendências de antes do reinício
-    s_st.configVersion = settings().cloudConfigVersion;
   }
-  log_i("[%s] nuvem %s; fila com %u médias; configuração v%u", TAG,
-        s_st.configured ? s_st.url.c_str() : "não configurada", s_st.queue, s_st.configVersion);
+  log_i("[%s] nuvem %s; fila com %u médias", TAG, s_st.configured ? s_st.url.c_str() : "não configurada", s_st.queue);
   xTaskCreatePinnedToCore(netTask, "cloud", 16384, nullptr, 1, nullptr, 0);
 }
 
-// Aplica no loop principal a configuração que a tarefa de rede recebeu.
+// Remonta a cópia da configuração quando ela muda (só no loop principal,
+// que é quem altera as configurações) e marca para enviar.
 void uplinkLoop() {
-  String body;
-  uint32_t version;
-  {
-    Lock l;
-    if (s_pendingConfig.isEmpty()) return;
-    body = s_pendingConfig;
-    version = s_pendingVersion;
-    s_pendingConfig = "";
-  }
+  static uint32_t seen = 0;
+  uint32_t rev = settingsRevision();
+  if (rev == seen) return;
+  seen = rev;
   JsonDocument doc;
-  deserializeJson(doc, body);
-  String err;
-  if (settingsApplyCloud(doc["config"].as<JsonObjectConst>(), version, err)) {
-    displayApplySettings();
-    Lock l;
-    s_st.configVersion = version;
-    s_forcePoll = true;  // confirma a versão aplicada para o painel
-    log_i("[%s] configuração v%u aplicada", TAG, version);
-  } else {
-    log_e("[%s] configuração v%u recusada: %s", TAG, version, err.c_str());
-  }
+  settingsCloudCopy(doc);
+  String json;
+  serializeJson(doc, json);
+  Lock l;
+  s_configCopy = json;
+  s_st.configPending = true;
 }

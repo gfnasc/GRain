@@ -33,7 +33,7 @@ async function logout() {
     <nav aria-label="Seções">
       <NuxtLink to="/">Agora</NuxtLink>
       <NuxtLink to="/historico">Histórico</NuxtLink>
-      <NuxtLink to="/display">Display</NuxtLink>
+      <NuxtLink to="/estacao">Estação</NuxtLink>
     </nav>
     <div class="actions">
       <span v-if="lastSeenAt !== undefined" class="pill" :class="online ? 'ok' : 'off'">

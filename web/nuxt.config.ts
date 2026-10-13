@@ -29,6 +29,8 @@ export default defineNuxtConfig({
     },
   },
 
+  // A antiga aba Display (editor) virou Estação, só de leitura (fase 12).
+  routeRules: { '/display': { redirect: { to: '/estacao', statusCode: 301 } } },
   runtimeConfig: {
     // Hash (scrypt) da senha do painel. Definido por NUXT_PANEL_PASSWORD_HASH.
     panelPasswordHash: '',

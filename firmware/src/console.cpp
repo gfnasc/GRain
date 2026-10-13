@@ -46,7 +46,8 @@ static void printCloud() {
     strftime(t, sizeof t, "%d/%m %H:%M", &lt);
   }
   Serial.printf("Nuvem   : %s\n", u.configured ? u.url.c_str() : "não configurada (nuvem url / nuvem token)");
-  Serial.printf("          fila %u médias; último envio ok: %s; configuração da nuvem v%u", u.queue, t, u.configVersion);
+  Serial.printf("          fila %u médias; último envio ok: %s; cópia da configuração %s", u.queue, t,
+                u.configPending ? "pendente" : (u.configSentEpoch ? "enviada" : "–"));
   if (u.lastError.length()) Serial.printf("; último erro: %s", u.lastError.c_str());
   Serial.println();
 }

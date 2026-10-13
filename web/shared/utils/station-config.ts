@@ -1,6 +1,6 @@
-// Configuração do display e da calibração: formato, valores padrão e validação.
-// Compartilhado entre o servidor (validação) e o painel (editor e prévia).
-// O ESP32 recebe exatamente este JSON e grava em /config.json.
+// Configuração da estação (display, calibração e localização): formato, rótulos e validação.
+// A configuração é feita só no ESP32 (página local); a estação envia uma cópia junto com
+// as médias, o servidor valida com estas regras e o painel só mostra (com a prévia do OLED).
 
 export const PAGE_TYPES = ['temp', 'hum', 'pres', 'clock', 'today', 'fields', 'details', 'network'] as const
 export type PageType = (typeof PAGE_TYPES)[number]
@@ -31,6 +31,8 @@ export const FIELD_LABELS: Record<FieldType, string> = {
 
 export type PageConfig = { type: PageType; fields?: FieldType[] }
 
+export type Location = { lat: number | null; lon: number | null; label: string }
+
 export type StationConfig = {
   display: {
     page_s: number
@@ -39,20 +41,11 @@ export type StationConfig = {
     pages: PageConfig[]
   }
   calibration: { temp: number; hum: number; pres: number }
+  location: Location
 }
 
 export const MAX_PAGES = 8
 export const MAX_FIELDS = 4
-
-export const DEFAULT_CONFIG: StationConfig = {
-  display: {
-    page_s: 5,
-    contrast: 128,
-    night: { enabled: false, from: '23:00', to: '06:00', mode: 'dim' },
-    pages: [{ type: 'temp' }, { type: 'pres' }, { type: 'details' }, { type: 'network' }],
-  },
-  calibration: { temp: 0, hum: 0, pres: 0 },
-}
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -60,7 +53,7 @@ function numberIn(v: unknown, lo: number, hi: number, name: string, integer = fa
   if (typeof v !== 'number' || !Number.isFinite(v) || v < lo || v > hi || (integer && !Number.isInteger(v))) {
     throw new Error(`${name}: use ${integer ? 'um número inteiro ' : 'um valor '}entre ${lo} e ${hi}`)
   }
-  return integer ? v : Math.round(v * 10) / 10
+  return integer ? v : Math.round(v * 1e5) / 1e5
 }
 
 // Valida e normaliza; lança Error com a mensagem em português.
@@ -68,6 +61,7 @@ export function validateStationConfig(input: any): StationConfig {
   const d = input?.display ?? {}
   const n = d.night ?? {}
   const c = input?.calibration ?? {}
+  const l = input?.location ?? {}
 
   if (!Array.isArray(d.pages) || d.pages.length < 1 || d.pages.length > MAX_PAGES) {
     throw new Error(`páginas: escolha de 1 a ${MAX_PAGES}`)
@@ -85,6 +79,9 @@ export function validateStationConfig(input: any): StationConfig {
   if (!HHMM.test(n.from) || !HHMM.test(n.to)) throw new Error('modo noturno: use horários no formato HH:MM')
   if (n.from === n.to) throw new Error('modo noturno: início e fim não podem ser iguais')
   if (n.mode !== 'off' && n.mode !== 'dim') throw new Error('modo noturno: escolha apagar ou escurecer')
+  const hasLoc = l.lat != null && l.lon != null
+  if (hasLoc !== (l.lat != null || l.lon != null)) throw new Error('localização: latitude e longitude juntas')
+  if (l.label != null && (typeof l.label !== 'string' || l.label.length > 40)) throw new Error('localização: nome com até 40 caracteres')
 
   return {
     display: {
@@ -97,6 +94,11 @@ export function validateStationConfig(input: any): StationConfig {
       temp: numberIn(c.temp, -5, 5, 'ajuste de temperatura'),
       hum: numberIn(c.hum, -15, 15, 'ajuste de umidade'),
       pres: numberIn(c.pres, -15, 15, 'ajuste de pressão'),
+    },
+    location: {
+      lat: hasLoc ? Math.round(numberIn(l.lat, -90, 90, 'latitude') * 1e5) / 1e5 : null,
+      lon: hasLoc ? Math.round(numberIn(l.lon, -180, 180, 'longitude') * 1e5) / 1e5 : null,
+      label: l.label ?? '',
     },
   }
 }

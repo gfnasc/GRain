@@ -4,7 +4,7 @@
 #include <ArduinoJson.h>
 
 // Páginas do display e campos da página "Resumo". Os nomes em JSON são os
-// mesmos do painel (web/shared/utils/station-config.ts).
+// mesmos que o painel usa para mostrar a cópia (web/shared/utils/station-config.ts).
 enum PageType : uint8_t { PG_TEMP, PG_HUM, PG_PRES, PG_CLOCK, PG_TODAY, PG_FIELDS, PG_DETAILS, PG_NETWORK, PG_COUNT };
 enum FieldType : uint8_t { FD_TEMP, FD_HUM, FD_PRES, FD_DEW, FD_HEAT, FD_TEMP_BMP, FD_PRES_STATION, FD_COUNT };
 
@@ -19,10 +19,11 @@ struct PageCfg {
 
 // Configuração persistente em LittleFS (/config.json).
 // Os valores iniciais vêm de include/config.h e include/site.h; depois de
-// gravada, a configuração do arquivo prevalece. Display e calibração podem
-// vir da nuvem (painel). Segredos não ficam aqui (ficam na NVS).
+// gravada, a configuração do arquivo prevalece. Tudo é editado aqui mesmo
+// (página local, API e console); a nuvem só recebe uma cópia.
+// Segredos não ficam aqui (ficam na NVS).
 struct Settings {
-  int schema = 2;
+  int schema = 3;
   String deviceId;
   String hostname;     // nome mDNS: <hostname>.local
   String tz;           // fuso no formato POSIX, ex.: "<-03>3"
@@ -42,8 +43,9 @@ struct Settings {
   uint8_t nightMode = 1;         // 0 = apagar, 1 = escurecer
   // calibração (somada às leituras)
   float calTemp = 0, calHum = 0, calPres = 0;
-  // versão da configuração da nuvem aplicada (0 = nenhuma)
-  uint32_t cloudConfigVersion = 0;
+  // localização para os dados externos (NAN = não definida)
+  float lat = NAN, lon = NAN;
+  String placeLabel;   // nome curto do local, ex.: "Casa"
 };
 
 const char *pageTypeName(uint8_t t);
@@ -66,8 +68,11 @@ bool settingsSet(const String &key, const String &value, String &err);
 // formato de /config.json. Tudo ou nada: se um campo for inválido, nada muda.
 bool settingsApplyJson(JsonObjectConst obj, String &err);
 
-// Aplica a configuração vinda da nuvem (display + calibração) e registra a versão.
-bool settingsApplyCloud(JsonObjectConst config, uint32_t version, String &err);
+// Muda a cada gravação: quem precisa reagir a mudanças compara com o valor anterior.
+uint32_t settingsRevision();
+
+// Cópia enviada para a nuvem: display, calibração e localização.
+void settingsCloudCopy(JsonDocument &doc);
 
 // Serializa a configuração atual (formato de /config.json).
 void settingsToJson(JsonDocument &doc);

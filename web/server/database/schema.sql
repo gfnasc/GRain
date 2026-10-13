@@ -24,12 +24,16 @@ create table if not exists readings (
 
 create index if not exists readings_ts_idx on readings (ts desc);
 
--- Fase 8: configuração do display e calibração, editada no painel.
-alter table devices add column if not exists config                 jsonb;
-alter table devices add column if not exists config_version         integer not null default 0;
-alter table devices add column if not exists config_updated_at      timestamptz;
-alter table devices add column if not exists config_applied_version integer;     -- informado pela estação a cada consulta
-alter table devices add column if not exists last_poll_at           timestamptz; -- última consulta de configuração
+-- Fase 12: a configuração (display, calibração e localização) é feita só no ESP32.
+-- A estação manda uma cópia junto com as médias; o painel apenas mostra.
+-- As colunas da fase 8 (edição pelo painel) saíram.
+alter table devices drop column if exists config;
+alter table devices drop column if exists config_version;
+alter table devices drop column if exists config_updated_at;
+alter table devices drop column if exists config_applied_version;
+alter table devices drop column if exists last_poll_at;
+alter table devices add column if not exists station_config    jsonb;        -- cópia enviada pela estação
+alter table devices add column if not exists station_config_at timestamptz;  -- quando a cópia chegou
 
 -- Fase 11 (v5): o WhatsApp da fase 9 foi removido; volta na fase 19 com novo desenho.
 drop table if exists notifications;
@@ -37,7 +41,7 @@ drop table if exists recipients;
 alter table devices drop column if exists notify;
 
 -- Localização da estação (latitude, longitude e nome curto), usada para os dados externos.
--- Fica só no banco, nunca no repositório. A partir da fase 12, enviada pela própria estação.
+-- Fica só no banco, nunca no repositório. Vem da cópia da configuração enviada pela estação.
 alter table devices add column if not exists site jsonb;
 
 -- Onde a estação estava em cada período. Na "sacada", temperatura e umidade não

@@ -1,6 +1,8 @@
-// Recebe um lote de médias de 10 min do ESP32.
+// Recebe um lote de médias de 10 min do ESP32, o estado da estação e a cópia da
+// configuração (display, calibração e localização), que é feita só no ESP32.
 // Autenticação: Authorization: Bearer <token do aparelho>.
-// Horários repetidos são ignorados (o ESP32 pode reenviar após falha).
+// Horários repetidos são ignorados (o ESP32 pode reenviar após falha). O lote pode vir
+// vazio quando a estação só quer mandar a cópia da configuração.
 
 type Reading = { ts: number; temp?: number | null; hum?: number | null; pres_slp?: number | null; dew?: number | null }
 
@@ -15,7 +17,7 @@ function num(v: unknown, lo: number, hi: number): number | null {
 
 export default defineEventHandler(async (event) => {
   const deviceId = await requireDevice(event)
-  const body = await readBody<{ readings?: Reading[]; status?: Record<string, unknown> }>(event)
+  const body = await readBody<{ readings?: Reading[]; status?: Record<string, unknown>; config?: unknown }>(event)
 
   const list = body?.readings
   if (!Array.isArray(list)) throw createError({ statusCode: 400, message: 'readings deve ser uma lista' })
@@ -51,8 +53,23 @@ export default defineEventHandler(async (event) => {
     accepted = rows.length
   }
 
-  const status = body.status && typeof body.status === 'object' ? JSON.stringify(body.status).slice(0, 2000) : null
+  const statusJson = body.status && typeof body.status === 'object' ? JSON.stringify(body.status) : null
+  const status = statusJson && statusJson.length <= 2000 ? statusJson : null
   await sql`update devices set last_seen_at = now(), last_status = coalesce(${status}::jsonb, last_status) where id = ${deviceId}`
+
+  // Cópia da configuração: inválida é ignorada (as médias já foram gravadas).
+  if (body.config !== undefined) {
+    try {
+      const cfg = validateStationConfig(body.config)
+      const loc = cfg.location
+      const site = loc.lat != null && loc.lon != null ? JSON.stringify(loc) : null
+      await sql`
+        update devices set station_config = ${JSON.stringify(cfg)}::jsonb, station_config_at = now(), site = ${site}::jsonb
+        where id = ${deviceId}`
+    } catch (e) {
+      console.warn(`configuração de ${deviceId} ignorada:`, (e as Error).message)
+    }
+  }
 
   return { accepted, duplicates: ts.length - accepted }
 })

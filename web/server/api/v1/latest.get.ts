@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const sql = useSql()
 
   const devices = (await sql`
-    select id, name, greatest(last_seen_at, last_poll_at) as last_seen_at, last_status from devices order by created_at limit 1`) as {
+    select id, name, last_seen_at, last_status from devices order by created_at limit 1`) as {
     id: string
     name: string
     last_seen_at: string | null

@@ -10,6 +10,7 @@ static const char *TAG = "settings";
 static const char *PATH = "/config.json";
 
 static Settings s_cfg;
+static uint32_t s_revision = 1;
 
 static const char *PAGE_NAMES[PG_COUNT] = {"temp", "hum", "pres", "clock", "today", "fields", "details", "network"};
 static const char *FIELD_NAMES[FD_COUNT] = {"temp", "hum", "pres", "dew", "heat_index", "temp_bmp", "pres_station"};
@@ -142,7 +143,15 @@ static void toJson(const Settings &c, JsonDocument &doc) {
   cal["temp"] = c.calTemp;
   cal["hum"] = c.calHum;
   cal["pres"] = c.calPres;
-  doc["cloud"]["config_version"] = c.cloudConfigVersion;
+  JsonObject loc = doc["location"].to<JsonObject>();
+  if (isnan(c.lat) || isnan(c.lon)) {
+    loc["lat"] = nullptr;
+    loc["lon"] = nullptr;
+  } else {
+    loc["lat"] = c.lat;
+    loc["lon"] = c.lon;
+  }
+  loc["label"] = c.placeLabel;
 }
 
 static void fromJson(JsonDocument &doc, Settings &c) {
@@ -172,7 +181,9 @@ static void fromJson(JsonDocument &doc, Settings &c) {
   c.calTemp = doc["calibration"]["temp"] | c.calTemp;
   c.calHum = doc["calibration"]["hum"] | c.calHum;
   c.calPres = doc["calibration"]["pres"] | c.calPres;
-  c.cloudConfigVersion = doc["cloud"]["config_version"] | c.cloudConfigVersion;
+  c.lat = doc["location"]["lat"] | c.lat;
+  c.lon = doc["location"]["lon"] | c.lon;
+  c.placeLabel = doc["location"]["label"] | c.placeLabel;
 }
 
 static bool save() {
@@ -185,6 +196,7 @@ static bool save() {
   }
   serializeJsonPretty(doc, f);
   f.close();
+  s_revision++;
   return true;
 }
 
@@ -207,7 +219,7 @@ bool settingsBegin() {
     return save();
   }
   fromJson(doc, s_cfg);
-  if ((doc["schema"] | 1) < s_cfg.schema) save();  // grava os campos novos
+  if ((doc["schema"] | 1) < s_cfg.schema) save();  // grava os campos novos (e descarta os que saíram)
   log_i("[%s] configuração carregada de %s", TAG, PATH);
   return true;
 }
@@ -278,6 +290,19 @@ static bool setField(Settings &c, const String &key, const String &value, String
   } else if (key == "calibration.pres") {
     if (!parseFloat(value, -15, 15, f)) { err = "entre -15 e 15"; return false; }
     c.calPres = f;
+  } else if (key == "location.lat" || key == "location.lon") {
+    bool isLat = key.endsWith("lat");
+    if (value.isEmpty() || value == "null") {
+      (isLat ? c.lat : c.lon) = NAN;
+    } else if (!parseFloat(value, isLat ? -90 : -180, isLat ? 90 : 180, f)) {
+      err = isLat ? "latitude entre -90 e 90" : "longitude entre -180 e 180";
+      return false;
+    } else {
+      (isLat ? c.lat : c.lon) = f;
+    }
+  } else if (key == "location.label") {
+    if (value.length() > 40) { err = "até 40 caracteres"; return false; }
+    c.placeLabel = value == "null" ? "" : value;
   } else {
     err = "chave desconhecida";
     return false;
@@ -334,20 +359,14 @@ bool settingsApplyJson(JsonObjectConst obj, String &err) {
   return true;
 }
 
-bool settingsApplyCloud(JsonObjectConst config, uint32_t version, String &err) {
-  // A nuvem só controla display e calibração; o resto continua local.
-  JsonDocument filtered;
-  if (!config["display"].isNull()) filtered["display"] = config["display"];
-  if (!config["calibration"].isNull()) filtered["calibration"] = config["calibration"];
-  Settings c = s_cfg;
-  if (!applyObject(c, filtered.as<JsonObjectConst>(), "", err)) return false;
-  c.cloudConfigVersion = version;
-  s_cfg = c;
-  if (!save()) {
-    err = "falha ao gravar";
-    return false;
-  }
-  return true;
+uint32_t settingsRevision() { return s_revision; }
+
+void settingsCloudCopy(JsonDocument &doc) {
+  JsonDocument all;
+  toJson(s_cfg, all);
+  doc["display"] = all["display"];
+  doc["calibration"] = all["calibration"];
+  doc["location"] = all["location"];
 }
 
 void settingsToJson(JsonDocument &doc) { toJson(s_cfg, doc); }
