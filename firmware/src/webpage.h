@@ -10,26 +10,38 @@ static const char WEB_INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#15201c">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1013">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<title>GRain</title>
+<title>GRain · estação local</title>
 <style>
-:root{--bg:#f2f4f3;--card:#fff;--fg:#15201c;--mut:#5a6a65;--line:#d5ddd9;--acc:#a9532a;--bad:#c0352d;--ok:#1f8a52}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1513;--card:#161e1b;--fg:#e2eae6;--mut:#93a49d;--line:#2a3632;--acc:#e08b5b;--bad:#ee6a62;--ok:#3cb878}}
+/* App local da estação: cara de aparelho (moldura escura, tipografia mono, ciano do OLED),
+   para não confundir com o painel na nuvem (fonte Archivo, cobre, navegação no topo). */
+:root{--bg:#eef3f4;--card:#fff;--fg:#0f1a1d;--mut:#55686d;--line:#cfdcdf;--acc:#0b7d8c;--bad:#c0352d;--ok:#1f8a52;--warn:#b77306;
+  --bezel:#0a1013;--bezel2:#131c20;--oled:#7fe3f0;--oledd:#2c5d66;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+@media(prefers-color-scheme:dark){:root{--bg:#0c1214;--card:#141d20;--fg:#e1eaec;--mut:#8ea2a7;--line:#25343a;--acc:#4fd0e0;--bad:#ee6a62;--ok:#3cb878;--warn:#e3a33a}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:640px;margin:0 auto;padding:20px 16px 40px;display:grid;gap:14px}
-header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-h1{margin:0;font-size:1.5rem;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
-h1 img{width:28px;height:28px}
-h2{margin:6px 0 0;font-size:1.05rem}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.bezel{background:var(--bezel);color:#cfe3e7;padding:14px 16px 12px;padding-top:calc(14px + env(safe-area-inset-top));border-bottom:3px solid var(--acc)}
+.bezel>div{max-width:640px;margin:0 auto;display:grid;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand img{width:30px;height:30px}
+.brand h1{margin:0;font:700 1.25rem var(--mono);letter-spacing:.02em;color:#fff}
+.badge{font:700 .66rem var(--mono);letter-spacing:.12em;background:var(--oled);color:var(--bezel);padding:3px 7px;border-radius:4px}
+.where{font:.74rem var(--mono);color:#8fb0b7;margin-left:auto}
+.oled{background:#000;border:1px solid #1f2d33;border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between;gap:10px;font:.78rem var(--mono);color:var(--oled);text-shadow:0 0 6px rgba(127,227,240,.35)}
+.oled span:last-child{color:var(--oledd)}
+main{max-width:640px;margin:0 auto;padding:16px 16px 24px;display:grid;gap:14px}
+.tab{display:none;gap:14px}.tab.on{display:grid}
+h2{margin:6px 0 0;font:700 .78rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+h3{margin:4px 0 0;font:700 .9rem var(--mono)}
 .mut{color:var(--mut);font-size:.85rem}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px}
-.k{color:var(--mut);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em}
-.v{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}
-.v small{font-size:.9rem;font-weight:500;color:var(--mut);margin-left:3px}
+.k{color:var(--mut);font:.7rem var(--mono);text-transform:uppercase;letter-spacing:.1em}
+.v{font:700 2rem var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.v small{font:500 .85rem system-ui;color:var(--mut);margin-left:3px}
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 td{padding:8px 14px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 tr:last-child td{border-bottom:0}
@@ -37,164 +49,188 @@ td:first-child{color:var(--mut)}
 td:last-child{text-align:right}
 .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:8px 14px;border-radius:8px;cursor:pointer}
+button{font:600 .92rem system-ui;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:8px 14px;border-radius:8px;cursor:pointer}
 button:hover{border-color:var(--acc)}
 button:disabled{opacity:.5;cursor:default}
 button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
-h3{margin:4px 0 0;font-size:.95rem}
-select{font:inherit;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0}
+@media(prefers-color-scheme:dark){button.pri{color:#04181b}}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+input,select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0}
 .pl{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .pl li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
-.pl li>b{font-size:.85rem;color:var(--mut);text-align:center}
+.pl li>b{font:.85rem var(--mono);color:var(--mut);text-align:center}
 .pl .tools{display:flex;gap:4px}
 .pl .tools button{padding:4px 9px}
 .fs{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.85rem}
 .f2,.f3{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .f4{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
 .f2 label,.f3 label{display:grid;gap:3px;font-size:.8rem;color:var(--mut)}
-.f2 label.ck{display:flex;align-items:center;gap:8px;font-size:.95rem;color:var(--fg)}
+label.ck{display:flex!important;align-items:center;gap:8px;font-size:.95rem!important;color:var(--fg)!important}
 .f2 input,.f3 input,.f2 select{width:100%}
 input[type=range]{padding:0;accent-color:var(--acc)}
 input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
 .nav{display:grid;grid-template-columns:48px 1fr 48px;gap:8px;align-items:center}
 .nav button{font-size:1.1rem;padding:8px 0}
 .pg{text-align:center;display:grid}
-.pg b{font-size:1.1rem}
+.pg b{font:700 1.05rem var(--mono)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{font-size:.82rem;padding:4px 10px;border-radius:999px}
-input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0}
 .err{color:var(--bad);font-weight:600}
 .okc{color:var(--ok);font-weight:600}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--acc);margin-right:6px}
 .msg{min-height:1.2em}
 .rt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .rt div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:3px;background:var(--bg)}
-.rt b{font-size:1.6rem;font-variant-numeric:tabular-nums}
+.rt b{font:700 1.6rem var(--mono);font-variant-numeric:tabular-nums}
 .rt i{display:block;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
 .rt i span{display:block;height:100%;background:var(--mut)}
-.rt .m span{background:#d4930b}.rt .a span{background:var(--bad)}.rt .a{border-color:var(--bad)}
+.rt .m span{background:var(--warn)}.rt .a span{background:var(--bad)}.rt .a{border-color:var(--bad)}
 .alert{background:var(--bad);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700}
+.save{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,.12)}
+.save.dirty{border-color:var(--warn)}
+.save input{flex:1}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--bezel);border-top:1px solid #1f2d33;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+.tabs div{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabs a{display:grid;justify-items:center;gap:2px;padding:9px 4px 8px;color:#8fb0b7;text-decoration:none;font:600 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;border-top:2px solid transparent}
+.tabs a i{font-style:normal;font-size:1.15rem;line-height:1}
+.tabs a.on{color:var(--oled);border-top-color:var(--oled)}
+.foot{font-size:.8rem;color:var(--mut);text-align:center}
+.foot a{color:var(--acc)}
 </style>
 </head>
 <body>
+<header class="bezel"><div>
+  <div class="brand"><img src="/favicon.svg" alt=""><h1>GRain</h1><span class="badge">APP LOCAL · ESP32</span><span class="where" id="where">grain.local</span></div>
+  <div class="oled" aria-live="polite"><span id="oled">conectando à estação…</span><span id="upd">–</span></div>
+</div></header>
 <main>
-  <header>
-    <h1><img src="/favicon.svg" alt="">GRain</h1>
-    <span class="mut" id="upd"><span class="dot"></span>carregando…</span>
-  </header>
-  <div class="grid">
-    <div class="card"><span class="k">Temperatura</span><span class="v" id="temp">–</span></div>
-    <div class="card"><span class="k">Umidade</span><span class="v" id="hum">–</span></div>
-    <div class="card"><span class="k">Pressão (nível do mar)</span><span class="v" id="pres">–</span></div>
-  </div>
-  <table>
-    <tr><td>Sensação térmica</td><td id="hi">–</td></tr>
-    <tr><td>Ponto de orvalho</td><td id="dew">–</td></tr>
-    <tr><td>Pressão no local</td><td id="pst">–</td></tr>
-    <tr><td>Temperatura do BMP280</td><td id="tb">–</td></tr>
-  </table>
-
-  <h2>Chuva nas próximas horas</h2>
-  <div class="box">
+  <section class="tab" id="t-agora">
     <div id="ralert" class="alert" hidden></div>
-    <div class="rt" id="rt"><div><span class="mut">1 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">2 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">3 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div></div>
-    <span class="mut" id="rwhy"></span>
-    <div class="row"><button id="rrep">☂ Está chovendo aqui</button><span class="mut msg" id="rmsg"></span></div>
-  </div>
-
-  <h2>Display</h2>
-  <div class="box">
-    <div class="nav">
-      <button id="prev" aria-label="Página anterior">◀</button>
-      <div class="pg"><b id="pgname">–</b><span class="mut" id="pgpos"></span></div>
-      <button id="next" aria-label="Próxima página">▶</button>
+    <h2>Chuva nas próximas horas</h2>
+    <div class="box">
+      <div class="rt" id="rt"><div><span class="mut">1 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">2 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">3 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div></div>
+      <span class="mut" id="rwhy"></span>
+      <div class="row"><button id="rrep">☂ Está chovendo aqui</button><span class="mut msg" id="rmsg"></span></div>
     </div>
-    <div class="chips" id="chips"></div>
-    <div class="row">
-      <button id="pause">Pausar carrossel</button>
-      <button id="power">Desligar tela</button>
+    <h2>Sensores agora</h2>
+    <div class="grid">
+      <div class="card"><span class="k">Temperatura</span><span class="v" id="temp">–</span></div>
+      <div class="card"><span class="k">Umidade</span><span class="v" id="hum">–</span></div>
+      <div class="card"><span class="k">Pressão (nível do mar)</span><span class="v" id="pres">–</span></div>
     </div>
-    <span class="mut" id="dst"></span>
-  </div>
-
-  <h2>Configurações</h2>
-  <div class="box">
-    <span class="mut">Ficam gravadas na estação. O painel na nuvem só mostra uma cópia.</span>
-    <h3>Páginas do display</h3>
-    <ol class="pl" id="pl"></ol>
-    <div class="row"><select id="newp" aria-label="Tipo da nova página"></select><button id="addp">Adicionar página</button><span class="mut" id="pcount"></span></div>
-    <div class="f2">
-      <label>Tempo por página (s)<input id="page_s" type="number" min="2" max="60" step="1"></label>
-      <label>Brilho <span id="ctv"></span><input id="contrast" type="range" min="0" max="255" step="5"></label>
-    </div>
-    <h3>Modo noturno</h3>
-    <div class="f2 f4">
-      <label class="ck"><input id="n_on" type="checkbox">Ligado</label>
-      <label>Durante a noite<select id="n_mode"><option value="dim">escurecer</option><option value="off">apagar</option></select></label>
-      <label>Das<input id="n_from" type="time"></label>
-      <label>Às<input id="n_to" type="time"></label>
-    </div>
-    <h3>Alerta de chuva no display</h3>
-    <span class="mut">Quando a chance passa do limite, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta entra no carrossel a cada duas páginas.</span>
-    <div class="f2 f4">
-      <label class="ck"><input id="a_on" type="checkbox">Ligado</label>
-      <label>A partir de (%)<input id="a_pct" type="number" min="10" max="100" step="5"></label>
-      <label>Nas próximas<select id="a_h"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option></select></label>
-      <label>Mostrar<select id="a_mode"><option value="both">ícone e tela</option><option value="icon">só o ícone</option><option value="screen">só a tela</option></select></label>
-    </div>
-    <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta por 12 s com valores de exemplo</span></div>
-    <h3>Calibração</h3>
-    <label class="mut" style="display:flex;gap:8px;align-items:center;color:var(--fg)"><input id="c_auto" type="checkbox">Calibrar a pressão pelo aeroporto mais próximo</label>
-    <span class="mut" id="c_autotxt"></span>
-    <span class="mut">Ajustes manuais: valor somado a cada leitura.</span>
-    <div class="f3">
-      <label>Temperatura (°C)<input id="c_t" type="number" min="-5" max="5" step="0.1"></label>
-      <label>Umidade (%)<input id="c_h" type="number" min="-15" max="15" step="0.5"></label>
-      <label>Pressão (hPa)<input id="c_p" type="number" min="-15" max="15" step="0.1"></label>
-    </div>
-    <h3>Localização</h3>
-    <span class="mut">Para os dados de fora (aeroporto mais próximo e previsão). No Google Maps, toque e segure no local, copie os números e cole na latitude.</span>
-    <div class="f3">
-      <label>Latitude<input id="l_lat" inputmode="decimal" placeholder="-23.5"></label>
-      <label>Longitude<input id="l_lon" inputmode="decimal" placeholder="-46.6"></label>
-      <label>Nome do local<input id="l_lab" maxlength="40" placeholder="Casa"></label>
-    </div>
-    <div class="row">
-      <label for="pw" class="mut">Senha da estação</label>
-      <input id="pw" type="password" autocomplete="current-password" placeholder="comando status no console">
-    </div>
-    <div class="row"><button id="save" class="pri">Salvar</button><button id="undo">Desfazer</button><span class="msg" id="savemsg"></span></div>
-  </div>
-
-  <h2>Nuvem</h2>
-  <div class="box">
     <table>
-      <tr><td>Último envio</td><td id="c_ok">–</td></tr>
-      <tr><td>Médias na fila</td><td id="c_q">–</td></tr>
-      <tr><td>Cópia da configuração</td><td id="c_cfg">–</td></tr>
+      <tr><td>Sensação térmica</td><td id="hi">–</td></tr>
+      <tr><td>Ponto de orvalho</td><td id="dew">–</td></tr>
+      <tr><td>Pressão no local</td><td id="pst">–</td></tr>
+      <tr><td>Temperatura do BMP280</td><td id="tb">–</td></tr>
     </table>
-    <div class="row"><button id="sync">Sincronizar agora</button><span class="mut msg" id="syncmsg"></span></div>
+  </section>
+
+  <section class="tab" id="t-display">
+    <h2>Controle agora</h2>
+    <div class="box">
+      <div class="nav">
+        <button id="prev" aria-label="Página anterior">◀</button>
+        <div class="pg"><b id="pgname">–</b><span class="mut" id="pgpos"></span></div>
+        <button id="next" aria-label="Próxima página">▶</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="row"><button id="pause">Pausar carrossel</button><button id="power">Desligar tela</button></div>
+      <span class="mut" id="dst"></span>
+    </div>
+    <h2>Páginas</h2>
+    <div class="box">
+      <ol class="pl" id="pl"></ol>
+      <div class="row"><select id="newp" aria-label="Tipo da nova página"></select><button id="addp">Adicionar página</button><span class="mut" id="pcount"></span></div>
+      <div class="f2">
+        <label>Tempo por página (s)<input id="page_s" type="number" min="2" max="60" step="1"></label>
+        <label>Brilho <span id="ctv"></span><input id="contrast" type="range" min="0" max="255" step="5"></label>
+      </div>
+    </div>
+    <h2>Modo noturno</h2>
+    <div class="box">
+      <div class="f2 f4">
+        <label class="ck"><input id="n_on" type="checkbox">Ligado</label>
+        <label>Durante a noite<select id="n_mode"><option value="dim">escurecer</option><option value="off">apagar</option></select></label>
+        <label>Das<input id="n_from" type="time"></label>
+        <label>Às<input id="n_to" type="time"></label>
+      </div>
+    </div>
+    <h2>Alerta de chuva</h2>
+    <div class="box">
+      <span class="mut">Quando a chance passa do limite, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta entra no carrossel a cada duas páginas.</span>
+      <div class="f2 f4">
+        <label class="ck"><input id="a_on" type="checkbox">Ligado</label>
+        <label>A partir de (%)<input id="a_pct" type="number" min="10" max="100" step="5"></label>
+        <label>Nas próximas<select id="a_h"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option></select></label>
+        <label>Mostrar<select id="a_mode"><option value="both">ícone e tela</option><option value="icon">só o ícone</option><option value="screen">só a tela</option></select></label>
+      </div>
+      <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta por 12 s com valores de exemplo</span></div>
+    </div>
+  </section>
+
+  <section class="tab" id="t-ajustes">
+    <h2>Calibração</h2>
+    <div class="box">
+      <label class="ck"><input id="c_auto" type="checkbox">Calibrar a pressão pelo aeroporto mais próximo</label>
+      <span class="mut" id="c_autotxt"></span>
+      <span class="mut">Ajustes manuais: valor somado a cada leitura.</span>
+      <div class="f3">
+        <label>Temperatura (°C)<input id="c_t" type="number" min="-5" max="5" step="0.1"></label>
+        <label>Umidade (%)<input id="c_h" type="number" min="-15" max="15" step="0.5"></label>
+        <label>Pressão (hPa)<input id="c_p" type="number" min="-15" max="15" step="0.1"></label>
+      </div>
+    </div>
+    <h2>Localização</h2>
+    <div class="box">
+      <span class="mut">Para os dados de fora (aeroporto mais próximo e previsão). No Google Maps, toque e segure no local, copie os números e cole na latitude.</span>
+      <div class="f3">
+        <label>Latitude<input id="l_lat" inputmode="decimal" placeholder="-23.5"></label>
+        <label>Longitude<input id="l_lon" inputmode="decimal" placeholder="-46.6"></label>
+        <label>Nome do local<input id="l_lab" maxlength="40" placeholder="Casa"></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab" id="t-sistema">
+    <h2>Nuvem</h2>
+    <div class="box">
+      <table>
+        <tr><td>Último envio</td><td id="c_ok">–</td></tr>
+        <tr><td>Médias na fila</td><td id="c_q">–</td></tr>
+        <tr><td>Cópia da configuração</td><td id="c_cfg">–</td></tr>
+      </table>
+      <div class="row"><button id="sync">Sincronizar agora</button><a id="cloud" href="#" target="_blank" rel="noopener" hidden>Abrir o painel na nuvem ↗</a><span class="mut msg" id="syncmsg"></span></div>
+    </div>
+    <h2>Estação</h2>
+    <table>
+      <tr><td>Wi-Fi</td><td id="wifi">–</td></tr>
+      <tr><td>Hora</td><td id="time">–</td></tr>
+      <tr><td>Ligado há</td><td id="up">–</td></tr>
+      <tr><td>Memória livre</td><td id="mem">–</td></tr>
+      <tr><td>Sensores</td><td id="sens">–</td></tr>
+      <tr><td>Firmware</td><td id="fw">–</td></tr>
+    </table>
+    <h2>Manutenção</h2>
+    <div class="box">
+      <div class="row"><input id="pw_rb" type="password" autocomplete="current-password" placeholder="senha da estação"><button id="reboot">Reiniciar</button></div>
+      <span class="mut msg" id="rbmsg"></span>
+    </div>
+  </section>
+
+  <div class="save" id="savebar" hidden>
+    <span class="msg mut" id="savemsg">As configurações ficam gravadas na estação; o painel na nuvem recebe uma cópia.</span>
+    <div class="row"><input id="pw" type="password" autocomplete="current-password" placeholder="senha da estação (comando status)"><button id="save" class="pri">Salvar</button><button id="undo">Desfazer</button></div>
   </div>
 
-  <table>
-    <tr><td>Wi-Fi</td><td id="wifi">–</td></tr>
-    <tr><td>Hora</td><td id="time">–</td></tr>
-    <tr><td>Ligado há</td><td id="up">–</td></tr>
-    <tr><td>Memória livre</td><td id="mem">–</td></tr>
-    <tr><td>Sensores</td><td id="sens">–</td></tr>
-    <tr><td>Firmware</td><td id="fw">–</td></tr>
-  </table>
-
-  <h2>Manutenção</h2>
-  <div class="box">
-    <div class="row"><button id="reboot">Reiniciar</button><span class="mut">usa a senha da estação, acima</span></div>
-    <span class="mut msg" id="rbmsg"></span>
-  </div>
-
-  <p class="mut">Página local do ESP32, funciona sem internet. Histórico e gráficos ficam no painel na nuvem. API: <code>/api/v1/now</code>, <code>/status</code>, <code>/display</code>, <code>/config</code>.</p>
+  <p class="foot">Este é o app <b>local</b> da estação: roda no ESP32 e funciona sem internet. Histórico e gráficos ficam no painel na nuvem.</p>
 </main>
+<nav class="tabs" aria-label="Seções"><div>
+  <a href="#agora" data-t="agora"><i>☂</i>Agora</a>
+  <a href="#display" data-t="display"><i>▣</i>Display</a>
+  <a href="#ajustes" data-t="ajustes"><i>⚙</i>Ajustes</a>
+  <a href="#sistema" data-t="sistema"><i>ⓘ</i>Sistema</a>
+</div></nav>
 <script>
 const $=id=>document.getElementById(id);
 const NAMES={temp:"Temperatura",hum:"Umidade",pres:"Pressão",clock:"Relógio",today:"Hoje",fields:"Resumo",details:"Detalhes",network:"Rede",rain:"Chuva"};
@@ -218,8 +254,8 @@ function drawPages(){
     sel.value=p.type;
     sel.onchange=()=>{p.type=sel.value;if(p.type==="fields"&&!(p.fields&&p.fields.length))p.fields=["temp","hum","pres","dew"];drawPages()};
     const tools=el("span",{className:"tools"});
-    [["↑",-1],["↓",1]].forEach(([t,d])=>tools.append(el("button",{textContent:t,disabled:i+d<0||i+d>=P.length,onclick:()=>{[P[i],P[i+d]]=[P[i+d],P[i]];drawPages()}})));
-    tools.append(el("button",{textContent:"✕",disabled:P.length<2,onclick:()=>{P.splice(i,1);drawPages()}}));
+    [["↑",-1],["↓",1]].forEach(([t,d])=>tools.append(el("button",{textContent:t,disabled:i+d<0||i+d>=P.length,onclick:()=>{[P[i],P[i+d]]=[P[i+d],P[i]];drawPages();markDirty()}})));
+    tools.append(el("button",{textContent:"✕",disabled:P.length<2,onclick:()=>{P.splice(i,1);drawPages();markDirty()}}));
     const li=el("li",{},el("b",{textContent:i+1}),sel,tools);
     if(p.type==="fields"){
       const fs=el("div",{className:"fs"});
@@ -250,12 +286,24 @@ async function loadCfg(){
   const a=c.rain_alert||{};$("a_on").checked=a.enabled!==false;$("a_pct").value=a.threshold||60;$("a_h").value=String(a.hours||2);$("a_mode").value=a.mode||"both";
   $("l_lat").value=r1(l.lat,1e5);$("l_lon").value=r1(l.lon,1e5);$("l_lab").value=l.label||"";
   drawPages();
+  dirty=false;$("savebar").classList.remove("dirty");
 }
 for(const k in NAMES)$("newp").add(new Option(NAMES[k],k));
-$("addp").onclick=()=>{const t=$("newp").value;P.push(t==="fields"?{type:t,fields:["temp","hum","pres","dew"]}:{type:t,fields:[]});drawPages()};
+$("addp").onclick=()=>{const t=$("newp").value;P.push(t==="fields"?{type:t,fields:["temp","hum","pres","dew"]}:{type:t,fields:[]});drawPages();markDirty()};
 $("contrast").oninput=ct;
 $("l_lat").oninput=e=>{const m=e.target.value.match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);if(m){$("l_lat").value=m[1];$("l_lon").value=m[2]}};
-$("undo").onclick=()=>{loadCfg();$("savemsg").textContent=""};
+// Abas (lembradas no endereço, ex.: grain.local/#display) e barra de salvar nas abas de configuração.
+const TABS=["agora","display","ajustes","sistema"];
+function showTab(){const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):"agora";
+  TABS.forEach(x=>{$("t-"+x).classList.toggle("on",x===t)});
+  document.querySelectorAll(".tabs a").forEach(a=>a.classList.toggle("on",a.dataset.t===t));
+  $("savebar").hidden=!(t==="display"||t==="ajustes")}
+addEventListener("hashchange",showTab);showTab();
+let dirty=false;
+function markDirty(){dirty=true;$("savebar").classList.add("dirty");$("savemsg").innerHTML='<span class="err" style="color:var(--warn)">Alterações não salvas</span>'}
+["t-display","t-ajustes"].forEach(id=>{$(id).addEventListener("input",e=>{if(!e.target.closest(".nav,.chips"))markDirty()});$(id).addEventListener("change",e=>{if(!e.target.closest(".nav,.chips"))markDirty()})});
+addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
+$("undo").onclick=()=>{loadCfg();$("savemsg").textContent="Alterações desfeitas."};
 $("save").onclick=async()=>{
   const pw=$("pw").value;if(!pw)return say("savemsg","Digite a senha da estação.",1);
   const lat=num($("l_lat").value),lon=num($("l_lon").value);
@@ -273,8 +321,8 @@ $("save").onclick=async()=>{
     const j=await r.json().catch(()=>({}));
     if(r.status===401)throw new Error("Senha incorreta.");
     if(!r.ok)throw new Error(j.detail||j.error||("HTTP "+r.status));
-    say("savemsg","Salvo. O display já mudou; a cópia vai para o painel em instantes.");
     await loadCfg();tick();
+    say("savemsg","Salvo. O display já mudou; a cópia vai para o painel em instantes.");
   }catch(e){say("savemsg",e.message,1)}
   finally{$("save").disabled=false}
 };
@@ -314,8 +362,8 @@ $("sync").onclick=async()=>{
   catch(e){$("syncmsg").innerHTML='<span class="err">'+e.message+"</span>";$("sync").disabled=false}
 };
 $("reboot").onclick=async()=>{
-  const pw=$("pw").value;if(!pw){$("rbmsg").innerHTML='<span class="err">Digite a senha da estação.</span>';return}
-  try{await post("/api/v1/system/reboot",{},{Authorization:auth(pw)});$("rbmsg").textContent="Reiniciando… a página volta em cerca de 15 s.";$("pw").value=""}
+  const pw=$("pw_rb").value||$("pw").value;if(!pw){$("rbmsg").innerHTML='<span class="err">Digite a senha da estação.</span>';return}
+  try{await post("/api/v1/system/reboot",{},{Authorization:auth(pw)});$("rbmsg").textContent="Reiniciando… a página volta em cerca de 15 s.";$("pw_rb").value=""}
   catch(e){$("rbmsg").innerHTML='<span class="err">'+(e.message.includes("401")?"Senha incorreta.":e.message)+"</span>"}
 };
 const LV=p=>p>=60?["a","alta"]:p>=30?["m","média"]:["","baixa"];
@@ -334,7 +382,7 @@ $("a_test").onclick=()=>act({alert_test:true});
 async function tick(){
   try{
     const [now,st,d,rn]=await Promise.all(["/api/v1/now","/api/v1/status","/api/v1/display","/api/v1/rain"].map(u=>fetch(u).then(r=>r.json())));
-    renderRain(rn);
+    try{renderRain(rn)}catch(e){$("rwhy").textContent="Previsão indisponível nesta versão do firmware."}
     $("temp").innerHTML=unit(now.temp,1,"°C");
     $("hum").innerHTML=unit(now.hum,0,"%");
     $("pres").innerHTML=unit(now.pres_slp,0,"hPa");
@@ -354,10 +402,13 @@ async function tick(){
     else{$("c_ok").innerHTML=c.last_error?'<span class="err">'+c.last_error+"</span>":(c.last_ok?hm(c.last_ok):"ainda não (envia a cada 10 min)");}
     $("c_q").textContent=c.queue;
     $("c_cfg").textContent=c.config_pending?"enviando…":(c.config_sent?"enviada às "+hm(c.config_sent):"–");
+    if(c.url){$("cloud").href=c.url;$("cloud").hidden=false}
     renderDisplay(d);
-    $("upd").innerHTML='<span class="dot"></span>leitura de '+now.age_s+" s atrás";
+    $("where").textContent=st.wifi.hostname+" · "+st.wifi.ip;
+    $("oled").textContent=d.on?"display: "+(NAMES[d.pages[d.page]]||d.pages[d.page])+(d.paused?" ‖":""):"display desligado";
+    $("upd").textContent=(st.time.synced?st.time.local.slice(11,16)+" · ":"")+"leitura de "+now.age_s+" s";
   }catch(e){
-    $("upd").innerHTML='<span class="err">sem resposta da estação</span>';
+    $("oled").textContent="sem resposta da estação";$("upd").textContent="";
   }
 }
 loadCfg().catch(()=>say("savemsg","Não foi possível ler a configuração.",1));

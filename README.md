@@ -158,7 +158,9 @@ O Wi-Fi fica salvo na placa. Para trocar de rede, use o comando `wifi esquecer` 
 
 ### Página local e API
 
-Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. É aqui que ficam **todas as configurações** da estação; o painel na nuvem só mostra os dados e uma cópia da configuração. A página funciona sem internet e atualiza a cada 5 s:
+Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. É o **app local** da estação: roda no próprio ESP32, funciona sem internet e é onde ficam **todas as configurações**; o painel na nuvem só mostra os dados e uma cópia da configuração.
+
+Para não confundir com o painel, o app local tem cara de aparelho: cabeçalho escuro com o selo **APP LOCAL · ESP32** e o endereço da estação, uma tirinha no estilo do OLED com a página que está no display naquele momento, tipografia monoespaçada e acento ciano, e as abas numa barra embaixo (**Agora**, **Display**, **Ajustes** e **Sistema**; a aba fica no endereço, ex.: `grain.local/#display`). Nas abas de configuração, uma barra fixa com a senha e o botão Salvar avisa quando há alterações não salvas. Atualiza a cada 5 s. Conteúdo, por aba:
 
 - **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
 - **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar.

@@ -121,8 +121,14 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
     a cada duas páginas, histerese de 10 pontos, respeita modo noturno; teste de 12 s. Página local com card de chuva,
     botão "Está chovendo aqui" (repassado com retentativa de 1 min) e opções do alerta.
 
+  - Página local reorganizada em abas (Agora, Display, Ajustes, Sistema; barra embaixo, aba no hash) com
+    identidade de aparelho (cabeçalho escuro, selo APP LOCAL · ESP32, tirinha estilo OLED com a página atual,
+    fonte mono, ciano) para não confundir com o painel; barra de salvar com aviso de alterações; ~27 KB.
+    Testada no navegador com um proxy só leitura para a estação.
+
 ## Em andamento
-- Fase 15: gravar o firmware 0.11.0 (placa no USB) e validar com o usuário.
+- Fase 15: gravar o firmware 0.11.0 e validar. A porta serial ficou presa (CP2102 aparece no USB via hub,
+  mas o nó /dev/cu.usbserial-0001 é antigo: tcsetattr dá erro 22); precisa reconectar o cabo, de preferência direto no Mac.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
