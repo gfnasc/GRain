@@ -68,10 +68,6 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
           <span v-if="data.device.place" class="place">{{ PLACE_LABEL[data.device.place] }}</span>
           Média de 10 min iniciada às <span class="mono">{{ hhmm(data.latest.ts) }}</span>
         </p>
-        <p v-if="data.device.place === 'sacada'" class="notice">
-          <strong>Estação na sacada</strong>
-          <span>Temperatura e umidade sofrem com sol direto e calor do prédio; a pressão vale normalmente.</span>
-        </p>
         <section class="cards">
           <article class="card">
             <span class="k">Temperatura</span>
@@ -136,7 +132,6 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
 h2 { font-size: 1.15rem; font-weight: 700; font-stretch: 108%; }
 .when { margin: 0; font-size: 0.9rem; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .place { font-family: var(--ff-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg); border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 2px 9px; }
-.notice span { font-size: 0.92rem; color: var(--muted); }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 4px; min-width: 0; }
 .k { font-family: var(--ff-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }

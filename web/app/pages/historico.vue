@@ -113,9 +113,8 @@ const coverage = computed(() => {
         <span v-if="pending"> · atualizando…</span>
       </p>
 
-      <p v-if="series.summary.n_sacada" class="notice">
-        <strong>Parte deste período foi medida na sacada</strong>
-        <span>No trecho hachurado, a temperatura e a umidade sofriam com sol direto e calor do prédio, então ficam fora das mínimas, máximas e médias. A pressão vale normalmente.</span>
+      <p v-if="series.summary.n_sacada" class="muted meta">
+        Trecho hachurado: medições de antes da mudança para o escritório (sacada), fora das mínimas, máximas e médias de temperatura e umidade.
       </p>
 
       <section class="stats">
@@ -257,7 +256,6 @@ th { font-family: var(--ff-mono); font-size: 0.7rem; letter-spacing: 0.07em; tex
 tr:last-child td { border-bottom: none; }
 .notice { background: var(--surface); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; display: grid; gap: 4px; margin: 0; }
 .notice.crit { border-left-color: var(--crit); }
-.notice span { font-size: 0.92rem; color: var(--muted); }
 .tag { margin-left: 8px; font-family: var(--ff-mono); font-size: 0.7rem; border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; }
 @media (max-width: 560px) { .downloads { margin-left: 0; } }
 </style>

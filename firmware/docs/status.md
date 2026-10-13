@@ -73,7 +73,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Fora do git até a fase 13: `web/server/utils/forecast.ts` e `web/server/api/v1/forecast.get.ts`.
 
 ## Em andamento
-- Fase 11: registrar a mudança para o escritório (`pnpm placement escritorio <horário>`) e validação do usuário.
+- Fase 11: mudança registrada (escritório desde 13/10 07:50; a estação não volta para a sacada). Aguardando o fechamento pelo usuário.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
