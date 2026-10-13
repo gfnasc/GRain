@@ -89,3 +89,30 @@ alter table devices add column if not exists outdoor jsonb;
 -- mar sem nenhuma calibração (pres_raw); a nuvem calcula o desvio em relação ao QNH do
 -- METAR (mediana de 7 dias) com ela, sem realimentação, e devolve na resposta do envio.
 alter table readings add column if not exists pres_raw real;  -- hPa, nível do mar sem calibração
+
+-- Fase 15: chuva nas próximas 1 h, 2 h e 3 h.
+-- Chuva medida pelo modelo, para verificar quando não há METAR.
+alter table outdoor_obs add column if not exists precip real;  -- mm no intervalo anterior (Open-Meteo)
+
+-- Previsões de cada método, feitas a cada 10 min, e o que aconteceu depois (placar).
+create table if not exists rain_predictions (
+  device_id   text        not null references devices(id) on delete cascade,
+  issued_at   timestamptz not null,                -- início do intervalo de 10 min da previsão
+  method      text        not null check (method in ('m1', 'm2', 'm3')),
+  horizon_h   smallint    not null check (horizon_h between 1 and 3),
+  prob        real        not null,                -- 0 a 1
+  reason      text,
+  features    jsonb,                               -- dados usados no cálculo
+  outcome     boolean,                             -- choveu na janela? null = ainda não verificado
+  verified_at timestamptz,
+  primary key (device_id, issued_at, method, horizon_h)
+);
+create index if not exists rain_predictions_pending_idx on rain_predictions (device_id, issued_at) where outcome is null;
+
+-- Botão "Está chovendo aqui" (painel ou página local da estação): vale mais que o aeroporto.
+create table if not exists rain_reports (
+  device_id text        not null references devices(id) on delete cascade,
+  ts        timestamptz not null,                  -- início do intervalo de 10 min
+  via       text        not null check (via in ('painel', 'estacao')),
+  primary key (device_id, ts)
+);

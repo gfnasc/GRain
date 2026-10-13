@@ -17,6 +17,9 @@
   --series-hum: #1baf7a;
   --series-pres: #4a3aa7;
   --series-out: #b0337e;
+  --series-m1: #4a3aa7;
+  --series-m2: #1baf7a;
+  --series-m3: #eb6834;
   --ff-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -39,6 +42,9 @@
     --series-hum: #199e70;
     --series-pres: #9085e9;
     --series-out: #d65ba3;
+    --series-m1: #9085e9;
+    --series-m2: #199e70;
+    --series-m3: #d95926;
     color-scheme: dark;
   }
 }

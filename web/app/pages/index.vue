@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RainResp } from '~/components/RainNow.vue'
 // Aba Agora: Outdoor (lá fora, dados externos) × Indoor (escritório, sensores da estação),
 // pressão com tendência (barômetro da estação) e previsão de hoje e amanhã.
 useHead({ title: 'GRain' })
@@ -42,6 +43,7 @@ type Forecast = {
 const { data, refresh, error } = await useFetch<Latest>('/api/v1/latest')
 const { data: outdoor, refresh: refreshOut } = await useFetch<Outdoor>('/api/v1/outdoor')
 const { data: forecast, refresh: refreshFc } = await useFetch<Forecast>('/api/v1/forecast')
+const { data: rain, refresh: refreshRain } = await useFetch<RainResp>('/api/v1/rain')
 
 // Atualiza a cada minuto; o ESP32 envia médias de 10 min e a coleta de fora acompanha.
 let timer: ReturnType<typeof setInterval> | undefined
@@ -51,6 +53,7 @@ onMounted(() => {
     now.value = Date.now()
     refresh()
     refreshOut()
+    refreshRain()
   }, 60_000)
 })
 onBeforeUnmount(() => clearInterval(timer))
@@ -110,6 +113,8 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
     </section>
 
     <template v-else>
+      <RainNow :data="rain ?? null" @reported="refreshRain" />
+
       <section class="modes">
         <article class="mode">
           <header><span class="tag">Outdoor</span><span class="muted small">lá fora</span></header>

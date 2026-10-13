@@ -115,3 +115,36 @@ export function describeMetar(o: Pick<MetarObs, 'wx' | 'clouds' | 'raw'>): strin
   if (/\b(FEW|SCT|BKN|OVC)\d{3}(CB|TCU)\b/.test(o.raw)) parts.push('nuvens de trovoada por perto')
   return parts.join(' · ')
 }
+
+export type TafGroup = { from: number; to: number; change: string | null; prob: number | null; wx: string | null; cb: boolean }
+
+// TAF (previsão do aeroporto para 24–30 h). Nem todo aeroporto tem; sem TAF devolve null.
+export async function latestTaf(icao: string): Promise<{ at: number; groups: TafGroup[]; raw: string } | null> {
+  const r = await fetch(`https://aviationweather.gov/api/data/taf?${new URLSearchParams({ ids: icao, format: 'json' })}`, {
+    headers: { 'User-Agent': UA },
+    signal: AbortSignal.timeout(8000),
+  })
+  if (r.status === 204) return null
+  if (!r.ok) throw new Error(`TAF: HTTP ${r.status}`)
+  const list = await r.json()
+  const t = Array.isArray(list) ? list[0] : null
+  if (!t?.fcsts) return null
+  return {
+    at: Date.now(),
+    raw: t.rawTAF ?? '',
+    groups: t.fcsts.map((f: any) => ({
+      from: f.timeFrom,
+      to: f.timeTo,
+      change: f.fcstChange ?? null,
+      prob: typeof f.probability === 'number' ? f.probability : null,
+      wx: f.wxString ?? null,
+      cb: Array.isArray(f.clouds) && f.clouds.some((c: any) => c.type === 'CB' || c.type === 'TCU'),
+    })),
+  }
+}
+
+// Chuva de verdade no tempo presente do METAR (fora "nas proximidades"): RA, DZ, SHRA, TSRA, GR...
+export const METAR_RAIN_SQL = String.raw`(^|\s)[-+]?(TS|SH)?(RA|DZ|GR|GS|UP)`
+export function metarIsRaining(wx: string | null): boolean {
+  return !!wx && new RegExp(METAR_RAIN_SQL).test(wx)
+}

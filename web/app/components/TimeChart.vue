@@ -24,6 +24,8 @@ const props = defineProps<{
   xMax: number
   // Trechos hachurados (epoch s; to = null vai até o fim do eixo).
   periods?: Period[]
+  // Eixo vertical fixo (ex.: 0 a 100 para porcentagens); sem ele, ajusta aos dados.
+  yRange?: [number, number]
 }>()
 
 const tz = useRuntimeConfig().public.tz as string
@@ -210,6 +212,7 @@ function build() {
       x: { time: true, range: () => [props.xMin, props.xMax] },
       y: {
         range: (_u, min, max) => {
+          if (props.yRange) return props.yRange
           if (min == null || max == null) return [0, 1]
           const mid = (min + max) / 2
           const half = Math.max((max - min) / 2, props.minSpan / 2) * 1.1

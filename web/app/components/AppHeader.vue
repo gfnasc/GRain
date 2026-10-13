@@ -32,6 +32,7 @@ async function logout() {
     </div>
     <nav aria-label="Seções">
       <NuxtLink to="/">Agora</NuxtLink>
+      <NuxtLink to="/chuva">Chuva</NuxtLink>
       <NuxtLink to="/historico">Histórico</NuxtLink>
       <NuxtLink to="/estacao">Estação</NuxtLink>
     </nav>

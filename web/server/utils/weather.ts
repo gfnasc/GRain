@@ -113,6 +113,7 @@ export type CurrentWeather = {
   wind_kmh: number | null
   gust_kmh: number | null
   code: number | null
+  precip: number | null
 }
 
 // Condição atual da Open-Meteo (modelo, resolução de 15 min). Reserva quando o METAR atrasa.
@@ -121,7 +122,7 @@ export async function openMeteoCurrent(lat: number, lon: number): Promise<Curren
   url.search = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
-    current: 'temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code',
+    current: 'temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,precipitation',
     timezone: 'GMT',
     timeformat: 'unixtime',
   }).toString()
@@ -141,6 +142,7 @@ export async function openMeteoCurrent(lat: number, lon: number): Promise<Curren
       wind_kmh: n(c.wind_speed_10m),
       gust_kmh: n(c.wind_gusts_10m),
       code: n(c.weather_code),
+      precip: n(c.precipitation),
     }
   } catch {
     return null
@@ -153,7 +155,7 @@ export async function openMeteoPast(lat: number, lon: number, days = 3): Promise
   url.search = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
-    hourly: 'temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code',
+    hourly: 'temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code,precipitation',
     past_days: String(days),
     forecast_days: '1',
     timezone: 'GMT',
@@ -176,9 +178,45 @@ export async function openMeteoPast(lat: number, lon: number, days = 3): Promise
         wind_kmh: n(h.wind_speed_10m[i]),
         gust_kmh: n(h.wind_gusts_10m[i]),
         code: n(h.weather_code[i]),
+        precip: n(h.precipitation[i]),
       }))
       .filter((o) => o.obs_at.getTime() <= now && o.temp != null)
   } catch {
     return []
+  }
+}
+
+export type RainOutlook = {
+  at: number                                                    // epoch ms da busca
+  hourly: { t: number; pp: number | null; mm: number | null; cape: number | null }[]  // início da hora (epoch s)
+  m15: { t: number; mm: number | null }[]                       // blocos de 15 min (epoch s)
+}
+
+// Próximas horas da Open-Meteo para o método do modelo: probabilidade e volume por hora,
+// CAPE (energia para trovoada) e chuva em blocos de 15 min nas próximas 3 h.
+export async function openMeteoRain(lat: number, lon: number): Promise<RainOutlook | null> {
+  const url = new URL('https://api.open-meteo.com/v1/forecast')
+  url.search = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    hourly: 'precipitation_probability,precipitation,cape',
+    minutely_15: 'precipitation',
+    forecast_hours: '5',
+    forecast_minutely_15: '13',
+    timezone: 'GMT',
+    timeformat: 'unixtime',
+  }).toString()
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) })
+    if (!r.ok) return null
+    const j: any = await r.json()
+    const n = (v: unknown) => (typeof v === 'number' ? v : null)
+    return {
+      at: Date.now(),
+      hourly: (j.hourly.time as number[]).map((t, i) => ({ t, pp: n(j.hourly.precipitation_probability[i]), mm: n(j.hourly.precipitation[i]), cape: n(j.hourly.cape[i]) })),
+      m15: (j.minutely_15?.time ?? []).map((t: number, i: number) => ({ t, mm: n(j.minutely_15.precipitation[i]) })),
+    }
+  } catch {
+    return null
   }
 }

@@ -4,7 +4,14 @@
 // Ao detectar o aeroporto (localização nova), busca as últimas 72 h (METAR e Open-Meteo)
 // para o histórico.
 
-type OutdoorState = { site_key?: string; station?: MetarStation | null; metar_try?: number; om_try?: number }
+type OutdoorState = {
+  site_key?: string
+  station?: MetarStation | null
+  metar_try?: number
+  om_try?: number
+  rain?: RainOutlook | null                // próximas horas da Open-Meteo (método M3)
+  taf?: { at: number; groups: TafGroup[]; raw: string } | null
+}
 
 const METAR_EVERY = 9 * 60_000
 const OM_EVERY = 29 * 60_000
@@ -54,15 +61,24 @@ export async function collectOutdoor(deviceId: string): Promise<void> {
         if (!list.length) return
         const col = <K extends keyof CurrentWeather>(k: K) => list.map((c) => c[k])
         await sql`
-          insert into outdoor_obs (device_id, source, obs_at, temp, dew, hum, pres, wind_dir, wind_kmh, gust_kmh, code)
-          select ${deviceId}, 'open-meteo', o.obs_at, o.temp, o.dew, o.hum, o.pres, o.wind_dir, o.wind_kmh, o.gust_kmh, o.code
+          insert into outdoor_obs (device_id, source, obs_at, temp, dew, hum, pres, wind_dir, wind_kmh, gust_kmh, code, precip)
+          select ${deviceId}, 'open-meteo', o.obs_at, o.temp, o.dew, o.hum, o.pres, o.wind_dir, o.wind_kmh, o.gust_kmh, o.code, o.precip
           from unnest(
             ${list.map((c) => c.obs_at.toISOString())}::timestamptz[], ${col('temp')}::real[], ${col('dew')}::real[], ${col('hum')}::real[],
-            ${col('pres')}::real[], ${col('wind_dir')}::smallint[], ${col('wind_kmh')}::real[], ${col('gust_kmh')}::real[], ${col('code')}::smallint[]
-          ) as o(obs_at, temp, dew, hum, pres, wind_dir, wind_kmh, gust_kmh, code)
+            ${col('pres')}::real[], ${col('wind_dir')}::smallint[], ${col('wind_kmh')}::real[], ${col('gust_kmh')}::real[], ${col('code')}::smallint[],
+            ${col('precip')}::real[]
+          ) as o(obs_at, temp, dew, hum, pres, wind_dir, wind_kmh, gust_kmh, code, precip)
           on conflict do nothing`
       }),
     )
+  }
+  // Previsão das próximas horas (M3) e TAF do aeroporto (M2), também a cada 30 min.
+  if (now - (st.rain?.at ?? 0) >= OM_EVERY) {
+    jobs.push(openMeteoRain(site.lat, site.lon).then((r) => { if (r) st.rain = r }))
+  }
+  if (st.station && now - (st.taf?.at ?? 0) >= OM_EVERY) {
+    const icao = st.station.icao
+    jobs.push(latestTaf(icao).then((t) => { st.taf = t ?? { at: now, groups: [], raw: '' } }))
   }
   const results = await Promise.allSettled(jobs)
   for (const r of results) if (r.status === 'rejected') console.warn('coleta Outdoor falhou:', r.reason)
