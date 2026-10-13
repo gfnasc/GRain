@@ -28,7 +28,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 11 | GRain: novo nome, flag "sacada" no histórico, remoção do WhatsApp | ✅ Concluída |
 | 12 | Configurações só no ESP32; painel só para visualização | ✅ Concluída |
 | 13 | Outdoor: dados externos (METAR e Open-Meteo) | ✅ Concluída |
-| 14 | Pressão calibrada pelo aeroporto | 🔧 Em andamento |
+| 14 | Pressão calibrada pelo aeroporto | 🔧 Em validação |
 | 15 | Chuva v1: métodos M1 a M3 e placar de acertos | Planejada |
 | 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |
 | 17 | Chuva v2: método combinado com aprendizado | Planejada |
@@ -162,7 +162,7 @@ Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede
 
 - **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
 - **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar.
-- **Configurações** (pedem a senha da estação para salvar): páginas do display (até 8, em qualquer ordem, com os campos da página Resumo), tempo por página, brilho, modo noturno, calibração dos sensores e localização (latitude, longitude e nome, usados pelos dados de fora). Não há prévia na página: os botões de página da seção Display mostram cada página direto no OLED.
+- **Configurações** (pedem a senha da estação para salvar): páginas do display (até 8, em qualquer ordem, com os campos da página Resumo), tempo por página, brilho, modo noturno, calibração dos sensores (com a calibração automática da pressão pelo aeroporto) e localização (latitude, longitude e nome, usados pelos dados de fora). Não há prévia na página: os botões de página da seção Display mostram cada página direto no OLED.
 - **Nuvem:** último envio, médias na fila, quando a cópia da configuração chegou ao painel e o botão **Sincronizar agora** (envia a fila e a cópia na hora).
 - **Manutenção:** reiniciar a estação (usa a mesma senha).
 
@@ -204,7 +204,7 @@ O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `des
 O painel serve só para ver os dados; nada é configurado por ele. Três seções:
 - **Agora:** **Outdoor** (lá fora) e **Indoor** (onde a estação está) lado a lado. O Outdoor vem do METAR do aeroporto mais próximo da localização configurada na estação (temperatura, sensação, umidade, orvalho, vento e condição em português), com a condição atual do Open-Meteo como reserva quando o METAR atrasa ou o aeroporto está fechado. O Indoor traz a última média, mínimas e máximas de 24 h e a diferença em relação a fora. Abaixo: pressão do barômetro da estação com tendência de 3 h, interpretação (Zambretti) e QNH do aeroporto para comparar; previsão de hoje e amanhã (Open-Meteo); últimas médias e estado da estação.
 - **Estação:** a configuração atual, como a estação informou (páginas do OLED com prévia, brilho, modo noturno, calibração e localização), e o estado da estação. A cópia chega a cada envio e logo depois de qualquer mudança feita em `grain.local`.
-- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura Indoor × Outdoor (com o ponto de orvalho), umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
+- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura Indoor × Outdoor (com o ponto de orvalho), umidade e pressão (estação × QNH do aeroporto) (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
 
 ### Dados de fora (Outdoor)
 
@@ -215,6 +215,12 @@ A nuvem busca os dados de fora a cada envio da estação (a cada 10 min), sem cr
 - Quando a localização muda, o aeroporto é detectado de novo e as últimas 72 h dos dois são buscadas para o histórico já começar preenchido.
 
 Sem localização, o painel mostra só o Indoor. A localização e o aeroporto detectado ficam no banco, nunca no repositório.
+
+### Pressão calibrada pelo aeroporto
+
+A pressão ao nível do mar calculada pela estação depende da altitude configurada; um erro de 8 m dá 1 hPa. Com a opção **Calibrar a pressão pelo aeroporto mais próximo** ligada (padrão, na página local), a nuvem compara a pressão **sem calibração** de cada média com o QNH dos METARs no mesmo horário, tira a mediana dos últimos 7 dias (mínimo de 12 pares) e devolve o desvio na resposta de cada envio. A estação aplica o valor (só grava quando muda) e ele substitui o ajuste manual de pressão. Como o cálculo usa a pressão sem calibração, o ajuste não se realimenta. Isso também resolve a altitude quando a estação muda de andar ou de endereço.
+
+No painel, o gráfico de pressão mostra a estação e o QNH do aeroporto juntos, e as abas Agora e Estação mostram o ajuste em uso.
 
 ### Local da estação (sacada ou escritório)
 

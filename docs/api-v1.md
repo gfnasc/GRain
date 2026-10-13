@@ -83,7 +83,7 @@ Configuração gravada em `/config.json`. É a única fonte da configuração: a
     "night": { "enabled": false, "from": "23:00", "to": "06:00", "mode": "dim" },
     "pages": [ { "type": "clock" }, { "type": "temp" }, { "type": "fields", "fields": ["temp", "hum", "pres", "dew"] } ]
   },
-  "calibration": { "temp": 0, "hum": 0, "pres": 0 },
+  "calibration": { "temp": 0, "hum": 0, "pres": 0, "pres_auto": true, "pres_auto_offset": 2.29 },
   "location": { "lat": null, "lon": null, "label": "" }
 }
 ```
@@ -110,7 +110,9 @@ curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
 | `display.contrast` | 0 a 255 |
 | `display.night` | `enabled` booleano; `from`/`to` em `HH:MM` (podem cruzar a meia-noite); `mode` `off` (apagar) ou `dim` (escurecer) |
 | `display.pages` | Lista completa, 1 a 8; `type`: `temp`, `hum`, `pres`, `clock`, `today`, `fields`, `details`, `network`. Na página `fields`, `fields` com 1 a 4 de `temp`, `hum`, `pres`, `dew`, `heat_index`, `temp_bmp`, `pres_station` |
-| `calibration.temp` / `.hum` / `.pres` | Somado às leituras: −5 a 5 °C, −15 a 15 %, −15 a 15 hPa |
+| `calibration.temp` / `.hum` / `.pres` | Somado às leituras: −5 a 5 °C, −15 a 15 %, −15 a 15 hPa (`pres` só vale com `pres_auto` desligado) |
+| `calibration.pres_auto` | `true` (padrão): pressão calibrada pelo QNH do aeroporto, com o desvio calculado na nuvem |
+| `calibration.pres_auto_offset` | −15 a 15 hPa, somado à pressão ao nível do mar; atualizado pela estação a partir da resposta do envio |
 | `location.lat` / `.lon` | −90 a 90 / −180 a 180, ou `null` para apagar |
 | `location.label` | Até 40 caracteres |
 
@@ -157,7 +159,7 @@ Recebe um lote de médias de 10 min do ESP32, o estado e a cópia da configuraç
 ```json
 {
   "readings": [
-    { "ts": 1791831600, "temp": 27.97, "hum": 65.8, "pres_slp": 1010.55, "dew": 21.0 }
+    { "ts": 1791831600, "temp": 27.97, "hum": 65.8, "pres_slp": 1012.84, "pres_raw": 1010.55, "dew": 21.0 }
   ],
   "status": { "fw": "0.9.0", "rssi": -57, "uptime_s": 563, "heap": 220132, "queue": 0 },
   "config": { "display": { "...": "..." }, "calibration": { "...": "..." }, "location": { "lat": null, "lon": null, "label": "" } }
@@ -169,7 +171,8 @@ Recebe um lote de médias de 10 min do ESP32, o estado e a cópia da configuraç
 | `ts` | Início do intervalo de 10 min, UTC epoch inteiro, entre 2024-01-01 e agora + 5 min |
 | `temp` | −40 a 85, ou ausente/`null` |
 | `hum` | 0 a 100, ou ausente/`null` |
-| `pres_slp` | 800 a 1100, ou ausente/`null` |
+| `pres_slp` | 800 a 1100, ou ausente/`null`: pressão ao nível do mar com a calibração em uso |
+| `pres_raw` | 800 a 1100, ou ausente/`null`: a mesma pressão sem nenhuma calibração (base do cálculo do desvio) |
 | `dew` | −60 a 60, ou ausente/`null` |
 | `readings` | Até 500 por lote |
 | `status` | Opcional; guardado como o último estado da estação |
@@ -177,7 +180,7 @@ Recebe um lote de médias de 10 min do ESP32, o estado e a cópia da configuraç
 
 Horários já recebidos são ignorados, então o ESP32 pode reenviar com segurança.
 
-Respostas: `200 {"accepted": 1, "duplicates": 0}` · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
+Respostas: `200 {"accepted": 1, "duplicates": 0, "pres_offset": 2.29}` (`pres_offset`: desvio QNH − pressão sem calibração, mediana de 7 dias; só aparece com 12 pares ou mais) · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
 
 ### `GET /api/v1/latest` 🔐
 Exige a sessão do painel. Devolve a estação (com `place`: `sacada`, `escritorio` ou `null`), a média mais recente, as 12 últimas médias e mínimas/máximas de 24 h, sem o período na sacada.
@@ -216,7 +219,7 @@ Série agregada para os gráficos. A resolução depende do tamanho do período:
 
 `n` em cada ponto é a quantidade de médias de 10 min agregadas. Os extremos do `summary` são exatos (não médias), com o horário em que ocorreram; `expected` é quantas médias de 10 min cabem no período.
 
-Cada ponto tem também `out_temp`: temperatura de fora no mesmo intervalo (METAR, com o Open-Meteo nos buracos, interpolada entre observações a até 2 h).
+Cada ponto tem também `out_pres` (QNH dos METARs, interpolado entre observações a até 2 h) e `out_temp`: temperatura de fora no mesmo intervalo (METAR, com o Open-Meteo nos buracos, interpolada entre observações a até 2 h).
 
 `placements` lista onde a estação estava em cada trecho do período (`to: null` é o local atual). Temperatura e umidade medidas na sacada continuam em `points` (o painel desenha hachurado), mas ficam fora dos extremos e das médias do `summary`; `n_sacada` conta essas médias. A pressão entra sempre.
 
@@ -263,7 +266,7 @@ A configuração é feita só no ESP32 (página local, `PUT /api/v1/config` ou c
       { "type": "fields", "fields": ["temp", "hum", "pres", "dew"] }
     ]
   },
-  "calibration": { "temp": 0, "hum": 0, "pres": 0 },
+  "calibration": { "temp": 0, "hum": 0, "pres": 0, "pres_auto": true, "pres_auto_offset": 2.29 },
   "location": { "lat": null, "lon": null, "label": "" }
 }
 ```

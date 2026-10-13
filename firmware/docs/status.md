@@ -95,12 +95,22 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Histórico: `out_temp` (METAR com Open-Meteo nos buracos, p. ex. aeroporto fechado à noite).
   - Testado com localização genérica de teste (apagada depois).
 
+- Fase 14 (em validação): pressão calibrada pelo QNH do aeroporto.
+  - Desvio medido antes: estação 2,3 hPa abaixo do QNH (desvio-padrão 0,23 em 16 pares).
+  - Firmware 0.10.0: `Reading.seaLevelRawHpa` (sem calibração) vai como `pres_raw`; `calibration.pres_auto`
+    (padrão true) e `pres_auto_offset`; com auto ligado, o ajuste manual de pressão é ignorado e o desvio é
+    somado ao nível do mar; o desvio chega em `pres_offset` na resposta do ingest e é gravado se mudar ≥ 0,05.
+  - Nuvem: `web/server/utils/pressure.ts` (mediana de 7 dias de QNH − pres_raw, pares a ±5 min, mínimo 12);
+    coluna `readings.pres_raw`; `out_pres` no histórico; calibração em `latest` e na aba Estação.
+  - Histórico corrigido uma vez: 105 médias antigas (sem pres_raw) ganharam +2,29 hPa; original em pres_raw.
+  - Aplicado na placa às 10:02 de 13/10: 1014,4 → 1016,7 hPa.
+
 ## Em andamento
-- Fase 14: pressão calibrada pelo QNH do aeroporto.
+- Fase 14: validação (diferença média para o QNH < 0,5 hPa).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fase 14: pressão calibrada pelo QNH do aeroporto (mediana de 7 dias), aplicada pelo ESP32.
+1. Fase 15: Chuva v1 (métodos M1 a M3, registro das previsões, chuva observada e placar).
 
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.
