@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'Entrar · GWeather' })
+useHead({ title: 'Entrar · GRain' })
 
 const password = ref('')
 const error = ref('')
@@ -26,7 +26,7 @@ async function submit() {
   <main class="login">
     <form class="card" @submit.prevent="submit">
       <span class="eyebrow">Estação meteorológica</span>
-      <h1>GWeather</h1>
+      <h1>GRain</h1>
       <label for="password">Senha do painel</label>
       <input
         id="password"

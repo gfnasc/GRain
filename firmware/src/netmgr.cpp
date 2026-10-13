@@ -22,7 +22,7 @@ static uint32_t s_disconnectedSince = 0;
 // consegue configurá-la. (Não derivar do MAC: ele é visível no ar.)
 static String portalPassword() {
   Preferences prefs;
-  prefs.begin("gweather", false);
+  prefs.begin("gweather", false);  // namespace antigo mantido: guarda a senha do portal
   String pass = prefs.getString("portal_pass", "");
   if (pass.length() != 8) {
     static const char alphabet[] = "abcdefghjkmnpqrstuvwxyz23456789";  // sem 0/o, 1/l/i
@@ -79,7 +79,7 @@ void netBegin() {
   // Sem Wi-Fi salvo, a rede de configuração fica aberta até ser usada.
   // Com Wi-Fi salvo (ex.: roteador fora do ar no boot), fecha sozinha depois de um tempo.
   s_wm.setConfigPortalTimeout(s_wm.getWiFiIsSaved() ? PORTAL_TIMEOUT_S : 0);
-  s_wm.setTitle("GWeather");
+  s_wm.setTitle("GRain");
   static std::vector<const char *> menu = {"wifi", "info", "exit"};
   s_wm.setMenu(menu);
   s_wm.setClass("invert");

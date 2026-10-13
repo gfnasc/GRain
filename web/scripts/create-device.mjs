@@ -1,6 +1,6 @@
 // Cadastra (ou troca o token de) uma estação e grava o token em um arquivo local.
 // Uso: pnpm device:token <device_id> [nome]
-//   ex.: pnpm device:token gweather-a1b2c3
+//   ex.: pnpm device:token grain-a1b2c3
 // O device_id aparece no comando "status"/"config" do console serial do ESP32.
 // O token é mostrado UMA vez, no arquivo .device-token-<id>.txt (fora do git);
 // no banco fica só o hash.
@@ -8,9 +8,9 @@ import { createHash, randomBytes } from 'node:crypto'
 import { writeFileSync } from 'node:fs'
 import { neon } from '@neondatabase/serverless'
 
-const [id, name = 'GWeather'] = process.argv.slice(2)
+const [id, name = 'GRain'] = process.argv.slice(2)
 if (!id || !/^[a-z0-9-]{3,40}$/.test(id)) {
-  console.error('Uso: pnpm device:token <device_id> [nome]   (ex.: gweather-a1b2c3)')
+  console.error('Uso: pnpm device:token <device_id> [nome]   (ex.: grain-a1b2c3)')
   process.exit(1)
 }
 const url = process.env.DATABASE_URL

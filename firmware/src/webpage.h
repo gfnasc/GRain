@@ -12,7 +12,7 @@ static const char WEB_INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#15201c">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<title>GWeather</title>
+<title>GRain</title>
 <style>
 :root{--bg:#f2f4f3;--card:#fff;--fg:#15201c;--mut:#5a6a65;--line:#d5ddd9;--acc:#a9532a;--bad:#c0352d;--ok:#1f8a52}
 @media(prefers-color-scheme:dark){:root{--bg:#0f1513;--card:#161e1b;--fg:#e2eae6;--mut:#93a49d;--line:#2a3632;--acc:#e08b5b;--bad:#ee6a62;--ok:#3cb878}}
@@ -57,7 +57,7 @@ input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8
 <body>
 <main>
   <header>
-    <h1><img src="/favicon.svg" alt="">GWeather</h1>
+    <h1><img src="/favicon.svg" alt="">GRain</h1>
     <span class="mut" id="upd"><span class="dot"></span>carregando…</span>
   </header>
   <div class="grid">

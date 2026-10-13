@@ -138,7 +138,7 @@ void uplinkAddReading(const Reading &r) {
 
 static void loadConfig() {
   Preferences p;
-  p.begin("gweather", true);
+  p.begin("gweather", true);  // namespace da NVS mantido desde o GWeather (URL e token)
   String url = p.getString("cloud_url", "");
   String tok = p.getString("cloud_token", "");
   p.end();

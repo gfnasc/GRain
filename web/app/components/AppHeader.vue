@@ -27,14 +27,13 @@ async function logout() {
 <template>
   <header class="top">
     <div class="brand">
-      <span class="eyebrow">Estação meteorológica</span>
-      <h1>GWeather</h1>
+      <span class="eyebrow">Estação de chuva</span>
+      <h1>GRain</h1>
     </div>
     <nav aria-label="Seções">
       <NuxtLink to="/">Agora</NuxtLink>
       <NuxtLink to="/historico">Histórico</NuxtLink>
       <NuxtLink to="/display">Display</NuxtLink>
-      <NuxtLink to="/mensagens">Mensagens</NuxtLink>
     </nav>
     <div class="actions">
       <span v-if="lastSeenAt !== undefined" class="pill" :class="online ? 'ok' : 'off'">

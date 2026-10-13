@@ -54,15 +54,5 @@ export default defineEventHandler(async (event) => {
   const status = body.status && typeof body.status === 'object' ? JSON.stringify(body.status).slice(0, 2000) : null
   await sql`update devices set last_seen_at = now(), last_status = coalesce(${status}::jsonb, last_status) where id = ${deviceId}`
 
-  // Alertas avaliados com a média mais recente (falha aqui não afeta o recebimento).
-  if (accepted) {
-    try {
-      const { cfg } = await loadNotify()
-      await runAlerts(deviceId, cfg, useRuntimeConfig(event).public.tz as string)
-    } catch (e) {
-      console.error('alertas falharam:', e)
-    }
-  }
-
   return { accepted, duplicates: ts.length - accepted }
 })

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-useHead({ title: 'GWeather' })
+useHead({ title: 'GRain' })
 
 type Reading = { ts: number; temp: number | null; hum: number | null; pres_slp: number | null; dew: number | null }
 type Latest = {
-  device: { id: string; name: string; last_seen_at: string | null; status: Record<string, any> | null } | null
+  device: { id: string; name: string; last_seen_at: string | null; status: Record<string, any> | null; place: 'sacada' | 'escritorio' | null } | null
   latest: Reading | null
   recent: Reading[]
   last24h: { temp_min: number | null; temp_max: number | null; hum_min: number | null; hum_max: number | null; n: number } | null
@@ -43,6 +43,7 @@ function uptime(s?: number) {
   return `${d ? d + 'd ' : ''}${h}h ${String(m).padStart(2, '0')}m`
 }
 
+const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
 </script>
 
 <template>
@@ -63,7 +64,14 @@ function uptime(s?: number) {
       </section>
 
       <template v-else>
-        <p class="muted when">Média de 10 min iniciada às <span class="mono">{{ hhmm(data.latest.ts) }}</span></p>
+        <p class="muted when">
+          <span v-if="data.device.place" class="place">{{ PLACE_LABEL[data.device.place] }}</span>
+          Média de 10 min iniciada às <span class="mono">{{ hhmm(data.latest.ts) }}</span>
+        </p>
+        <p v-if="data.device.place === 'sacada'" class="notice">
+          <strong>Estação na sacada</strong>
+          <span>Temperatura e umidade sofrem com sol direto e calor do prédio; a pressão vale normalmente.</span>
+        </p>
         <section class="cards">
           <article class="card">
             <span class="k">Temperatura</span>
@@ -109,6 +117,7 @@ function uptime(s?: number) {
           <h2>Estação</h2>
           <dl class="kv">
             <dt>Identificação</dt><dd class="mono">{{ data.device.id }}</dd>
+            <dt>Local</dt><dd>{{ data.device.place ? PLACE_LABEL[data.device.place] : '–' }}</dd>
             <dt>Último envio</dt><dd>{{ ago(data.device.last_seen_at) }}</dd>
             <dt>Firmware</dt><dd>{{ data.device.status?.fw ?? '–' }}</dd>
             <dt>Sinal Wi-Fi</dt><dd>{{ data.device.status?.rssi != null ? data.device.status.rssi + ' dBm' : '–' }}</dd>
@@ -125,7 +134,9 @@ function uptime(s?: number) {
 <style scoped>
 .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 56px; display: grid; gap: 22px; }
 h2 { font-size: 1.15rem; font-weight: 700; font-stretch: 108%; }
-.when { margin: 0; font-size: 0.9rem; }
+.when { margin: 0; font-size: 0.9rem; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.place { font-family: var(--ff-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg); border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 2px 9px; }
+.notice span { font-size: 0.92rem; color: var(--muted); }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 4px; min-width: 0; }
 .k { font-family: var(--ff-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }

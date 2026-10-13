@@ -1,12 +1,14 @@
 <script setup lang="ts">
 // Gráfico de série temporal (uPlot) com faixa mín.–máx. opcional,
 // lacunas visíveis quando faltam dados, eixo de tempo no fuso configurado,
-// cruz de leitura e tooltip ao passar o mouse/dedo.
+// cruz de leitura e tooltip ao passar o mouse/dedo. Períodos marcados (ex.: sacada)
+// aparecem hachurados atrás das linhas.
 import uPlot from 'uplot'
 import 'uplot/dist/uPlot.min.css'
 
 type Point = Record<string, number | null> & { ts: number }
 type SeriesDef = { key: string; label: string; color: string; bandMin?: string; bandMax?: string }
+type Period = { from: number; to: number | null; label: string }
 
 const props = defineProps<{
   points: Point[]
@@ -20,6 +22,8 @@ const props = defineProps<{
   // Período pedido (epoch s): o eixo do tempo cobre o período inteiro, mesmo sem dados.
   xMin: number
   xMax: number
+  // Trechos hachurados (epoch s; to = null vai até o fim do eixo).
+  periods?: Period[]
 }>()
 
 const tz = useRuntimeConfig().public.tz as string
@@ -81,6 +85,48 @@ function buildData() {
   return { data: [xs, ...cols] as uPlot.AlignedData, keys }
 }
 
+const periodAt = (ts: number) => props.periods?.find((p) => ts >= p.from && ts < (p.to ?? Infinity))
+
+function periodsPlugin(): uPlot.Plugin {
+  return {
+    hooks: {
+      drawClear: (u) => {
+        if (!props.periods?.length) return
+        const ctx = u.ctx
+        const { left, top, width, height } = u.bbox
+        const dpr = devicePixelRatio || 1
+        const color = cssVar('--muted')
+        for (const p of props.periods) {
+          const x0 = Math.max(u.valToPos(p.from, 'x', true), left)
+          const x1 = Math.min(u.valToPos(p.to ?? props.xMax, 'x', true), left + width)
+          if (x1 - x0 < 1) continue
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(x0, top, x1 - x0, height)
+          ctx.clip()
+          ctx.fillStyle = alpha(color, 0.06)
+          ctx.fillRect(x0, top, x1 - x0, height)
+          ctx.strokeStyle = alpha(color, 0.28)
+          ctx.lineWidth = dpr
+          ctx.beginPath()
+          for (let x = x0 - height; x < x1; x += 7 * dpr) {
+            ctx.moveTo(x, top + height)
+            ctx.lineTo(x + height, top)
+          }
+          ctx.stroke()
+          if (x1 - x0 > 48 * dpr) {
+            ctx.fillStyle = color
+            ctx.font = `${10 * dpr}px "JetBrains Mono", ui-monospace, monospace`
+            ctx.textBaseline = 'top'
+            ctx.fillText(p.label, x0 + 6 * dpr, top + 4 * dpr)
+          }
+          ctx.restore()
+        }
+      },
+    },
+  }
+}
+
 function tooltipPlugin(): uPlot.Plugin {
   return {
     hooks: {
@@ -110,7 +156,8 @@ function tooltipPlugin(): uPlot.Plugin {
           const si = u.series.findIndex((x) => (x as any)._key === s.key)
           return u.data[si]?.[idx] == null
         })
-        t.innerHTML = `<div class="when">${fmtWhen(ts)}</div>${allNull ? '<div class="row muted">sem dados</div>' : rows}`
+        const period = periodAt(ts)
+        t.innerHTML = `<div class="when">${fmtWhen(ts)}${period ? ` · ${period.label}` : ''}</div>${allNull ? '<div class="row muted">sem dados</div>' : rows}`
         t.hidden = false
         const left = u.cursor.left ?? 0
         const w = t.offsetWidth
@@ -194,7 +241,7 @@ function build() {
         size: 52,
       },
     ],
-    plugins: [tooltipPlugin()],
+    plugins: [periodsPlugin(), tooltipPlugin()],
   }
   plot = new uPlot(opts, data, el.value)
   plot.over.addEventListener('mouseleave', () => tip.value && (tip.value.hidden = true))
@@ -212,7 +259,7 @@ onBeforeUnmount(() => {
   mql?.removeEventListener('change', build)
   plot?.destroy()
 })
-watch(() => [props.points, props.step, props.xMin, props.xMax], build)
+watch(() => [props.points, props.step, props.xMin, props.xMax, props.periods], build)
 </script>
 
 <template>

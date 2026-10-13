@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'Display · GWeather' })
+useHead({ title: 'Display · GRain' })
 
 type ConfigResp = {
   device_id: string

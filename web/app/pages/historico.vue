@@ -1,11 +1,12 @@
 <script setup lang="ts">
-useHead({ title: 'Histórico · GWeather' })
+useHead({ title: 'Histórico · GRain' })
 
 type Point = { ts: number; temp: number | null; temp_min: number | null; temp_max: number | null; hum: number | null; hum_min: number | null; hum_max: number | null; pres: number | null; pres_min: number | null; pres_max: number | null; dew: number | null; n: number }
 type Extreme = { v: number; ts: number } | null
 type Stat = { min: Extreme; max: Extreme; avg: number | null }
-type Series = { from: string; to: string; step_s: number; points: Point[]; summary: { n: number; expected: number; temp: Stat; hum: Stat; pres: Stat } | null }
-type Day = { day: string; temp_min: number | null; temp_max: number | null; temp_avg: number | null; hum_min: number | null; hum_max: number | null; hum_avg: number | null; pres_min: number | null; pres_max: number | null; pres_avg: number | null; n: number }
+type Placement = { place: 'sacada' | 'escritorio'; from: number; to: number | null }
+type Series = { from: string; to: string; step_s: number; points: Point[]; placements: Placement[]; summary: { n: number; n_sacada: number; expected: number; temp: Stat; hum: Stat; pres: Stat } | null }
+type Day = { day: string; temp_min: number | null; temp_max: number | null; temp_avg: number | null; hum_min: number | null; hum_max: number | null; hum_avg: number | null; pres_min: number | null; pres_max: number | null; pres_avg: number | null; n: number; n_sacada: number }
 
 const route = useRoute()
 const router = useRouter()
@@ -61,6 +62,10 @@ const stepLabel = computed(() => {
 })
 const xMin = computed(() => Math.floor(new Date(series.value?.from ?? Date.now()).getTime() / 1000))
 const xMax = computed(() => Math.floor(new Date(series.value?.to ?? Date.now()).getTime() / 1000))
+// Na sacada, temperatura e umidade não representam o ambiente: trecho hachurado nos gráficos.
+const sacada = computed(() =>
+  (series.value?.placements ?? []).filter((p) => p.place === 'sacada').map((p) => ({ from: p.from, to: p.to, label: 'sacada' })),
+)
 const coverage = computed(() => {
   const s = series.value?.summary
   if (!s || !s.expected) return null
@@ -108,6 +113,11 @@ const coverage = computed(() => {
         <span v-if="pending"> · atualizando…</span>
       </p>
 
+      <p v-if="series.summary.n_sacada" class="notice">
+        <strong>Parte deste período foi medida na sacada</strong>
+        <span>No trecho hachurado, a temperatura e a umidade sofriam com sol direto e calor do prédio, então ficam fora das mínimas, máximas e médias. A pressão vale normalmente.</span>
+      </p>
+
       <section class="stats">
         <article class="stat">
           <span class="k">Temperatura</span>
@@ -151,6 +161,7 @@ const coverage = computed(() => {
             :x-min="xMin"
             :x-max="xMax"
             :points="series.points"
+            :periods="sacada"
             :series="[
               { key: 'temp', label: 'Temperatura', color: '--series-temp', bandMin: 'temp_min', bandMax: 'temp_max' },
               { key: 'dew', label: 'Ponto de orvalho', color: '--series-dew' },
@@ -165,6 +176,7 @@ const coverage = computed(() => {
             :x-min="xMin"
             :x-max="xMax"
             :points="series.points"
+            :periods="sacada"
             :series="[{ key: 'hum', label: 'Umidade', color: '--series-hum', bandMin: 'hum_min', bandMax: 'hum_max' }]"
           />
           <TimeChart
@@ -202,7 +214,7 @@ const coverage = computed(() => {
                 <td>{{ fmt(d.hum_min, 0) }} %</td>
                 <td>{{ fmt(d.hum_max, 0) }} %</td>
                 <td>{{ fmt(d.pres_avg) }} hPa</td>
-                <td class="muted">{{ d.n }}/144</td>
+                <td class="muted">{{ d.n }}/144<span v-if="d.n_sacada" class="tag">{{ d.n_sacada === d.n ? 'sacada' : `${d.n_sacada} na sacada` }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -245,5 +257,7 @@ th { font-family: var(--ff-mono); font-size: 0.7rem; letter-spacing: 0.07em; tex
 tr:last-child td { border-bottom: none; }
 .notice { background: var(--surface); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; display: grid; gap: 4px; margin: 0; }
 .notice.crit { border-left-color: var(--crit); }
+.notice span { font-size: 0.92rem; color: var(--muted); }
+.tag { margin-left: 8px; font-family: var(--ff-mono); font-size: 0.7rem; border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; }
 @media (max-width: 560px) { .downloads { margin-left: 0; } }
 </style>

@@ -49,7 +49,7 @@ static void sendError(int code, const char *error, const String &detail = "") {
 static bool requireAuth() {
   if (s_srv.authenticate(API_USER, netStatus().apPass.c_str())) return true;
   cors();
-  s_srv.requestAuthentication(BASIC_AUTH, "GWeather");
+  s_srv.requestAuthentication(BASIC_AUTH, "GRain");
   return false;
 }
 

@@ -1,4 +1,4 @@
-// Previsão e cálculos para as mensagens.
+// Cálculos meteorológicos (sensação térmica, tendência da pressão, Zambretti) e previsão do Open-Meteo.
 
 // Sensação térmica (índice de calor NOAA), °C. Mesma fórmula do firmware.
 export function heatIndexC(tempC: number, hum: number): number {

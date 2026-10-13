@@ -35,7 +35,7 @@ void setup() {
   Serial.begin(115200);
   delay(500);
   pinMode(PIN_LED, OUTPUT);
-  log_i("[%s] boot: GWeather %s", TAG, FW_VERSION);
+  log_i("[%s] boot: GRain %s", TAG, FW_VERSION);
 
   settingsBegin();
 

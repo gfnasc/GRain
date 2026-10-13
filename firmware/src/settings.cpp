@@ -40,7 +40,7 @@ static void applyDefaults(Settings &c) {
     c.deviceId = keepId;
   } else {
     char id[24];
-    snprintf(id, sizeof id, "gweather-%06lx", (unsigned long)(esp_random() & 0xFFFFFF));
+    snprintf(id, sizeof id, "grain-%06lx", (unsigned long)(esp_random() & 0xFFFFFF));
     c.deviceId = id;
   }
   c.hostname = DEFAULT_HOSTNAME;
@@ -149,6 +149,7 @@ static void fromJson(JsonDocument &doc, Settings &c) {
   // Campos ausentes mantêm o valor padrão já aplicado em c.
   c.deviceId = doc["device_id"] | c.deviceId;
   c.hostname = doc["hostname"] | c.hostname;
+  if (c.hostname == LEGACY_HOSTNAME) c.hostname = DEFAULT_HOSTNAME;  // projeto renomeado para GRain
   c.tz = doc["time"]["tz"] | c.tz;
   c.ntp1 = doc["time"]["ntp1"] | c.ntp1;
   c.ntp2 = doc["time"]["ntp2"] | c.ntp2;

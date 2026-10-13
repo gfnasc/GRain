@@ -14,7 +14,7 @@ struct NetStatus {
 };
 
 // Inicia Wi-Fi (WiFiManager não bloqueante), mDNS e NTP.
-// Sem Wi-Fi salvo, abre a rede de configuração "GWeather-Setup".
+// Sem Wi-Fi salvo, abre a rede de configuração "GRain-Setup".
 void netBegin();
 
 // Chamar no loop(): atende o portal, reconecta e acompanha a hora.

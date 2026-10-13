@@ -13,15 +13,8 @@ export default defineEventHandler(async (event) => {
     update devices
        set last_poll_at = now(), config_applied_version = ${applied}
      where id = ${deviceId}
-    returning config, config_version, notify`) as { config: StationConfig | null; config_version: number; notify: NotifyConfig | null }[]
+    returning config, config_version`) as { config: StationConfig | null; config_version: number }[]
   const row = rows[0]!
-
-  // A consulta de cada minuto também serve de relógio para a agenda de mensagens.
-  try {
-    await runSchedules(deviceId, row.notify ?? DEFAULT_NOTIFY, useRuntimeConfig(event).public.tz as string)
-  } catch (e) {
-    console.error('agenda de mensagens falhou:', e)
-  }
 
   if (!row.config || row.config_version === applied) {
     setResponseStatus(event, 204)
