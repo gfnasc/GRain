@@ -144,7 +144,7 @@ const fmt = (v: number | null | undefined, d = 2) =>
       <ul class="about">
         <li v-for="m in METHODS" :key="m.key"><b>{{ m.name }}</b>: {{ m.about }}</li>
         <li><b>Conferência</b>: choveu na janela se o METAR do aeroporto registrou chuva (fora “nas proximidades”) ou se alguém tocou em “Está chovendo aqui”; sem METAR, vale a chuva medida pelo modelo. O aviso local vale mais que o aeroporto, que fica a alguns quilômetros.</li>
-        <li><b>Próximo passo</b> (fase 17): um método combinado (M4) que aprende os pesos com este placar.</li>
+        <li><b>Próximo passo</b> (fase 18): um método combinado (M4) que aprende os pesos com este placar.</li>
       </ul>
     </section>
   </main>

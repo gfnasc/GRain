@@ -605,7 +605,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
   <div class="head">
     <span class="eyebrow">Roteiro</span>
     <h2>Fases do projeto</h2>
-    <p class="muted">Cada fase termina com um critério de aceite. Na v4 o painel saiu do ESP32 e foi para um app Nuxt na Vercel. Na v5 o projeto virou GRain: a Fase 9 foi encerrada, a robustez passou para a 18 e o WhatsApp voltou como a 19.</p>
+    <p class="muted">Cada fase termina com um critério de aceite. Na v4 o painel saiu do ESP32 e foi para um app Nuxt na Vercel. Na v5 o projeto virou GRain: a Fase 9 foi encerrada, a robustez passou para a 17 (antes do M4, que precisa de um teste de 30 dias) e o WhatsApp voltou como a 19.</p>
   </div>
   <div class="phases">
     <div class="phase done">
@@ -723,7 +723,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="phase">
       <div class="n">10</div>
       <div class="body">
-        <div class="meta"><h3>Robustez</h3><span class="chip v5">Movida para a Fase 18 na v5</span></div>
+        <div class="meta"><h3>Robustez</h3><span class="chip v5">Movida para a Fase 17 na v5</span></div>
         <ul><li>Watchdog, OTA e teste de 72 h agora fecham a reformulação. Veja <a href="#v5">Reformulação v5</a>.</li></ul>
       </div>
     </div>
@@ -823,20 +823,20 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
       <div class="phase next">
         <div class="n">17</div>
         <div class="body">
-          <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip">2 dias + semanas de dados</span></div>
-          <ul>
-            <li>M4 combinado: pesos fixos no início e, com dados suficientes (cerca de 20 a 30 eventos de chuva), pesos ajustados pelo histórico.</li>
-            <li>M5 (radar) como experimento, se houver uma fonte gratuita viável.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, nos últimos 30 dias.</p>
+          <div class="meta"><h3>Robustez (antiga Fase 10)</h3><span class="chip">1 dia + 72 h</span></div>
+          <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li><li>Vem antes do M4 para fechar as pontas soltas antes do teste longo de 30 dias.</li></ul>
+          <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
         </div>
       </div>
       <div class="phase next">
         <div class="n">18</div>
         <div class="body">
-          <div class="meta"><h3>Robustez (antiga Fase 10)</h3><span class="chip">1 dia + 72 h</span></div>
-          <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
-          <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
+          <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip">2 dias + teste de 30 dias</span></div>
+          <ul>
+            <li>M4 combinado: pesos fixos no início e, com dados suficientes (cerca de 20 a 30 eventos de chuva), pesos ajustados pelo histórico.</li>
+            <li>M5 (radar) como experimento, se houver uma fonte gratuita viável.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, nos últimos 30 dias.</p>
         </div>
       </div>
       <div class="phase next">

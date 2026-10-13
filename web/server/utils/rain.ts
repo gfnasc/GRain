@@ -5,7 +5,7 @@
 //   M2  M1 + aeroporto: chuva/trovoada observada ou nas proximidades, nuvens CB/TCU,
 //       ar perto de saturar, teto baixo, rajadas e TAF (previsão do aeroporto)
 //   M3  modelo numérico (Open-Meteo): probabilidade por hora, chuva em blocos de 15 min, CAPE
-// Os pesos são fixos por enquanto; a fase 17 ajusta pelo histórico (M4).
+// Os pesos são fixos por enquanto; a fase 18 ajusta pelo histórico (M4).
 
 export type Method = 'm1' | 'm2' | 'm3'
 export const METHODS: Method[] = ['m1', 'm2', 'm3']

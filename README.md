@@ -24,15 +24,15 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 7 | Histórico, gráficos e exportação CSV no painel | ✅ Concluída |
 | 8 | Personalização do display pelo painel | ✅ Concluída |
 | 9 | Previsão e WhatsApp | ⏹️ Encerrada na v5 (volta na 19) |
-| 10 | Robustez | ➡️ Movida para a 18 |
+| 10 | Robustez | ➡️ Movida para a 17 |
 | 11 | GRain: novo nome, flag "sacada" no histórico, remoção do WhatsApp | ✅ Concluída |
 | 12 | Configurações só no ESP32; painel só para visualização | ✅ Concluída |
 | 13 | Outdoor: dados externos (METAR e Open-Meteo) | ✅ Concluída |
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
 | 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | ✅ Concluída |
 | 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |
-| 17 | Chuva v2: método combinado com aprendizado | Planejada |
-| 18 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
+| 17 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
+| 18 | Chuva v2: método combinado com aprendizado (teste de 30 dias) | Planejada |
 | 19 | WhatsApp, configurado no ESP32 | Planejada |
 
 Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama interativo de ligações e montagem passo a passo: [docs/plano.html](docs/plano.html) (baixe o arquivo e abra no navegador).
@@ -233,7 +233,7 @@ A cada envio da estação (10 min), a nuvem calcula três métodos, do menos ao 
 | M2 · Barômetro + aeroporto | M1 + METAR (chuva ou trovoada no aeroporto ou perto dele, nuvens CB/TCU, ar perto de saturar, teto baixo, rajadas) + TAF (previsão do aeroporto) |
 | M3 · Modelo numérico | Open-Meteo: probabilidade por hora, chuva prevista em blocos de 15 min e CAPE (energia para trovoada) |
 
-Quando a janela termina, a previsão é conferida: choveu se o METAR registrou chuva (fora "nas proximidades") ou se alguém tocou em **Está chovendo aqui** (no painel ou na página local); sem METAR, vale a chuva medida pelo modelo. O placar de 30 dias mostra o erro de cada método; o destaque (card, página local e OLED) é o método de menor erro quando o placar tem dados suficientes (100 previsões e 5 chuvas) e, até lá, o modelo. Os pesos dos métodos são fixos por enquanto; a fase 17 cria um método combinado que aprende com o placar.
+Quando a janela termina, a previsão é conferida: choveu se o METAR registrou chuva (fora "nas proximidades") ou se alguém tocou em **Está chovendo aqui** (no painel ou na página local); sem METAR, vale a chuva medida pelo modelo. O placar de 30 dias mostra o erro de cada método; o destaque (card, página local e OLED) é o método de menor erro quando o placar tem dados suficientes (100 previsões e 5 chuvas) e, até lá, o modelo. Os pesos dos métodos são fixos por enquanto; a fase 18 cria um método combinado que aprende com o placar.
 
 ### Pressão calibrada pelo aeroporto
 

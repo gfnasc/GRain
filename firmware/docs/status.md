@@ -137,6 +137,8 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 
 ## Próximos passos
 1. Fase 16: Indoor (conforto, ar seco, mofo, abra/feche a janela, atraso térmico).
+2. Fase 17: robustez (watchdog, OTA, teste de 72 h), antes do M4.
+3. Fase 18: Chuva v2 (M4, teste de 30 dias). 4. Fase 19: WhatsApp.
 
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.

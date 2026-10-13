@@ -74,7 +74,7 @@ O que conta como chuva observada: o METAR (RA/DZ/SHRA/TSRA), o botão “Está c
 7. ✅ Histórico, gráficos (24 h / 7 d / 30 d), mínimas e máximas, exportação CSV no painel.
 8. ✅ Personalização do display pelo painel; ESP32 busca a configuração na nuvem. *(Na v5 o editor vai para o ESP32, Fase 12.)*
 9. ⏹️ Previsão + WhatsApp: encerrada na v5 sem validação; código removido na Fase 11, volta como Fase 19.
-10. ➡️ Robustez: movida para a Fase 18.
+10. ➡️ Robustez: movida para a Fase 17.
 
 **v5 — GRain**
 
@@ -84,8 +84,8 @@ O que conta como chuva observada: o METAR (RA/DZ/SHRA/TSRA), o botão “Está c
 14. ✅ Pressão calibrada automaticamente pelo QNH (mediana de 7 dias), aplicada pelo ESP32; gráfico estação × QNH. *Resultado: desvio de +2,29 hPa (desvio-padrão 0,23) calculado com a pressão sem calibração, sem realimentação; firmware 0.10.0 aplica pela resposta do envio; histórico antigo corrigido uma vez.*
 15. ✅ Chuva v1: M1–M3, registro, chuva observada, botão “Está chovendo aqui”, aba Chuva e placar. Dividida em 15a (nuvem/painel, no ar) e 15b (ESP32: página Chuva, alertas no OLED, card e botão na página local; firmware 0.11.0 gravado; app local reorganizado em abas com identidade de aparelho). *Na implementação: tabela `rain_reports` no lugar de `rain_truth` (a chuva do METAR e do modelo é lida de `outdoor_obs`), sem `forecast_snapshots` (as previsões do M3 ficam em `rain_predictions`), e o M1 desconta a maré barométrica diária.*
 16. Indoor: conforto, ar seco, mofo, janela, atraso térmico; resumo do dia com Indoor e Outdoor.
-17. Chuva v2: M4 com aprendizado (após ~20–30 eventos de chuva) e M5 experimental.
-18. Robustez: watchdog, OTA, reinício sem rede, aviso de erro no OLED, teste de 72 h.
+17. Robustez: watchdog, OTA, reinício sem rede, aviso de erro no OLED, teste de 72 h. Vem antes do M4 para fechar as pontas soltas antes do teste longo.
+18. Chuva v2: M4 com aprendizado (após ~20–30 eventos de chuva), validado num teste de 30 dias, e M5 experimental.
 19. WhatsApp: números, chaves e horários configurados no ESP32; mensagens Outdoor/Indoor/Chuva montadas pela nuvem e alerta de chuva.
 
 ## Bibliotecas
