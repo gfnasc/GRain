@@ -61,7 +61,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 
 - Fase 9 (WhatsApp) chegou a funcionar na nuvem, mas foi encerrada na v5 sem validação e removida na fase 11.
 
-- Fase 11 (em validação): projeto renomeado para GRain.
+- Fase 11 concluída e validada pelo usuário: projeto renomeado para GRain; estação no escritório desde 13/10 07:50.
   - Firmware 0.8.0: hostname `grain` (migra `gweather` ao carregar o /config.json), rede `GRain-Setup`,
     nome na abertura, títulos. Namespace da NVS continua `gweather` (URL, token e senha do portal preservados);
     novos `device_id` usam o prefixo `grain-` (a estação atual mantém o id antigo).
@@ -73,7 +73,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Fora do git até a fase 13: `web/server/utils/forecast.ts` e `web/server/api/v1/forecast.get.ts`.
 
 ## Em andamento
-- Fase 11: mudança registrada (escritório desde 13/10 07:50; a estação não volta para a sacada). Aguardando o fechamento pelo usuário.
+- Fase 12: configurações só no ESP32 e painel somente leitura.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos

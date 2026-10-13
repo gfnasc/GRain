@@ -78,8 +78,8 @@ O que conta como chuva observada: o METAR (RA/DZ/SHRA/TSRA), o botão “Está c
 
 **v5 — GRain**
 
-11. 🔧 (em validação) GRain, escritório e limpeza: renome (GitHub, Vercel com domínio novo e o antigo como alias, firmware, `grain.local`), `placements` com flag sacada, remoção do WhatsApp (aba, rotas, envio, agenda, alertas, tabelas). *Resultado: firmware 0.8.0 com `grain.local`; repositório `gfnasc/GRain`; painel no domínio novo (o antigo segue como alias); histórico da sacada hachurado e fora dos extremos; WhatsApp e suas tabelas removidos.*
-12. Configurações só no ESP32: editor do display com prévia do OLED, calibração e localização na página local; ESP32 para de buscar config e envia uma cópia; painel somente leitura (a aba Display vira Estação).
+11. ✅ GRain, escritório e limpeza: renome (GitHub, Vercel com domínio novo e o antigo como alias, firmware, `grain.local`), `placements` com flag sacada, remoção do WhatsApp (aba, rotas, envio, agenda, alertas, tabelas). *Resultado: firmware 0.8.0 com `grain.local`; repositório `gfnasc/GRain`; painel no domínio novo (o antigo segue como alias); histórico da sacada hachurado e fora dos extremos; WhatsApp e suas tabelas removidos.*
+12. 🔧 Configurações só no ESP32: editor do display com prévia do OLED, calibração e localização na página local; ESP32 para de buscar config e envia uma cópia; painel somente leitura (a aba Display vira Estação).
 13. Outdoor: METAR e Open-Meteo gravados em `outdoor_obs`, cards Outdoor × Indoor e previsão de hoje/amanhã na aba Agora, Indoor × Outdoor no histórico.
 14. Pressão calibrada automaticamente pelo QNH (mediana de 7 dias), aplicada pelo ESP32; gráfico estação × QNH.
 15. Chuva v1: M1–M3, registro, chuva observada, botão “Está chovendo aqui”, aba Chuva e placar.
