@@ -92,12 +92,17 @@ Reading sensorsRead() {
 
   if (s_bmpPresent && s_bmp->takeForcedMeasurement()) {
     float t = s_bmp->readTemperature();
-    float p = s_bmp->readPressure() / 100.0f + settings().calPres;
+    // Calibração da pressão: automática (desvio do QNH do aeroporto, calculado na nuvem e
+    // somado ao nível do mar) ou manual (somada à pressão no local), nunca as duas.
+    const Settings &cfg = settings();
+    float raw = s_bmp->readPressure() / 100.0f;
+    float p = raw + (cfg.presAuto ? 0.0f : cfg.calPres);
     if (!isnan(t) && !isnan(p) && p > 300.0f && p < 1100.0f) {
       r.bmpOk = true;
       r.tempBmpC = t;
       r.stationHpa = p;
-      r.seaLevelHpa = seaLevelPressureHpa(p, s_altitudeM);
+      r.seaLevelRawHpa = seaLevelPressureHpa(raw, s_altitudeM);
+      r.seaLevelHpa = seaLevelPressureHpa(p, s_altitudeM) + (cfg.presAuto ? cfg.presAutoOffset : 0.0f);
       s_bmpFails = 0;
     }
   }

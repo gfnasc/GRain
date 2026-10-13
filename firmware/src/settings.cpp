@@ -143,6 +143,8 @@ static void toJson(const Settings &c, JsonDocument &doc) {
   cal["temp"] = c.calTemp;
   cal["hum"] = c.calHum;
   cal["pres"] = c.calPres;
+  cal["pres_auto"] = c.presAuto;
+  cal["pres_auto_offset"] = roundf(c.presAutoOffset * 100) / 100;
   JsonObject loc = doc["location"].to<JsonObject>();
   if (isnan(c.lat) || isnan(c.lon)) {
     loc["lat"] = nullptr;
@@ -181,6 +183,8 @@ static void fromJson(JsonDocument &doc, Settings &c) {
   c.calTemp = doc["calibration"]["temp"] | c.calTemp;
   c.calHum = doc["calibration"]["hum"] | c.calHum;
   c.calPres = doc["calibration"]["pres"] | c.calPres;
+  c.presAuto = doc["calibration"]["pres_auto"] | c.presAuto;
+  c.presAutoOffset = doc["calibration"]["pres_auto_offset"] | c.presAutoOffset;
   c.lat = doc["location"]["lat"] | c.lat;
   c.lon = doc["location"]["lon"] | c.lon;
   c.placeLabel = doc["location"]["label"] | c.placeLabel;
@@ -290,6 +294,12 @@ static bool setField(Settings &c, const String &key, const String &value, String
   } else if (key == "calibration.pres") {
     if (!parseFloat(value, -15, 15, f)) { err = "entre -15 e 15"; return false; }
     c.calPres = f;
+  } else if (key == "calibration.pres_auto") {
+    if (value != "true" && value != "false") { err = "true ou false"; return false; }
+    c.presAuto = value == "true";
+  } else if (key == "calibration.pres_auto_offset") {
+    if (!parseFloat(value, -15, 15, f)) { err = "entre -15 e 15"; return false; }
+    c.presAutoOffset = f;
   } else if (key == "location.lat" || key == "location.lon") {
     bool isLat = key.endsWith("lat");
     if (value.isEmpty() || value == "null") {

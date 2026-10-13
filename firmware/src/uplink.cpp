@@ -26,6 +26,7 @@ static uint32_t s_nextAttemptMs = 0;
 static uint32_t s_backoffMs = 0;
 static bool s_forceSend = false;
 static String s_configCopy;        // JSON da cópia da configuração (montado no loop principal)
+static float s_pendingOffset = NAN; // desvio da pressão sugerido pela nuvem, a aplicar no loop principal
 
 struct Lock {
   Lock() { xSemaphoreTake(s_lock, portMAX_DELAY); }
@@ -36,7 +37,7 @@ struct Lock {
 struct Bucket {
   uint32_t start = 0;  // epoch UTC do início do intervalo
   uint32_t nAht = 0, nBmp = 0;
-  double temp = 0, hum = 0, dew = 0, pres = 0;
+  double temp = 0, hum = 0, dew = 0, pres = 0, presRaw = 0;
 };
 static Bucket s_bucket;
 
@@ -102,7 +103,10 @@ static void finishBucket() {
       doc["hum"] = roundf(b.hum / b.nAht * 10) / 10;
       doc["dew"] = roundf(b.dew / b.nAht * 10) / 10;
     }
-    if (b.nBmp >= minSamples) doc["pres_slp"] = roundf(b.pres / b.nBmp * 100) / 100;
+    if (b.nBmp >= minSamples) {
+      doc["pres_slp"] = roundf(b.pres / b.nBmp * 100) / 100;
+      doc["pres_raw"] = roundf(b.presRaw / b.nBmp * 100) / 100;
+    }
     String line;
     serializeJson(doc, line);
     enqueue(line);
@@ -128,6 +132,7 @@ void uplinkAddReading(const Reading &r) {
   if (r.bmpOk) {
     s_bucket.nBmp++;
     s_bucket.pres += r.seaLevelHpa;
+    s_bucket.presRaw += r.seaLevelRawHpa;
   }
 }
 
@@ -289,6 +294,8 @@ static void sendBatch() {
     s_backoffMs = 0;
     s_nextAttemptMs = 0;
     log_i("[%s] lote de %u enviado: %s (fila %u)", TAG, n, resp.c_str(), s_st.queue);
+    JsonDocument r;
+    if (!deserializeJson(r, resp) && r["pres_offset"].is<float>()) s_pendingOffset = r["pres_offset"];
     if (s_st.queue) s_forceSend = true;  // ainda há pendências: continua
   } else if (code == 422 || code == 413) {
     // Lote recusado pelo conteúdo: descarta para não travar a fila.
@@ -342,6 +349,20 @@ void uplinkBegin() {
 // Remonta a cópia da configuração quando ela muda (só no loop principal,
 // que é quem altera as configurações) e marca para enviar.
 void uplinkLoop() {
+  // Desvio da pressão vindo da nuvem: grava só se a calibração automática estiver ligada
+  // e o valor mudou (evita escrever no flash a cada envio).
+  float offset;
+  {
+    Lock l;
+    offset = s_pendingOffset;
+    s_pendingOffset = NAN;
+  }
+  if (!isnan(offset) && settings().presAuto && fabsf(offset - settings().presAutoOffset) >= 0.05f) {
+    String err;
+    if (settingsSet("calibration.pres_auto_offset", String(offset, 2), err))
+      log_i("[%s] pressão calibrada pelo aeroporto: %+.2f hPa", TAG, offset);
+  }
+
   static uint32_t seen = 0;
   uint32_t rev = settingsRevision();
   if (rev == seen) return;

@@ -105,7 +105,11 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
             <dl class="kv">
               <dt>Temperatura</dt><dd>{{ signed(cfg.calibration.temp, '°C') }}</dd>
               <dt>Umidade</dt><dd>{{ signed(cfg.calibration.hum, '%') }}</dd>
-              <dt>Pressão</dt><dd>{{ signed(cfg.calibration.pres, 'hPa') }}</dd>
+              <dt>Pressão</dt>
+              <dd v-if="cfg.calibration.pres_auto">
+                pelo aeroporto: {{ cfg.calibration.pres_auto_offset ? `${cfg.calibration.pres_auto_offset > 0 ? '+' : ''}${fmt(cfg.calibration.pres_auto_offset, 2)} hPa` : 'aguardando o cálculo' }}
+              </dd>
+              <dd v-else>{{ signed(cfg.calibration.pres, 'hPa') }} (manual)</dd>
             </dl>
           </section>
 

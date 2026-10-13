@@ -43,6 +43,9 @@ struct Settings {
   uint8_t nightMode = 1;         // 0 = apagar, 1 = escurecer
   // calibração (somada às leituras)
   float calTemp = 0, calHum = 0, calPres = 0;
+  // pressão calibrada pelo QNH do aeroporto: o desvio vem da nuvem e substitui calPres
+  bool presAuto = true;
+  float presAutoOffset = 0;  // hPa, somado à pressão ao nível do mar
   // localização para os dados externos (NAN = não definida)
   float lat = NAN, lon = NAN;
   String placeLabel;   // nome curto do local, ex.: "Casa"

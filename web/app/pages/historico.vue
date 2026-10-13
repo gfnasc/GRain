@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Histórico · GRain' })
 
-type Point = { ts: number; temp: number | null; temp_min: number | null; temp_max: number | null; hum: number | null; hum_min: number | null; hum_max: number | null; pres: number | null; pres_min: number | null; pres_max: number | null; dew: number | null; out_temp: number | null; n: number }
+type Point = { ts: number; temp: number | null; temp_min: number | null; temp_max: number | null; hum: number | null; hum_min: number | null; hum_max: number | null; pres: number | null; pres_min: number | null; pres_max: number | null; dew: number | null; out_temp: number | null; out_pres: number | null; n: number }
 type Extreme = { v: number; ts: number } | null
 type Stat = { min: Extreme; max: Extreme; avg: number | null }
 type Placement = { place: 'sacada' | 'escritorio'; from: number; to: number | null }
@@ -180,7 +180,7 @@ const coverage = computed(() => {
             :series="[{ key: 'hum', label: 'Umidade', color: '--series-hum', bandMin: 'hum_min', bandMax: 'hum_max' }]"
           />
           <TimeChart
-            title="Pressão ao nível do mar"
+            title="Pressão ao nível do mar: estação × aeroporto"
             unit="hPa"
             :decimals="1"
             :min-span="4"
@@ -188,7 +188,10 @@ const coverage = computed(() => {
             :x-min="xMin"
             :x-max="xMax"
             :points="series.points"
-            :series="[{ key: 'pres', label: 'Pressão', color: '--series-pres', bandMin: 'pres_min', bandMax: 'pres_max' }]"
+            :series="[
+              { key: 'pres', label: 'Estação', color: '--series-pres', bandMin: 'pres_min', bandMax: 'pres_max' },
+              { key: 'out_pres', label: 'Aeroporto (QNH)', color: '--series-out' },
+            ]"
           />
         </section>
       </ClientOnly>

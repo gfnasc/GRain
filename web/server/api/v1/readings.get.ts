@@ -5,7 +5,8 @@
 // Temperatura e umidade medidas na sacada aparecem nos gráficos (marcadas) mas
 // ficam fora dos extremos e das médias; a pressão vale em qualquer local.
 // Cada ponto traz também a temperatura de fora (out_temp): METAR do aeroporto, com o
-// Open-Meteo nos buracos, interpolada entre observações próximas.
+// Open-Meteo nos buracos, interpolada entre observações próximas, e o QNH do aeroporto
+// (out_pres), para comparar com a pressão da estação.
 
 type Extreme = { v: number; ts: number } | null
 
@@ -54,13 +55,15 @@ export default defineEventHandler(async (event) => {
   const placements = await placementsIn(deviceId, range.from, range.to)
 
   const out = (await sql`
-    select extract(epoch from obs_at)::bigint as ts, temp, source from outdoor_obs
-    where device_id = ${deviceId} and temp is not null
+    select extract(epoch from obs_at)::bigint as ts, temp, pres, source from outdoor_obs
+    where device_id = ${deviceId}
       and obs_at >= ${new Date(range.from.getTime() - 2 * 3600_000).toISOString()} and obs_at < ${new Date(range.to.getTime() + 2 * 3600_000).toISOString()}
-    order by obs_at`) as { ts: string; temp: number; source: string }[]
+    order by obs_at`) as { ts: string; temp: number | null; pres: number | null; source: string }[]
   // METAR onde houver; nos buracos (aeroporto fechado à noite, atraso) entra o Open-Meteo.
-  const metarOut = out.filter((o) => o.source === 'metar').map((o) => ({ ts: Number(o.ts), v: o.temp }))
-  const modelOut = out.filter((o) => o.source === 'open-meteo').map((o) => ({ ts: Number(o.ts), v: o.temp }))
+  const metarOut = out.filter((o) => o.source === 'metar' && o.temp != null).map((o) => ({ ts: Number(o.ts), v: o.temp }))
+  const modelOut = out.filter((o) => o.source === 'open-meteo' && o.temp != null).map((o) => ({ ts: Number(o.ts), v: o.temp }))
+  // QNH do aeroporto (só METAR: é a referência da calibração).
+  const qnhSeries = out.filter((o) => o.source === 'metar' && o.pres != null).map((o) => ({ ts: Number(o.ts), v: o.pres! }))
   const outSeries = [...metarOut, ...modelOut.filter((m) => !metarOut.some((o) => Math.abs(o.ts - m.ts) < 75 * 60))].sort((x, y) => x.ts - y.ts)
   const outdoorAt = (start: number) => outdoorValue(outSeries, start, step)
   const num = (v: unknown) => (v === null || v === undefined ? null : Math.round(Number(v) * 1000) / 1000)
@@ -77,6 +80,7 @@ export default defineEventHandler(async (event) => {
       pres: num(p.pres), pres_min: num(p.pres_min), pres_max: num(p.pres_max),
       dew: num(p.dew),
       out_temp: outdoorAt(Number(p.ts)),
+      out_pres: outdoorValue(qnhSeries, Number(p.ts), step),
       n: Number(p.n),
     })),
     placements,

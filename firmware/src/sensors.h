@@ -9,7 +9,8 @@ struct Reading {
   float humPct = NAN;       // AHT20
   float tempBmpC = NAN;     // BMP280 (conferência)
   float stationHpa = NAN;   // BMP280, pressão no local
-  float seaLevelHpa = NAN;  // corrigida para o nível do mar
+  float seaLevelHpa = NAN;  // corrigida para o nível do mar (com a calibração em uso)
+  float seaLevelRawHpa = NAN; // nível do mar sem nenhuma calibração (base do ajuste pelo aeroporto)
   float dewPointC = NAN;
   float heatIndexC = NAN;
 };

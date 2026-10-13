@@ -122,7 +122,9 @@ input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8
       <label>Às<input id="n_to" type="time"></label>
     </div>
     <h3>Calibração</h3>
-    <span class="mut">Valor somado a cada leitura.</span>
+    <label class="mut" style="display:flex;gap:8px;align-items:center;color:var(--fg)"><input id="c_auto" type="checkbox">Calibrar a pressão pelo aeroporto mais próximo</label>
+    <span class="mut" id="c_autotxt"></span>
+    <span class="mut">Ajustes manuais: valor somado a cada leitura.</span>
     <div class="f3">
       <label>Temperatura (°C)<input id="c_t" type="number" min="-5" max="5" step="0.1"></label>
       <label>Umidade (%)<input id="c_h" type="number" min="-15" max="15" step="0.5"></label>
@@ -210,6 +212,9 @@ function drawPages(){
   $("pcount").textContent=P.length+" de 8";$("addp").disabled=P.length>=8;
 }
 const ct=()=>$("ctv").textContent=Math.round($("contrast").value/2.55)+"%";
+function autoTxt(o){const on=$("c_auto").checked;$("c_p").disabled=on;
+  $("c_autotxt").textContent=on?(o?"Ajuste atual: "+(o>0?"+":"")+n(o,2)+" hPa (mediana de 7 dias, recalculada a cada envio). O ajuste manual de pressão fica desligado.":"Aguardando a nuvem calcular o ajuste (precisa de cerca de 12 h de dados do aeroporto)."):"Desligado: vale o ajuste manual de pressão."}
+$("c_auto").onchange=()=>autoTxt(null);
 async function loadCfg(){
   const c=await fetch("/api/v1/config").then(r=>r.json());
   const d=c.display,l=c.location||{},k=c.calibration;
@@ -217,6 +222,7 @@ async function loadCfg(){
   $("page_s").value=d.page_s;$("contrast").value=d.contrast;ct();
   $("n_on").checked=d.night.enabled;$("n_mode").value=d.night.mode;$("n_from").value=d.night.from;$("n_to").value=d.night.to;
   $("c_t").value=r1(k.temp,10);$("c_h").value=r1(k.hum,10);$("c_p").value=r1(k.pres,10);
+  $("c_auto").checked=k.pres_auto!==false;autoTxt(k.pres_auto_offset);
   $("l_lat").value=r1(l.lat,1e5);$("l_lon").value=r1(l.lon,1e5);$("l_lab").value=l.label||"";
   drawPages();
 }
@@ -233,7 +239,7 @@ $("save").onclick=async()=>{
     display:{page_s:+$("page_s").value,contrast:+$("contrast").value,
       night:{enabled:$("n_on").checked,from:$("n_from").value,to:$("n_to").value,mode:$("n_mode").value},
       pages:P.map(p=>p.type==="fields"?{type:"fields",fields:p.fields}:{type:p.type})},
-    calibration:{temp:num($("c_t").value)||0,hum:num($("c_h").value)||0,pres:num($("c_p").value)||0},
+    calibration:{temp:num($("c_t").value)||0,hum:num($("c_h").value)||0,pres:num($("c_p").value)||0,pres_auto:$("c_auto").checked},
     location:{lat:lat,lon:lon,label:$("l_lab").value.trim()}};
   $("save").disabled=true;
   try{

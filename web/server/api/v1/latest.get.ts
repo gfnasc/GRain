@@ -5,7 +5,8 @@ export default defineEventHandler(async (event) => {
   const sql = useSql()
 
   const devices = (await sql`
-    select id, name, last_seen_at, last_status from devices order by created_at limit 1`) as {
+    select id, name, last_seen_at, last_status, station_config->'calibration' as calibration from devices order by created_at limit 1`) as {
+    calibration: { pres_auto?: boolean; pres_auto_offset?: number } | null
     id: string
     name: string
     last_seen_at: string | null
@@ -26,7 +27,8 @@ export default defineEventHandler(async (event) => {
 
   const rows = recent.map((r) => ({ ...r, ts: Number(r.ts) }))
   return {
-    device: { id: device.id, name: device.name, last_seen_at: device.last_seen_at, status: device.last_status, place: await currentPlace(device.id) },
+    device: { id: device.id, name: device.name, last_seen_at: device.last_seen_at, status: device.last_status, place: await currentPlace(device.id),
+      pres_cal: device.calibration ? { auto: device.calibration.pres_auto !== false, offset: device.calibration.pres_auto_offset ?? 0 } : null },
     latest: rows[0] ?? null,
     recent: rows,
     last24h: day[0] ?? null,

@@ -40,7 +40,7 @@ export type StationConfig = {
     night: { enabled: boolean; from: string; to: string; mode: 'off' | 'dim' }
     pages: PageConfig[]
   }
-  calibration: { temp: number; hum: number; pres: number }
+  calibration: { temp: number; hum: number; pres: number; pres_auto: boolean; pres_auto_offset: number }
   location: Location
 }
 
@@ -94,6 +94,8 @@ export function validateStationConfig(input: any): StationConfig {
       temp: numberIn(c.temp, -5, 5, 'ajuste de temperatura'),
       hum: numberIn(c.hum, -15, 15, 'ajuste de umidade'),
       pres: numberIn(c.pres, -15, 15, 'ajuste de pressão'),
+      pres_auto: c.pres_auto !== false,
+      pres_auto_offset: numberIn(c.pres_auto_offset ?? 0, -15, 15, 'ajuste automático de pressão'),
     },
     location: {
       lat: hasLoc ? Math.round(numberIn(l.lat, -90, 90, 'latitude') * 1e5) / 1e5 : null,

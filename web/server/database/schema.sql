@@ -84,3 +84,8 @@ create index if not exists outdoor_obs_recent_idx on outdoor_obs (device_id, obs
 
 -- Aeroporto detectado para a localização atual e controle da coleta.
 alter table devices add column if not exists outdoor jsonb;
+
+-- Fase 14: pressão calibrada pelo aeroporto. A estação manda também a pressão ao nível do
+-- mar sem nenhuma calibração (pres_raw); a nuvem calcula o desvio em relação ao QNH do
+-- METAR (mediana de 7 dias) com ela, sem realimentação, e devolve na resposta do envio.
+alter table readings add column if not exists pres_raw real;  -- hPa, nível do mar sem calibração

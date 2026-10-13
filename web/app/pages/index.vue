@@ -5,7 +5,7 @@ useHead({ title: 'GRain' })
 
 type Reading = { ts: number; temp: number | null; hum: number | null; pres_slp: number | null; dew: number | null }
 type Latest = {
-  device: { id: string; name: string; last_seen_at: string | null; status: Record<string, any> | null; place: 'sacada' | 'escritorio' | null } | null
+  device: { id: string; name: string; last_seen_at: string | null; status: Record<string, any> | null; place: 'sacada' | 'escritorio' | null; pres_cal: { auto: boolean; offset: number } | null } | null
   latest: Reading | null
   recent: Reading[]
   last24h: { temp_min: number | null; temp_max: number | null; hum_min: number | null; hum_max: number | null; n: number } | null
@@ -159,6 +159,9 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
           <span class="sub" v-else>tendência disponível após 3 h de dados</span>
           <span class="sub" v-if="forecast?.pressure.outlook">{{ forecast.pressure.outlook }}</span>
           <span class="sub" v-if="outdoor?.metar?.pres">Aeroporto: QNH {{ fmt(outdoor.metar.pres, 0) }} hPa</span>
+          <span class="sub" v-if="data.device.pres_cal?.auto && data.device.pres_cal.offset">
+            Calibrada pelo aeroporto ({{ data.device.pres_cal.offset > 0 ? '+' : '' }}{{ fmt(data.device.pres_cal.offset, 2) }} hPa)
+          </span>
         </article>
         <article class="card">
           <span class="k">Previsão{{ forecast?.location.label ? ` · ${forecast.location.label}` : '' }}</span>

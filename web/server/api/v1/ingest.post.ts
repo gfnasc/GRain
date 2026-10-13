@@ -6,7 +6,7 @@ import { waitUntil } from '@vercel/functions'
 // Horários repetidos são ignorados (o ESP32 pode reenviar após falha). O lote pode vir
 // vazio quando a estação só quer mandar a cópia da configuração.
 
-type Reading = { ts: number; temp?: number | null; hum?: number | null; pres_slp?: number | null; dew?: number | null }
+type Reading = { ts: number; temp?: number | null; hum?: number | null; pres_slp?: number | null; pres_raw?: number | null; dew?: number | null }
 
 const MAX_BATCH = 500
 const MIN_TS = 1704067200 // 2024-01-01
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
   const maxTs = Math.floor(Date.now() / 1000) + 300
   const ts: string[] = [], temp: (number | null)[] = [], hum: (number | null)[] = []
-  const pres: (number | null)[] = [], dew: (number | null)[] = []
+  const pres: (number | null)[] = [], presRaw: (number | null)[] = [], dew: (number | null)[] = []
 
   for (const [i, r] of list.entries()) {
     try {
@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
       temp.push(num(r.temp, -40, 85))
       hum.push(num(r.hum, 0, 100))
       pres.push(num(r.pres_slp, 800, 1100))
+      presRaw.push(num(r.pres_raw, 800, 1100))
       dew.push(num(r.dew, -60, 60))
     } catch (e) {
       throw createError({ statusCode: 422, message: `leitura ${i}: ${(e as Error).message}` })
@@ -46,9 +47,9 @@ export default defineEventHandler(async (event) => {
   let accepted = 0
   if (ts.length) {
     const rows = await sql`
-      insert into readings (device_id, ts, temp, hum, pres_slp, dew)
+      insert into readings (device_id, ts, temp, hum, pres_slp, dew, pres_raw)
       select ${deviceId}, * from unnest(
-        ${ts}::timestamptz[], ${temp}::real[], ${hum}::real[], ${pres}::real[], ${dew}::real[]
+        ${ts}::timestamptz[], ${temp}::real[], ${hum}::real[], ${pres}::real[], ${dew}::real[], ${presRaw}::real[]
       )
       on conflict (device_id, ts) do nothing
       returning ts`
@@ -79,5 +80,14 @@ export default defineEventHandler(async (event) => {
   if (process.env.VERCEL) waitUntil(job)
   else await job
 
-  return { accepted, duplicates: ts.length - accepted }
+  // Desvio da pressão em relação ao aeroporto: a estação aplica se a calibração automática
+  // estiver ligada (só vem quando há pares suficientes).
+  let presOffset: number | undefined
+  try {
+    presOffset = (await pressureOffset(deviceId))?.value
+  } catch (e) {
+    console.warn('desvio da pressão falhou:', (e as Error).message)
+  }
+
+  return { accepted, duplicates: ts.length - accepted, ...(presOffset != null ? { pres_offset: presOffset } : {}) }
 })
