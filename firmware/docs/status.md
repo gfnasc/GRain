@@ -176,6 +176,9 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 3. Fase 19: WhatsApp (configurado na página local).
 
 ## Problemas conhecidos
+- M2T e M4 treinam uma regressão por janela (1, 2 e 3 h) separadamente; às vezes a chance de 2 h sai 1 ponto abaixo
+  da de 1 h (ex.: M4 28 %, 27 %, 30 % às 17:10 de 13/10). Cosmético. Não mexer durante o teste de 30 dias; depois,
+  forçar janelas crescentes (p2 ≥ p1, p3 ≥ p2) na saída.
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.
 - Abrir a porta serial no macOS reinicia a placa (DTR/RTS).
 - Após reinício por OTA, grain.local demora ~5 s no macOS (sem AAAA no mDNS); pelo IP é imediato.
