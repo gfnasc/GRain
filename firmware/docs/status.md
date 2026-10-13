@@ -141,7 +141,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 
 - Firmware 0.12.1: os três métodos no app local (tabela no card de chuva); a nuvem manda `rain.all` no ingest.
 
-- Fase 16 (em validação, só nuvem): `web/server/utils/indoor.ts` + `GET /api/v1/indoor` + card "No escritório"
+- Fase 16 concluída e validada pelo usuário (só nuvem): `web/server/utils/indoor.ts` + `GET /api/v1/indoor` + card "No escritório"
   na aba Agora (conforto, janela, ar seco, mofo pelas horas de umidade ≥ 70 % em 72 h, atraso térmico por correlação
   hora a hora Indoor × Outdoor com defasagem de 0 a 8 h, mínimo de 24 pares); resumo por dia com Outdoor.
   METAR das 14:00 de 13/10 registrou -RA, mas o usuário viu que não choveu (nem no aeroporto, visível da janela):
@@ -149,7 +149,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   afetadas reconferidas como sem chuva (M2/M3 erraram, M1 acertou).
 
 ## Em andamento
-- Fase 16: validação do usuário (uma semana de uso; atraso térmico depois de 24 h de dados).
+- Fase 17: robustez (watchdog, OTA, autocura, diagnóstico, teste de 72 h).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
