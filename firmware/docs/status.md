@@ -105,12 +105,28 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Histórico corrigido uma vez: 105 médias antigas (sem pres_raw) ganharam +2,29 hPa; original em pres_raw.
   - Aplicado na placa às 10:02 de 13/10: 1014,4 → 1016,7 hPa.
 
+- Fase 15 (em validação), dividida em 15a (nuvem e painel) e 15b (ESP32).
+  - 15a no ar: `web/server/utils/rain.ts` com M1 (tendência descontada a maré barométrica: onda de 12 h ~1,1 hPa
+    + 24 h ~0,6 hPa na hora solar), M2 (METAR: chuva, VCSH/VCTS, CB/TCU, T−Td, teto, rajadas; TAF por janela),
+    M3 (Open-Meteo hourly + minutely_15 + CAPE, buscado a cada 30 min em devices.outdoor.rain).
+    Tabelas `rain_predictions` (outcome verificado quando a janela termina) e `rain_reports`; `outdoor_obs.precip`.
+    Placar (Brier, skill vs. climatologia, acertos/alarmes/perdidas, confiabilidade). Destaque: menor Brier com
+    ≥ 100 previsões e ≥ 5 chuvas; antes disso M3. Ingest devolve `rain` compacto para a estação.
+    Painel: card na Agora, aba Chuva (métodos, gráfico com trechos de chuva, placar, explicação).
+    Primeiras previsões em produção às 10:30 de 13/10: M1 52–79 %, M2 73–94 % (queda real de pressão + TAF
+    com TSRA), M3 8–44 %; o placar vai dizer quem acerta.
+  - 15b compilado (firmware 0.11.0, release 85,3 %), ainda NÃO gravado: a placa saiu do USB do Mac.
+    Página "Chuva" (PG_RAIN), alerta (`rain_alert`: enabled, threshold, hours, mode) com inversão do SSD1306
+    (0xA7/0xA6) ao disparar, guarda-chuva no cabeçalho, tela com gotas animadas (updateDisplayArea nos tiles 0..5)
+    a cada duas páginas, histerese de 10 pontos, respeita modo noturno; teste de 12 s. Página local com card de chuva,
+    botão "Está chovendo aqui" (repassado com retentativa de 1 min) e opções do alerta.
+
 ## Em andamento
-- Fase 15: desenho em discussão com o usuário (aba Chuva, dados no ESP32, alertas no OLED).
+- Fase 15: gravar o firmware 0.11.0 (placa no USB) e validar com o usuário.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fase 15: Chuva v1 (métodos M1 a M3, registro das previsões, chuva observada e placar).
+1. Fase 16: Indoor (conforto, ar seco, mofo, abra/feche a janela, atraso térmico).
 
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.

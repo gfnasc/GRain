@@ -84,7 +84,8 @@ Configuração gravada em `/config.json`. É a única fonte da configuração: a
     "pages": [ { "type": "clock" }, { "type": "temp" }, { "type": "fields", "fields": ["temp", "hum", "pres", "dew"] } ]
   },
   "calibration": { "temp": 0, "hum": 0, "pres": 0, "pres_auto": true, "pres_auto_offset": 2.29 },
-  "location": { "lat": null, "lon": null, "label": "" }
+  "location": { "lat": null, "lon": null, "label": "" },
+  "rain_alert": { "enabled": true, "threshold": 60, "hours": 2, "mode": "both" }
 }
 ```
 
@@ -109,12 +110,16 @@ curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
 | `display.page_s` | 2 a 60 |
 | `display.contrast` | 0 a 255 |
 | `display.night` | `enabled` booleano; `from`/`to` em `HH:MM` (podem cruzar a meia-noite); `mode` `off` (apagar) ou `dim` (escurecer) |
-| `display.pages` | Lista completa, 1 a 8; `type`: `temp`, `hum`, `pres`, `clock`, `today`, `fields`, `details`, `network`. Na página `fields`, `fields` com 1 a 4 de `temp`, `hum`, `pres`, `dew`, `heat_index`, `temp_bmp`, `pres_station` |
+| `display.pages` | Lista completa, 1 a 8; `type`: `temp`, `hum`, `pres`, `clock`, `today`, `fields`, `details`, `network`, `rain`. Na página `fields`, `fields` com 1 a 4 de `temp`, `hum`, `pres`, `dew`, `heat_index`, `temp_bmp`, `pres_station` |
 | `calibration.temp` / `.hum` / `.pres` | Somado às leituras: −5 a 5 °C, −15 a 15 %, −15 a 15 hPa (`pres` só vale com `pres_auto` desligado) |
 | `calibration.pres_auto` | `true` (padrão): pressão calibrada pelo QNH do aeroporto, com o desvio calculado na nuvem |
 | `calibration.pres_auto_offset` | −15 a 15 hPa, somado à pressão ao nível do mar; atualizado pela estação a partir da resposta do envio |
 | `location.lat` / `.lon` | −90 a 90 / −180 a 180, ou `null` para apagar |
 | `location.label` | Até 40 caracteres |
+| `rain_alert.enabled` | Liga o alerta de chuva no display |
+| `rain_alert.threshold` | 10 a 100 (%): dispara a partir desta chance |
+| `rain_alert.hours` | 1 a 3: olha as próximas 1, 2 ou 3 h |
+| `rain_alert.mode` | `icon` (guarda-chuva no cabeçalho), `screen` (tela no carrossel) ou `both` |
 
 `schema` e `device_id` são somente leitura e ignorados.
 
@@ -138,8 +143,23 @@ Controles temporários (valem até reiniciar), sem senha. Corpo JSON com um ou m
 | `"page": "next"` / `"prev"` / `<índice>` | Navega; com o carrossel girando, segura a página por 60 s |
 | `"paused": true/false` | Pausa ou retoma o carrossel (o display mostra ‖ no cabeçalho) |
 | `"power": true/false` | Liga ou desliga a tela (desligada manualmente vale mais que o modo noturno) |
+| `"alert_test": true` | Mostra o alerta de chuva por 12 s com valores de exemplo (pisca, ícone e tela) |
 
 Responde o estado atualizado (mesmo formato do `GET`). `422` para página fora da lista.
+
+### `GET /api/v1/rain`
+Chance de chuva recebida da nuvem e estado do alerta no display.
+
+```json
+{ "fresh": true, "at": 1791898200, "age_s": 312, "p": [8, 18, 44], "m": ["M3", "M3", "M3"],
+  "reason": "modelo: 36 % na hora mais provável (13:00), energia para trovoada (CAPE 1760)",
+  "alert": { "active": false, "hours": 0, "pct": 0, "enabled": true, "threshold": 60, "window": 2 },
+  "last_report": null, "report_pending": false }
+```
+`fresh`: previsão com até 35 min (depois a estação deixa de mostrar).
+
+### `POST /api/v1/rain/report`
+Aviso "Está chovendo aqui": a estação repassa para a nuvem (`POST /api/v1/device/rain-report`), tentando de novo a cada minuto se falhar. `202`; `409` se a nuvem não estiver configurada.
 
 ### `POST /api/v1/cloud/sync`
 Envia agora a fila de médias e a cópia da configuração. `202`; `409` se a nuvem não estiver configurada.
@@ -180,7 +200,7 @@ Recebe um lote de médias de 10 min do ESP32, o estado e a cópia da configuraç
 
 Horários já recebidos são ignorados, então o ESP32 pode reenviar com segurança.
 
-Respostas: `200 {"accepted": 1, "duplicates": 0, "pres_offset": 2.29}` (`pres_offset`: desvio QNH − pressão sem calibração, mediana de 7 dias; só aparece com 12 pares ou mais) · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
+Respostas: `200 {"accepted": 1, "duplicates": 0, "pres_offset": 2.29, "rain": {"at": 1791898200, "p": [8, 18, 44], "m": ["M3", "M3", "M3"], "r": "modelo: ..."}}`. `pres_offset`: desvio QNH − pressão sem calibração, mediana de 7 dias (só com 12 pares ou mais). `rain`: última previsão de chuva (1, 2 e 3 h, método em destaque e motivo curto), para a página local e o display · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
 
 ### `GET /api/v1/latest` 🔐
 Exige a sessão do painel. Devolve a estação (com `place`: `sacada`, `escritorio` ou `null`), a média mais recente, as 12 últimas médias e mínimas/máximas de 24 h, sem o período na sacada.
@@ -247,6 +267,17 @@ Condições de fora. `now` é a observação a mostrar: METAR se tiver até 90 m
 
 ### `GET /api/v1/forecast` 🔐
 Previsão de hoje e amanhã (Open-Meteo: máxima, mínima, chance de chuva e condição) e a pressão da estação com variação em 3 h, tendência e interpretação (Zambretti).
+
+### Chuva 🔐
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/rain` | Última previsão: os três métodos (`methods.m1..m3`, índice 0..2 = 1, 2 e 3 h, com `prob` 0–1 e `reason`), o destaque de cada janela (`best`) e se foi escolhido pelo placar; avisos das últimas 24 h |
+| `GET` | `/api/v1/rain/history?range=24h\|7d&h=1..3` | Probabilidade (%) de cada método ao longo do tempo para a janela escolhida e os trechos em que choveu (`rain`: `from`, `to`, `sources`) |
+| `GET` | `/api/v1/rain/score` | Placar de 30 dias por método e janela: `n`, `events`, `brier`, `skill`, `hits`, `false_alarms`, `misses`, `reliability` (faixas de 20 %) |
+| `POST` | `/api/v1/rain/report` | Aviso "Está chovendo aqui" pelo painel (um por intervalo de 10 min) |
+
+`POST /api/v1/device/rain-report` 🔑 recebe o mesmo aviso vindo da página local da estação.
 
 ### `GET /api/v1/station` 🔐
 Estado da estação, local atual e a última cópia da configuração enviada por ela (`config`, ou `null` se ainda não chegou) com a hora em que chegou (`config_at`). Somente leitura: o painel não altera a configuração.

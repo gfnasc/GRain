@@ -29,7 +29,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 12 | Configurações só no ESP32; painel só para visualização | ✅ Concluída |
 | 13 | Outdoor: dados externos (METAR e Open-Meteo) | ✅ Concluída |
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
-| 15 | Chuva v1: métodos M1 a M3 e placar de acertos | Planejada |
+| 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | 🔧 Em validação (falta gravar o firmware 0.11.0) |
 | 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |
 | 17 | Chuva v2: método combinado com aprendizado | Planejada |
 | 18 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
@@ -162,7 +162,8 @@ Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede
 
 - **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
 - **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar.
-- **Configurações** (pedem a senha da estação para salvar): páginas do display (até 8, em qualquer ordem, com os campos da página Resumo), tempo por página, brilho, modo noturno, calibração dos sensores (com a calibração automática da pressão pelo aeroporto) e localização (latitude, longitude e nome, usados pelos dados de fora). Não há prévia na página: os botões de página da seção Display mostram cada página direto no OLED.
+- **Chuva nas próximas horas:** chance em 1, 2 e 3 h (calculada na nuvem e recebida a cada envio), motivo, aviso quando o alerta está ativo e o botão **Está chovendo aqui** (a estação repassa para a nuvem).
+- **Configurações** (pedem a senha da estação para salvar): páginas do display (até 8, em qualquer ordem, com os campos da página Resumo), tempo por página, brilho, modo noturno, alerta de chuva (limite, janela e forma, com botão **Testar alerta**), calibração dos sensores (com a calibração automática da pressão pelo aeroporto) e localização (latitude, longitude e nome, usados pelos dados de fora). Não há prévia na página: os botões de página da seção Display mostram cada página direto no OLED.
 - **Nuvem:** último envio, médias na fila, quando a cópia da configuração chegou ao painel e o botão **Sincronizar agora** (envia a fila e a cópia na hora).
 - **Manutenção:** reiniciar a estação (usa a mesma senha).
 
@@ -176,8 +177,10 @@ A mesma porta serve a API `/api/v1`:
 | `PUT /api/v1/config` 🔒 | Altera campos (JSON parcial, tudo ou nada) |
 | `POST /api/v1/system/reboot` 🔒 | Reinicia |
 | `GET /api/v1/display` | Estado do display: ligado, pausado, página atual, lista de páginas |
-| `POST /api/v1/display` | `{"page":"next"\|"prev"\|n}`, `{"paused":true}`, `{"power":false}` |
+| `POST /api/v1/display` | `{"page":"next"\|"prev"\|n}`, `{"paused":true}`, `{"power":false}`, `{"alert_test":true}` |
 | `POST /api/v1/cloud/sync` | Envia agora a fila e a cópia da configuração |
+| `GET /api/v1/rain` | Chance de chuva em 1, 2 e 3 h, motivo e estado do alerta |
+| `POST /api/v1/rain/report` | Aviso "Está chovendo aqui" (repassado para a nuvem) |
 
 🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
 
@@ -201,8 +204,9 @@ nuvem
 
 O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `desligada`).
 
-O painel serve só para ver os dados; nada é configurado por ele. Três seções:
-- **Agora:** **Outdoor** (lá fora) e **Indoor** (onde a estação está) lado a lado. O Outdoor vem do METAR do aeroporto mais próximo da localização configurada na estação (temperatura, sensação, umidade, orvalho, vento e condição em português), com a condição atual do Open-Meteo como reserva quando o METAR atrasa ou o aeroporto está fechado. O Indoor traz a última média, mínimas e máximas de 24 h e a diferença em relação a fora. Abaixo: pressão do barômetro da estação com tendência de 3 h, interpretação (Zambretti) e QNH do aeroporto para comparar; previsão de hoje e amanhã (Open-Meteo); últimas médias e estado da estação.
+O painel serve só para ver os dados; nada é configurado por ele. Quatro seções:
+- **Agora:** card **Chuva nas próximas horas** (chance em 1, 2 e 3 h, nível, motivo e o botão "Está chovendo aqui"); **Outdoor** (lá fora) e **Indoor** (onde a estação está) lado a lado. O Outdoor vem do METAR do aeroporto mais próximo da localização configurada na estação (temperatura, sensação, umidade, orvalho, vento e condição em português), com a condição atual do Open-Meteo como reserva quando o METAR atrasa ou o aeroporto está fechado. O Indoor traz a última média, mínimas e máximas de 24 h e a diferença em relação a fora. Abaixo: pressão do barômetro da estação com tendência de 3 h, interpretação (Zambretti) e QNH do aeroporto para comparar; previsão de hoje e amanhã (Open-Meteo); últimas médias e estado da estação.
+- **Chuva:** os três métodos lado a lado para cada janela, com o motivo; gráfico das previsões com os trechos em que choveu de fato; placar de 30 dias por método e janela (erro de Brier, habilidade, acertos, alarmes falsos, perdidas); como funciona.
 - **Estação:** a configuração atual, como a estação informou (páginas do OLED com prévia, brilho, modo noturno, calibração e localização), e o estado da estação. A cópia chega a cada envio e logo depois de qualquer mudança feita em `grain.local`.
 - **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura Indoor × Outdoor (com o ponto de orvalho), umidade e pressão (estação × QNH do aeroporto) (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
 
@@ -215,6 +219,18 @@ A nuvem busca os dados de fora a cada envio da estação (a cada 10 min), sem cr
 - Quando a localização muda, o aeroporto é detectado de novo e as últimas 72 h dos dois são buscadas para o histórico já começar preenchido.
 
 Sem localização, o painel mostra só o Indoor. A localização e o aeroporto detectado ficam no banco, nunca no repositório.
+
+### Chuva nas próximas 1, 2 e 3 horas
+
+A cada envio da estação (10 min), a nuvem calcula três métodos, do menos ao mais completo, e guarda cada previsão:
+
+| Método | Usa |
+|---|---|
+| M1 · Barômetro | Queda da pressão da estação em 1 h e 3 h, descontada a maré barométrica diária (nos trópicos a pressão cai ~3 hPa entre 10h e 16h todo dia, sem relação com chuva), e nível da pressão |
+| M2 · Barômetro + aeroporto | M1 + METAR (chuva ou trovoada no aeroporto ou perto dele, nuvens CB/TCU, ar perto de saturar, teto baixo, rajadas) + TAF (previsão do aeroporto) |
+| M3 · Modelo numérico | Open-Meteo: probabilidade por hora, chuva prevista em blocos de 15 min e CAPE (energia para trovoada) |
+
+Quando a janela termina, a previsão é conferida: choveu se o METAR registrou chuva (fora "nas proximidades") ou se alguém tocou em **Está chovendo aqui** (no painel ou na página local); sem METAR, vale a chuva medida pelo modelo. O placar de 30 dias mostra o erro de cada método; o destaque (card, página local e OLED) é o método de menor erro quando o placar tem dados suficientes (100 previsões e 5 chuvas) e, até lá, o modelo. Os pesos dos métodos são fixos por enquanto; a fase 17 cria um método combinado que aprende com o placar.
 
 ### Pressão calibrada pelo aeroporto
 
@@ -309,8 +325,11 @@ No boot aparece a tela de abertura com o nome GRain e um spinner animado por 2,5
 | Relógio | Hora grande, dia da semana e data, temperatura e umidade |
 | Hoje | Mínima e máxima do dia (com horário), faixa de umidade e amplitude |
 | Resumo | Até 4 campos à escolha (temperatura, umidade, pressão, orvalho, sensação, temperatura do BMP280, pressão no local) |
+| Chuva | Chance de chuva em 1, 2 e 3 h em barras, com a linha tracejada do limite do alerta; porcentagens acima do limite aparecem invertidas |
 
 Padrão: Temperatura, Pressão, Detalhes e Rede, 5 s cada. A hora aparece no cabeçalho quando cabe. No modo noturno, o display apaga ou escurece no horário escolhido.
+
+**Alerta de chuva** (configurável na página local): quando a chance numa das próximas 1, 2 ou 3 h passa do limite, o display pisca em inverso, um guarda-chuva aparece no cabeçalho de todas as páginas e uma tela "CHUVA provável" com gotas animadas entra no carrossel a cada duas páginas. O alerta só some 10 pontos abaixo do limite, para não ficar piscando, e não acende o display no modo noturno.
 
 Enquanto a rede de configuração estiver aberta, o display fica fixo nas instruções de conexão.
 
