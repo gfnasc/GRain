@@ -57,3 +57,30 @@ create table if not exists placements (
   check (ended_at is null or ended_at > started_at)
 );
 create unique index if not exists placements_current_idx on placements (device_id) where ended_at is null;
+
+-- Fase 13: Outdoor. Observações de fora: METAR do aeroporto mais próximo (de hora em
+-- hora, ou antes quando o tempo muda) e condição atual do Open-Meteo (reserva).
+-- Coletadas a cada envio da estação (a cada 10 min), sem cron.
+create table if not exists outdoor_obs (
+  device_id  text        not null references devices(id) on delete cascade,
+  source     text        not null check (source in ('metar', 'open-meteo')),
+  obs_at     timestamptz not null,               -- horário da observação (UTC)
+  station    text,                               -- código do aeroporto (METAR)
+  temp       real,                               -- °C
+  dew        real,                               -- °C
+  hum        real,                               -- %
+  pres       real,                               -- hPa: QNH (METAR) ou nível do mar (Open-Meteo)
+  wind_dir   smallint,                           -- graus; null = variável ou calmo
+  wind_kmh   real,
+  gust_kmh   real,
+  wx         text,                               -- tempo presente (METAR), ex.: -SHRA VCTS
+  clouds     jsonb,                              -- camadas (METAR)
+  code       smallint,                           -- código WMO (Open-Meteo)
+  raw        text,                               -- METAR original
+  fetched_at timestamptz not null default now(),
+  primary key (device_id, source, obs_at)
+);
+create index if not exists outdoor_obs_recent_idx on outdoor_obs (device_id, obs_at desc);
+
+-- Aeroporto detectado para a localização atual e controle da coleta.
+alter table devices add column if not exists outdoor jsonb;

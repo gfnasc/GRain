@@ -16,6 +16,7 @@
   --series-dew: #2a78d6;
   --series-hum: #1baf7a;
   --series-pres: #4a3aa7;
+  --series-out: #b0337e;
   --ff-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
   --ff-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -37,6 +38,7 @@
     --series-dew: #3987e5;
     --series-hum: #199e70;
     --series-pres: #9085e9;
+    --series-out: #d65ba3;
     color-scheme: dark;
   }
 }

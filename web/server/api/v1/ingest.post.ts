@@ -1,3 +1,5 @@
+import { waitUntil } from '@vercel/functions'
+
 // Recebe um lote de médias de 10 min do ESP32, o estado da estação e a cópia da
 // configuração (display, calibração e localização), que é feita só no ESP32.
 // Autenticação: Authorization: Bearer <token do aparelho>.
@@ -70,6 +72,12 @@ export default defineEventHandler(async (event) => {
       console.warn(`configuração de ${deviceId} ignorada:`, (e as Error).message)
     }
   }
+
+  // Dados de fora (Outdoor): cada envio da estação serve de relógio para a coleta, que roda
+  // depois da resposta (waitUntil) para a estação não esperar pelas APIs externas.
+  const job = collectOutdoor(deviceId).catch((e) => console.warn('coleta Outdoor falhou:', (e as Error).message))
+  if (process.env.VERCEL) waitUntil(job)
+  else await job
 
   return { accepted, duplicates: ts.length - accepted }
 })

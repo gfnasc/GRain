@@ -4,6 +4,8 @@
 // extremos exatos do período com o horário em que ocorreram.
 // Temperatura e umidade medidas na sacada aparecem nos gráficos (marcadas) mas
 // ficam fora dos extremos e das médias; a pressão vale em qualquer local.
+// Cada ponto traz também a temperatura de fora (out_temp): METAR do aeroporto, com o
+// Open-Meteo nos buracos, interpolada entre observações próximas.
 
 type Extreme = { v: number; ts: number } | null
 
@@ -50,6 +52,17 @@ export default defineEventHandler(async (event) => {
       (select count(*)::int from r) as n`) as Record<string, any>[]
 
   const placements = await placementsIn(deviceId, range.from, range.to)
+
+  const out = (await sql`
+    select extract(epoch from obs_at)::bigint as ts, temp, source from outdoor_obs
+    where device_id = ${deviceId} and temp is not null
+      and obs_at >= ${new Date(range.from.getTime() - 2 * 3600_000).toISOString()} and obs_at < ${new Date(range.to.getTime() + 2 * 3600_000).toISOString()}
+    order by obs_at`) as { ts: string; temp: number; source: string }[]
+  // METAR onde houver; nos buracos (aeroporto fechado à noite, atraso) entra o Open-Meteo.
+  const metarOut = out.filter((o) => o.source === 'metar').map((o) => ({ ts: Number(o.ts), v: o.temp }))
+  const modelOut = out.filter((o) => o.source === 'open-meteo').map((o) => ({ ts: Number(o.ts), v: o.temp }))
+  const outSeries = [...metarOut, ...modelOut.filter((m) => !metarOut.some((o) => Math.abs(o.ts - m.ts) < 75 * 60))].sort((x, y) => x.ts - y.ts)
+  const outdoorAt = (start: number) => outdoorValue(outSeries, start, step)
   const num = (v: unknown) => (v === null || v === undefined ? null : Math.round(Number(v) * 1000) / 1000)
   const extreme = (e: any): Extreme => (e ? { v: Number(e.v), ts: Number(e.ts) } : null)
 
@@ -63,6 +76,7 @@ export default defineEventHandler(async (event) => {
       hum: num(p.hum), hum_min: num(p.hum_min), hum_max: num(p.hum_max),
       pres: num(p.pres), pres_min: num(p.pres_min), pres_max: num(p.pres_max),
       dew: num(p.dew),
+      out_temp: outdoorAt(Number(p.ts)),
       n: Number(p.n),
     })),
     placements,
@@ -76,3 +90,21 @@ export default defineEventHandler(async (event) => {
     },
   }
 })
+
+// Temperatura de fora para o intervalo [start, start + step): média das observações dentro
+// dele; sem nenhuma, interpolação linear no meio do intervalo entre vizinhas a até 2 h.
+function outdoorValue(series: { ts: number; v: number }[], start: number, step: number): number | null {
+  if (!series.length) return null
+  const inside = series.filter((o) => o.ts >= start && o.ts < start + step)
+  if (inside.length) return Math.round((inside.reduce((a, o) => a + o.v, 0) / inside.length) * 10) / 10
+  const t = start + step / 2
+  let a: { ts: number; v: number } | undefined
+  let b: { ts: number; v: number } | undefined
+  for (const o of series) {
+    if (o.ts <= t) a = o
+    else { b = o; break }
+  }
+  if (a && b && b.ts - a.ts <= 2 * 3600) return Math.round((a.v + ((b.v - a.v) * (t - a.ts)) / (b.ts - a.ts)) * 10) / 10
+  const near = [a, b].filter((o) => o && Math.abs(o.ts - t) <= 45 * 60) as { ts: number; v: number }[]
+  return near.length ? near[0]!.v : null
+}

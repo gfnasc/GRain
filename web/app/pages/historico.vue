@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useHead({ title: 'Histórico · GRain' })
 
-type Point = { ts: number; temp: number | null; temp_min: number | null; temp_max: number | null; hum: number | null; hum_min: number | null; hum_max: number | null; pres: number | null; pres_min: number | null; pres_max: number | null; dew: number | null; n: number }
+type Point = { ts: number; temp: number | null; temp_min: number | null; temp_max: number | null; hum: number | null; hum_min: number | null; hum_max: number | null; pres: number | null; pres_min: number | null; pres_max: number | null; dew: number | null; out_temp: number | null; n: number }
 type Extreme = { v: number; ts: number } | null
 type Stat = { min: Extreme; max: Extreme; avg: number | null }
 type Placement = { place: 'sacada' | 'escritorio'; from: number; to: number | null }
@@ -119,7 +119,7 @@ const coverage = computed(() => {
 
       <section class="stats">
         <article class="stat">
-          <span class="k">Temperatura</span>
+          <span class="k">Temperatura · Indoor</span>
           <div class="mm">
             <div><small>mín.</small><b>{{ fmt(series.summary.temp.min?.v) }}<small>°C</small></b><span v-if="series.summary.temp.min">{{ when(series.summary.temp.min.ts) }}</span></div>
             <div><small>máx.</small><b>{{ fmt(series.summary.temp.max?.v) }}<small>°C</small></b><span v-if="series.summary.temp.max">{{ when(series.summary.temp.max.ts) }}</span></div>
@@ -127,7 +127,7 @@ const coverage = computed(() => {
           <span class="avg">média {{ fmt(series.summary.temp.avg) }} °C</span>
         </article>
         <article class="stat">
-          <span class="k">Umidade</span>
+          <span class="k">Umidade · Indoor</span>
           <div class="mm">
             <div><small>mín.</small><b>{{ fmt(series.summary.hum.min?.v, 0) }}<small>%</small></b><span v-if="series.summary.hum.min">{{ when(series.summary.hum.min.ts) }}</span></div>
             <div><small>máx.</small><b>{{ fmt(series.summary.hum.max?.v, 0) }}<small>%</small></b><span v-if="series.summary.hum.max">{{ when(series.summary.hum.max.ts) }}</span></div>
@@ -152,7 +152,7 @@ const coverage = computed(() => {
       <ClientOnly v-else>
         <section class="charts">
           <TimeChart
-            title="Temperatura e ponto de orvalho"
+            title="Temperatura: Indoor × Outdoor"
             unit="°C"
             :decimals="1"
             :min-span="4"
@@ -162,12 +162,13 @@ const coverage = computed(() => {
             :points="series.points"
             :periods="sacada"
             :series="[
-              { key: 'temp', label: 'Temperatura', color: '--series-temp', bandMin: 'temp_min', bandMax: 'temp_max' },
-              { key: 'dew', label: 'Ponto de orvalho', color: '--series-dew' },
+              { key: 'temp', label: 'Indoor', color: '--series-temp', bandMin: 'temp_min', bandMax: 'temp_max' },
+              { key: 'out_temp', label: 'Outdoor', color: '--series-out' },
+              { key: 'dew', label: 'Orvalho (Indoor)', color: '--series-dew' },
             ]"
           />
           <TimeChart
-            title="Umidade relativa"
+            title="Umidade relativa · Indoor"
             unit="%"
             :decimals="0"
             :min-span="10"

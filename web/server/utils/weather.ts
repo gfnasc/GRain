@@ -102,3 +102,83 @@ export async function openMeteo(lat: number, lon: number, tz: string): Promise<D
     return null
   }
 }
+
+export type CurrentWeather = {
+  obs_at: Date
+  temp: number | null
+  dew: number | null
+  hum: number | null
+  pres: number | null
+  wind_dir: number | null
+  wind_kmh: number | null
+  gust_kmh: number | null
+  code: number | null
+}
+
+// Condição atual da Open-Meteo (modelo, resolução de 15 min). Reserva quando o METAR atrasa.
+export async function openMeteoCurrent(lat: number, lon: number): Promise<CurrentWeather | null> {
+  const url = new URL('https://api.open-meteo.com/v1/forecast')
+  url.search = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    current: 'temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code',
+    timezone: 'GMT',
+    timeformat: 'unixtime',
+  }).toString()
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) })
+    if (!r.ok) return null
+    const c: any = (await r.json()).current
+    if (!c?.time) return null
+    const n = (v: unknown) => (typeof v === 'number' ? v : null)
+    return {
+      obs_at: new Date(c.time * 1000),
+      temp: n(c.temperature_2m),
+      dew: n(c.dew_point_2m),
+      hum: n(c.relative_humidity_2m),
+      pres: n(c.pressure_msl),
+      wind_dir: n(c.wind_direction_10m),
+      wind_kmh: n(c.wind_speed_10m),
+      gust_kmh: n(c.wind_gusts_10m),
+      code: n(c.weather_code),
+    }
+  } catch {
+    return null
+  }
+}
+
+// Horas passadas da Open-Meteo (modelo), para preencher o histórico de fora ao detectar o local.
+export async function openMeteoPast(lat: number, lon: number, days = 3): Promise<CurrentWeather[]> {
+  const url = new URL('https://api.open-meteo.com/v1/forecast')
+  url.search = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    hourly: 'temperature_2m,relative_humidity_2m,dew_point_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code',
+    past_days: String(days),
+    forecast_days: '1',
+    timezone: 'GMT',
+    timeformat: 'unixtime',
+  }).toString()
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    if (!r.ok) return []
+    const h: any = (await r.json()).hourly
+    const n = (v: unknown) => (typeof v === 'number' ? v : null)
+    const now = Date.now()
+    return (h.time as number[])
+      .map((t, i) => ({
+        obs_at: new Date(t * 1000),
+        temp: n(h.temperature_2m[i]),
+        dew: n(h.dew_point_2m[i]),
+        hum: n(h.relative_humidity_2m[i]),
+        pres: n(h.pressure_msl[i]),
+        wind_dir: n(h.wind_direction_10m[i]),
+        wind_kmh: n(h.wind_speed_10m[i]),
+        gust_kmh: n(h.wind_gusts_10m[i]),
+        code: n(h.weather_code[i]),
+      }))
+      .filter((o) => o.obs_at.getTime() <= now && o.temp != null)
+  } catch {
+    return []
+  }
+}
