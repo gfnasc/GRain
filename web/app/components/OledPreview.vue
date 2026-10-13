@@ -10,6 +10,8 @@ const props = defineProps<{
   reading: Reading | null
   today: { temp_min: number | null; temp_max: number | null; hum_min: number | null; hum_max: number | null } | null
   dim?: boolean
+  // Página "Chuva": chance (%) em 1, 2 e 3 h e limite do alerta (null = alerta desligado).
+  rain?: { p: number[] | null; threshold: number | null } | null
 }>()
 
 const tz = useRuntimeConfig().public.tz as string
@@ -134,6 +136,38 @@ function draw() {
       row(50, 'AHT20 BMP280', 'ok ok')
       row(63, 'Ligado há', '0h00m')
       break
+    case 'rain': {
+      header('Chuva')
+      const p = props.rain?.p
+      if (!p) {
+        center('sem previsão', 36, MID)
+        center('aguardando a nuvem', 52)
+        break
+      }
+      const top = 15, h = 30, bottom = top + h
+      ;[21, 64, 107].forEach((cx, i) => {
+        g.strokeRect(cx - 7.5, top + 0.5, 15, h)
+        const fill = Math.round(((p[i] ?? 0) * h) / 100)
+        if (fill) g.fillRect(cx - 8, bottom - fill + 1, 16, fill)
+        const th = props.rain?.threshold
+        const s = `${p[i] ?? 0}%`
+        const w = width(s)
+        if (th != null && (p[i] ?? 0) >= th) {
+          g.fillRect(cx - w / 2 - 2, 48, w + 4, 9)
+          g.fillStyle = '#000'
+          text(s, cx - w / 2, 56)
+          g.fillStyle = '#fff'
+        } else text(s, cx - w / 2, 56)
+        text(`${i + 1}h`, cx - width(`${i + 1}h`, TINY) / 2, 64, TINY)
+      })
+      if (props.rain?.threshold != null) {
+        const y = bottom - Math.round((props.rain.threshold * h) / 100)
+        g.globalCompositeOperation = 'difference'
+        for (let x = 0; x < W; x += 4) g.fillRect(x, y, 2, 1)
+        g.globalCompositeOperation = 'source-over'
+      }
+      break
+    }
     case 'network':
       header('Rede')
       row(24, 'Wi-Fi', 'MinhaRede')
@@ -160,7 +194,7 @@ onMounted(async () => {
   await document.fonts?.ready
   draw()
 })
-watch(() => [props.page, props.index, props.count, props.reading, props.today], draw, { deep: true })
+watch(() => [props.page, props.index, props.count, props.reading, props.today, props.rain], draw, { deep: true })
 let clock: ReturnType<typeof setInterval> | undefined
 onMounted(() => (clock = setInterval(draw, 30_000)))
 onBeforeUnmount(() => clearInterval(clock))

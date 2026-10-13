@@ -15,6 +15,12 @@ type Latest = {
 
 const { data, error } = await useFetch<StationResp>('/api/v1/station')
 const { data: latest } = await useFetch<Latest>('/api/v1/latest')
+const { data: rain } = await useFetch<{ now: { best: { prob: number }[] } | null }>('/api/v1/rain')
+const rainPreview = computed(() => ({
+  p: rain.value?.now ? rain.value.now.best.map((b) => Math.round(b.prob * 100)) : null,
+  threshold: cfg.value?.rain_alert?.enabled ? cfg.value.rain_alert.threshold : null,
+}))
+const ALERT_MODE = { both: 'ícone no cabeçalho e tela no carrossel', icon: 'só o ícone no cabeçalho', screen: 'só a tela no carrossel' } as const
 const tz = useRuntimeConfig().public.tz as string
 
 const cfg = computed(() => data.value?.config ?? null)
@@ -101,6 +107,17 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
           </section>
 
           <section class="block">
+            <h3>Alerta de chuva</h3>
+            <dl class="kv">
+              <template v-if="cfg.rain_alert?.enabled">
+                <dt>Dispara</dt><dd>a partir de {{ cfg.rain_alert.threshold }} % nas próximas {{ cfg.rain_alert.hours }} h</dd>
+                <dt>Mostra</dt><dd>{{ ALERT_MODE[cfg.rain_alert.mode] }}</dd>
+              </template>
+              <template v-else><dt>Situação</dt><dd>desligado</dd></template>
+            </dl>
+          </section>
+
+          <section class="block">
             <h3>Calibração</h3>
             <dl class="kv">
               <dt>Temperatura</dt><dd>{{ signed(cfg.calibration.temp, '°C') }}</dd>
@@ -138,6 +155,7 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
                 :reading="latest?.latest ?? null"
                 :today="latest?.last24h ?? null"
                 :dim="cfg.display.contrast < 40"
+                :rain="rainPreview"
               />
             </ClientOnly>
             <p class="muted small">Prévia da página {{ previewIndex + 1 }} com a última média; a fonte real do OLED é um pouco diferente.</p>

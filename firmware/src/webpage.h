@@ -69,6 +69,13 @@ input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8
 .okc{color:var(--ok);font-weight:600}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--acc);margin-right:6px}
 .msg{min-height:1.2em}
+.rt{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rt div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:3px;background:var(--bg)}
+.rt b{font-size:1.6rem;font-variant-numeric:tabular-nums}
+.rt i{display:block;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.rt i span{display:block;height:100%;background:var(--mut)}
+.rt .m span{background:#d4930b}.rt .a span{background:var(--bad)}.rt .a{border-color:var(--bad)}
+.alert{background:var(--bad);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700}
 </style>
 </head>
 <body>
@@ -88,6 +95,14 @@ input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8
     <tr><td>Pressão no local</td><td id="pst">–</td></tr>
     <tr><td>Temperatura do BMP280</td><td id="tb">–</td></tr>
   </table>
+
+  <h2>Chuva nas próximas horas</h2>
+  <div class="box">
+    <div id="ralert" class="alert" hidden></div>
+    <div class="rt" id="rt"><div><span class="mut">1 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">2 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">3 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div></div>
+    <span class="mut" id="rwhy"></span>
+    <div class="row"><button id="rrep">☂ Está chovendo aqui</button><span class="mut msg" id="rmsg"></span></div>
+  </div>
 
   <h2>Display</h2>
   <div class="box">
@@ -121,6 +136,15 @@ input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8
       <label>Das<input id="n_from" type="time"></label>
       <label>Às<input id="n_to" type="time"></label>
     </div>
+    <h3>Alerta de chuva no display</h3>
+    <span class="mut">Quando a chance passa do limite, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta entra no carrossel a cada duas páginas.</span>
+    <div class="f2 f4">
+      <label class="ck"><input id="a_on" type="checkbox">Ligado</label>
+      <label>A partir de (%)<input id="a_pct" type="number" min="10" max="100" step="5"></label>
+      <label>Nas próximas<select id="a_h"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option></select></label>
+      <label>Mostrar<select id="a_mode"><option value="both">ícone e tela</option><option value="icon">só o ícone</option><option value="screen">só a tela</option></select></label>
+    </div>
+    <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta por 12 s com valores de exemplo</span></div>
     <h3>Calibração</h3>
     <label class="mut" style="display:flex;gap:8px;align-items:center;color:var(--fg)"><input id="c_auto" type="checkbox">Calibrar a pressão pelo aeroporto mais próximo</label>
     <span class="mut" id="c_autotxt"></span>
@@ -173,7 +197,7 @@ input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const NAMES={temp:"Temperatura",hum:"Umidade",pres:"Pressão",clock:"Relógio",today:"Hoje",fields:"Resumo",details:"Detalhes",network:"Rede"};
+const NAMES={temp:"Temperatura",hum:"Umidade",pres:"Pressão",clock:"Relógio",today:"Hoje",fields:"Resumo",details:"Detalhes",network:"Rede",rain:"Chuva"};
 const n=(v,d)=>v==null?"–":v.toFixed(d).replace(".",",");
 const unit=(v,d,u)=>v==null?"–":n(v,d)+"<small>"+u+"</small>";
 const hm=e=>e?new Date(e*1000).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"nunca";
@@ -223,6 +247,7 @@ async function loadCfg(){
   $("n_on").checked=d.night.enabled;$("n_mode").value=d.night.mode;$("n_from").value=d.night.from;$("n_to").value=d.night.to;
   $("c_t").value=r1(k.temp,10);$("c_h").value=r1(k.hum,10);$("c_p").value=r1(k.pres,10);
   $("c_auto").checked=k.pres_auto!==false;autoTxt(k.pres_auto_offset);
+  const a=c.rain_alert||{};$("a_on").checked=a.enabled!==false;$("a_pct").value=a.threshold||60;$("a_h").value=String(a.hours||2);$("a_mode").value=a.mode||"both";
   $("l_lat").value=r1(l.lat,1e5);$("l_lon").value=r1(l.lon,1e5);$("l_lab").value=l.label||"";
   drawPages();
 }
@@ -240,7 +265,8 @@ $("save").onclick=async()=>{
       night:{enabled:$("n_on").checked,from:$("n_from").value,to:$("n_to").value,mode:$("n_mode").value},
       pages:P.map(p=>p.type==="fields"?{type:"fields",fields:p.fields}:{type:p.type})},
     calibration:{temp:num($("c_t").value)||0,hum:num($("c_h").value)||0,pres:num($("c_p").value)||0,pres_auto:$("c_auto").checked},
-    location:{lat:lat,lon:lon,label:$("l_lab").value.trim()}};
+    location:{lat:lat,lon:lon,label:$("l_lab").value.trim()},
+    rain_alert:{enabled:$("a_on").checked,threshold:+$("a_pct").value,hours:+$("a_h").value,mode:$("a_mode").value}};
   $("save").disabled=true;
   try{
     const r=await fetch("/api/v1/config",{method:"PUT",headers:{"Content-Type":"application/json",Authorization:auth(pw)},body:JSON.stringify(body)});
@@ -292,9 +318,23 @@ $("reboot").onclick=async()=>{
   try{await post("/api/v1/system/reboot",{},{Authorization:auth(pw)});$("rbmsg").textContent="Reiniciando… a página volta em cerca de 15 s.";$("pw").value=""}
   catch(e){$("rbmsg").innerHTML='<span class="err">'+(e.message.includes("401")?"Senha incorreta.":e.message)+"</span>"}
 };
+const LV=p=>p>=60?["a","alta"]:p>=30?["m","média"]:["","baixa"];
+function renderRain(r){
+  const tiles=$("rt").children;
+  for(let i=0;i<3;i++){const t=tiles[i],p=r.fresh&&r.p?r.p[i]:null,l=p==null?["",""]:LV(p);
+    t.className=l[0];t.children[1].textContent=p==null?"–":p+"%";t.children[2].firstChild.style.width=(p||0)+"%";t.children[3].textContent=p==null?"–":l[1]+(r.m?" · "+r.m[i]:"")}
+  $("rwhy").textContent=r.fresh?(r.reason+" · calculado há "+Math.round(r.age_s/60)+" min"):(r.at?"Previsão antiga (há "+Math.round(r.age_s/60)+" min): aguardando a nuvem.":"Aguardando a primeira previsão da nuvem (chega com o próximo envio).");
+  const al=r.alert;$("ralert").hidden=!al.active;if(al.active)$("ralert").textContent="☂ Alerta: "+al.pct+"% de chance de chuva em até "+al.hours+" h";
+  if(!$("rmsg").dataset.busy)$("rmsg").textContent=r.report_pending?"enviando aviso…":(r.last_report?"último aviso às "+hm(r.last_report):"");
+}
+$("rrep").onclick=async()=>{$("rrep").disabled=true;$("rmsg").dataset.busy=1;
+  try{await post("/api/v1/rain/report");say("rmsg","Aviso registrado. Obrigado: isso entra no placar.")}catch(e){say("rmsg",e.message,1)}
+  setTimeout(()=>{delete $("rmsg").dataset.busy;$("rrep").disabled=false},8000)};
+$("a_test").onclick=()=>act({alert_test:true});
 async function tick(){
   try{
-    const [now,st,d]=await Promise.all(["/api/v1/now","/api/v1/status","/api/v1/display"].map(u=>fetch(u).then(r=>r.json())));
+    const [now,st,d,rn]=await Promise.all(["/api/v1/now","/api/v1/status","/api/v1/display","/api/v1/rain"].map(u=>fetch(u).then(r=>r.json())));
+    renderRain(rn);
     $("temp").innerHTML=unit(now.temp,1,"°C");
     $("hum").innerHTML=unit(now.hum,0,"%");
     $("pres").innerHTML=unit(now.pres_slp,0,"hPa");

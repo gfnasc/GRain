@@ -27,6 +27,10 @@ static uint32_t s_backoffMs = 0;
 static bool s_forceSend = false;
 static String s_configCopy;        // JSON da cópia da configuração (montado no loop principal)
 static float s_pendingOffset = NAN; // desvio da pressão sugerido pela nuvem, a aplicar no loop principal
+static RainForecast s_rain;
+static uint32_t s_reportRetryAt = 0;  // espera entre tentativas do aviso de chuva
+
+static int https(const char *method, const String &url, const String &token, const String &body, String &resp);
 
 struct Lock {
   Lock() { xSemaphoreTake(s_lock, portMAX_DELAY); }
@@ -206,6 +210,37 @@ uint32_t uplinkClearQueue() {
   return n;
 }
 
+RainForecast uplinkRain() {
+  Lock l;
+  return s_rain;
+}
+
+void uplinkReportRain() {
+  Lock l;
+  s_st.reportPending = true;
+}
+
+static void sendReport() {
+  String url, token;
+  {
+    Lock l;
+    url = s_st.url + "/api/v1/device/rain-report";
+    token = s_token;
+  }
+  String resp;
+  int code = https("POST", url, token, "{}", resp);
+  Lock l;
+  if (code == 200) {
+    s_st.reportPending = false;
+    s_st.reportEpoch = (uint32_t)time(nullptr);
+    log_i("[%s] aviso de chuva enviado", TAG);
+  } else {
+    s_reportRetryAt = millis() + 60000;
+    if (s_reportRetryAt == 0) s_reportRetryAt = 1;
+    log_w("[%s] aviso de chuva falhou (%d); tenta de novo em 1 min", TAG, code);
+  }
+}
+
 UplinkStatus uplinkStatus() {
   Lock l;
   return s_st;
@@ -295,7 +330,19 @@ static void sendBatch() {
     s_nextAttemptMs = 0;
     log_i("[%s] lote de %u enviado: %s (fila %u)", TAG, n, resp.c_str(), s_st.queue);
     JsonDocument r;
-    if (!deserializeJson(r, resp) && r["pres_offset"].is<float>()) s_pendingOffset = r["pres_offset"];
+    if (!deserializeJson(r, resp)) {
+      if (r["pres_offset"].is<float>()) s_pendingOffset = r["pres_offset"];
+      JsonObject rain = r["rain"];
+      if (!rain.isNull() && rain["p"].size() == 3) {
+        s_rain.valid = true;
+        s_rain.at = rain["at"] | 0;
+        for (int i = 0; i < 3; i++) {
+          s_rain.p[i] = constrain((int)(rain["p"][i] | 0), 0, 100);
+          strlcpy(s_rain.method[i], rain["m"][i] | "", sizeof s_rain.method[i]);
+        }
+        s_rain.reason = rain["r"] | "";
+      }
+    }
     if (s_st.queue) s_forceSend = true;  // ainda há pendências: continua
   } else if (code == 422 || code == 413) {
     // Lote recusado pelo conteúdo: descarta para não travar a fila.
@@ -314,15 +361,17 @@ static void netTask(void *) {
   for (;;) {
     vTaskDelay(pdMS_TO_TICKS(500));
     const NetStatus &n = netStatus();
-    bool configured, sendDue;
+    bool configured, sendDue, reportDue;
     {
       Lock l;
       configured = s_st.configured;
+      reportDue = s_st.reportPending && (!s_reportRetryAt || (int32_t)(millis() - s_reportRetryAt) >= 0);
       bool backoffOk = !s_backoffMs || (int32_t)(millis() - s_nextAttemptMs) >= 0;
       bool work = s_st.queue > 0 || s_st.configPending;
       sendDue = work && backoffOk && (s_forceSend || s_st.configPending || s_backoffMs);
     }
     if (!configured || !n.connected || !n.timeSynced) continue;  // TLS precisa da hora certa
+    if (reportDue) sendReport();
     if (sendDue) {
       {
         Lock l;

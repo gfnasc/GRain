@@ -12,7 +12,8 @@ static const char *PATH = "/config.json";
 static Settings s_cfg;
 static uint32_t s_revision = 1;
 
-static const char *PAGE_NAMES[PG_COUNT] = {"temp", "hum", "pres", "clock", "today", "fields", "details", "network"};
+static const char *PAGE_NAMES[PG_COUNT] = {"temp", "hum", "pres", "clock", "today", "fields", "details", "network", "rain"};
+static const char *ALERT_MODES[4] = {"", "icon", "screen", "both"};
 static const char *FIELD_NAMES[FD_COUNT] = {"temp", "hum", "pres", "dew", "heat_index", "temp_bmp", "pres_station"};
 
 const char *pageTypeName(uint8_t t) { return t < PG_COUNT ? PAGE_NAMES[t] : "?"; }
@@ -145,6 +146,11 @@ static void toJson(const Settings &c, JsonDocument &doc) {
   cal["pres"] = c.calPres;
   cal["pres_auto"] = c.presAuto;
   cal["pres_auto_offset"] = roundf(c.presAutoOffset * 100) / 100;
+  JsonObject ra = doc["rain_alert"].to<JsonObject>();
+  ra["enabled"] = c.rainAlert;
+  ra["threshold"] = c.rainAlertPct;
+  ra["hours"] = c.rainAlertHours;
+  ra["mode"] = ALERT_MODES[c.rainAlertMode & 3];
   JsonObject loc = doc["location"].to<JsonObject>();
   if (isnan(c.lat) || isnan(c.lon)) {
     loc["lat"] = nullptr;
@@ -185,6 +191,11 @@ static void fromJson(JsonDocument &doc, Settings &c) {
   c.calPres = doc["calibration"]["pres"] | c.calPres;
   c.presAuto = doc["calibration"]["pres_auto"] | c.presAuto;
   c.presAutoOffset = doc["calibration"]["pres_auto_offset"] | c.presAutoOffset;
+  c.rainAlert = doc["rain_alert"]["enabled"] | c.rainAlert;
+  c.rainAlertPct = doc["rain_alert"]["threshold"] | (int)c.rainAlertPct;
+  c.rainAlertHours = doc["rain_alert"]["hours"] | (int)c.rainAlertHours;
+  int mode = indexOf(ALERT_MODES, 4, doc["rain_alert"]["mode"] | "both");
+  if (mode > 0) c.rainAlertMode = mode;
   c.lat = doc["location"]["lat"] | c.lat;
   c.lon = doc["location"]["lon"] | c.lon;
   c.placeLabel = doc["location"]["label"] | c.placeLabel;
@@ -300,6 +311,19 @@ static bool setField(Settings &c, const String &key, const String &value, String
   } else if (key == "calibration.pres_auto_offset") {
     if (!parseFloat(value, -15, 15, f)) { err = "entre -15 e 15"; return false; }
     c.presAutoOffset = f;
+  } else if (key == "rain_alert.enabled") {
+    if (value != "true" && value != "false") { err = "true ou false"; return false; }
+    c.rainAlert = value == "true";
+  } else if (key == "rain_alert.threshold") {
+    if (!parseFloat(value, 10, 100, f)) { err = "entre 10 e 100"; return false; }
+    c.rainAlertPct = (uint8_t)f;
+  } else if (key == "rain_alert.hours") {
+    if (!parseFloat(value, 1, 3, f)) { err = "1, 2 ou 3"; return false; }
+    c.rainAlertHours = (uint8_t)f;
+  } else if (key == "rain_alert.mode") {
+    int m = indexOf(ALERT_MODES, 4, value.c_str());
+    if (m <= 0) { err = "icon, screen ou both"; return false; }
+    c.rainAlertMode = m;
   } else if (key == "location.lat" || key == "location.lon") {
     bool isLat = key.endsWith("lat");
     if (value.isEmpty() || value == "null") {
@@ -377,6 +401,7 @@ void settingsCloudCopy(JsonDocument &doc) {
   doc["display"] = all["display"];
   doc["calibration"] = all["calibration"];
   doc["location"] = all["location"];
+  doc["rain_alert"] = all["rain_alert"];
 }
 
 void settingsToJson(JsonDocument &doc) { toJson(s_cfg, doc); }

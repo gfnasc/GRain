@@ -2,7 +2,7 @@
 // A configuração é feita só no ESP32 (página local); a estação envia uma cópia junto com
 // as médias, o servidor valida com estas regras e o painel só mostra (com a prévia do OLED).
 
-export const PAGE_TYPES = ['temp', 'hum', 'pres', 'clock', 'today', 'fields', 'details', 'network'] as const
+export const PAGE_TYPES = ['temp', 'hum', 'pres', 'clock', 'today', 'fields', 'details', 'network', 'rain'] as const
 export type PageType = (typeof PAGE_TYPES)[number]
 
 export const FIELD_TYPES = ['temp', 'hum', 'pres', 'dew', 'heat_index', 'temp_bmp', 'pres_station'] as const
@@ -17,6 +17,7 @@ export const PAGE_LABELS: Record<PageType, string> = {
   fields: 'Resumo (campos à escolha)',
   details: 'Detalhes',
   network: 'Rede',
+  rain: 'Chuva (próximas 3 h)',
 }
 
 export const FIELD_LABELS: Record<FieldType, string> = {
@@ -32,6 +33,7 @@ export const FIELD_LABELS: Record<FieldType, string> = {
 export type PageConfig = { type: PageType; fields?: FieldType[] }
 
 export type Location = { lat: number | null; lon: number | null; label: string }
+export type RainAlert = { enabled: boolean; threshold: number; hours: 1 | 2 | 3; mode: 'icon' | 'screen' | 'both' }
 
 export type StationConfig = {
   display: {
@@ -42,6 +44,7 @@ export type StationConfig = {
   }
   calibration: { temp: number; hum: number; pres: number; pres_auto: boolean; pres_auto_offset: number }
   location: Location
+  rain_alert: RainAlert
 }
 
 export const MAX_PAGES = 8
@@ -62,6 +65,7 @@ export function validateStationConfig(input: any): StationConfig {
   const n = d.night ?? {}
   const c = input?.calibration ?? {}
   const l = input?.location ?? {}
+  const ra = input?.rain_alert ?? {}
 
   if (!Array.isArray(d.pages) || d.pages.length < 1 || d.pages.length > MAX_PAGES) {
     throw new Error(`páginas: escolha de 1 a ${MAX_PAGES}`)
@@ -96,6 +100,12 @@ export function validateStationConfig(input: any): StationConfig {
       pres: numberIn(c.pres, -15, 15, 'ajuste de pressão'),
       pres_auto: c.pres_auto !== false,
       pres_auto_offset: numberIn(c.pres_auto_offset ?? 0, -15, 15, 'ajuste automático de pressão'),
+    },
+    rain_alert: {
+      enabled: ra.enabled !== false,
+      threshold: numberIn(ra.threshold ?? 60, 10, 100, 'limite do alerta de chuva', true),
+      hours: numberIn(ra.hours ?? 2, 1, 3, 'janela do alerta de chuva', true) as 1 | 2 | 3,
+      mode: ra.mode === 'icon' || ra.mode === 'screen' ? ra.mode : 'both',
     },
     location: {
       lat: hasLoc ? Math.round(numberIn(l.lat, -90, 90, 'latitude') * 1e5) / 1e5 : null,

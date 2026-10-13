@@ -31,3 +31,9 @@ void displaySetPaused(bool paused);
 void displayStep(int delta);
 // Vai direto para a página (0..count-1), com a mesma espera de 60 s.
 bool displayGoto(int index);
+
+// --- Alerta de chuva (previsão da nuvem + limite configurado) ---
+// Ativo agora? h = janela (1..3 h) e p = chance (%) que dispararam.
+bool displayRainAlert(int *h, int *p);
+// Mostra o alerta por 12 s com valores de exemplo (botão "Testar alerta").
+void displayAlertTest();

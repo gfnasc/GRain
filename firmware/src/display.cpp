@@ -26,11 +26,35 @@ static const uint32_t HOLD_MS = 60000;
 
 static int pageCount() { return settings().pageCount ? settings().pageCount : 1; }
 
+// --- Alerta de chuva ---
+// Dispara quando a chance numa das próximas N horas passa do limite (e só desliga 10 pontos
+// abaixo, para não ficar piscando). Ao disparar, o display pisca em inverso; enquanto dura,
+// aparece um guarda-chuva no cabeçalho e uma tela "Chuva provável" com gotas animadas entra
+// no carrossel a cada duas páginas. Respeita o modo noturno e a tela desligada.
+static bool s_alert = false;
+static int s_alertH = 0, s_alertP = 0;
+static bool s_alertScreen = false;     // a tela de alerta está no lugar de uma página
+static int s_pagesSinceAlert = 0;
+static int s_flashLeft = 0;            // inversões que faltam (par: termina normal)
+static uint32_t s_flashNext = 0;
+static bool s_inverted = false;
+static uint32_t s_testUntil = 0;
+static int s_dropFrame = -1;
+static const uint32_t DROP_FRAME_MS = 140;
+
 // Formata com uma casa decimal e vírgula (padrão brasileiro).
 static void fmt1(char *out, size_t n, float v) {
   snprintf(out, n, "%.1f", v);
   for (char *p = out; *p; p++)
     if (*p == '.') *p = ',';
+}
+
+// Guarda-chuva de 9x9 px a partir de (x, y) no canto superior esquerdo.
+static void drawUmbrellaSmall(int x, int y) {
+  s_oled.drawDisc(x + 4, y + 4, 4, U8G2_DRAW_UPPER_LEFT | U8G2_DRAW_UPPER_RIGHT);
+  s_oled.drawVLine(x + 4, y + 4, 4);
+  s_oled.drawPixel(x + 3, y + 8);
+  s_oled.drawPixel(x + 2, y + 7);
 }
 
 static void drawHeader(const char *title) {
@@ -55,12 +79,18 @@ static void drawHeader(const char *title) {
     s_oled.drawHLine(0, 11, 128);
     return;
   }
-  // Relógio (depois da sincronização), antes das bolinhas, se couber.
+  // Guarda-chuva do alerta (tem prioridade sobre o relógio), antes das bolinhas.
+  int right = 128 - (n > 1 ? n * step : 0) - 3;
+  if (s_alert && (settings().rainAlertMode & 1)) {
+    drawUmbrellaSmall(right - 9, 0);
+    right -= 12;
+  }
+  // Relógio (depois da sincronização), se couber.
   char hhmm[8];
   if (netLocalTime(hhmm, sizeof hhmm, "%H:%M")) {
     s_oled.setFont(u8g2_font_5x8_tf);
     int w = s_oled.getUTF8Width(hhmm);
-    int x = 128 - (n > 1 ? n * step : 0) - 3 - w;
+    int x = right - w;
     if (x > titleW + 4) s_oled.drawUTF8(x, 8, hhmm);
   }
   s_oled.drawHLine(0, 11, 128);
@@ -275,6 +305,96 @@ static void drawNetwork() {
   drawRow(63, "Hora", buf);
 }
 
+// Página "Chuva": chance nas próximas 1, 2 e 3 h em barras, com a linha tracejada do limite
+// do alerta; as porcentagens que passaram do limite aparecem invertidas.
+static void drawRain() {
+  drawHeader("Chuva");
+  RainForecast r = uplinkRain();
+  if (!r.fresh()) {
+    s_oled.setFont(u8g2_font_7x13_tf);
+    const char *a = "sem previsão";
+    s_oled.drawUTF8((128 - s_oled.getUTF8Width(a)) / 2, 36, a);
+    s_oled.setFont(u8g2_font_6x10_tf);
+    const char *b = "aguardando a nuvem";
+    s_oled.drawUTF8((128 - s_oled.getUTF8Width(b)) / 2, 52, b);
+    return;
+  }
+  const Settings &c = settings();
+  const int top = 15, h = 30, bottom = top + h;
+  static const int CX[3] = {21, 64, 107};
+  for (int i = 0; i < 3; i++) {
+    int x = CX[i] - 8;
+    s_oled.drawFrame(x, top, 16, h + 1);
+    int fill = (r.p[i] * h + 50) / 100;
+    if (fill) s_oled.drawBox(x, bottom - fill + 1, 16, fill);
+    char pct[8], lab[4];
+    snprintf(pct, sizeof pct, "%u%%", r.p[i]);
+    snprintf(lab, sizeof lab, "%dh", i + 1);
+    s_oled.setFont(u8g2_font_6x10_tf);
+    int w = s_oled.getUTF8Width(pct);
+    bool over = c.rainAlert && i < c.rainAlertHours && r.p[i] >= c.rainAlertPct;
+    if (over) {
+      s_oled.drawBox(CX[i] - w / 2 - 2, 48, w + 4, 9);
+      s_oled.setDrawColor(0);
+    }
+    s_oled.drawUTF8(CX[i] - w / 2, 56, pct);
+    s_oled.setDrawColor(1);
+    s_oled.setFont(u8g2_font_5x8_tf);
+    s_oled.drawUTF8(CX[i] - s_oled.getUTF8Width(lab) / 2, 64, lab);
+  }
+  // Limite do alerta: linha tracejada atravessando as barras (XOR para aparecer sobre o preenchimento).
+  if (c.rainAlert) {
+    int y = bottom - (c.rainAlertPct * h + 50) / 100;
+    s_oled.setDrawColor(2);
+    for (int x = 0; x < 128; x += 4) s_oled.drawHLine(x, y, 2);
+    s_oled.setDrawColor(1);
+  }
+}
+
+// Tela de alerta. Lado esquerdo (tiles 0..5): guarda-chuva grande com gotas caindo em volta,
+// animado com updateDisplayArea; lado direito: texto, desenhado uma vez.
+static void drawAlertArt(int frame) {
+  s_oled.setDrawColor(0);
+  s_oled.drawBox(0, 0, 48, 64);
+  s_oled.setDrawColor(1);
+  const int cx = 24, cy = 30;
+  // Gotas: caem e somem ao bater no guarda-chuva; as de fora vão até o chão.
+  static const uint8_t DX[8] = {3, 9, 15, 21, 27, 33, 39, 45};
+  static const uint8_t PH[8] = {0, 37, 14, 51, 23, 6, 44, 29};
+  for (int i = 0; i < 8; i++) {
+    int y = (frame * 4 + PH[i]) % 70 - 6;
+    bool under = DX[i] > cx - 16 && DX[i] < cx + 16;
+    if (under && y > cy - 16) continue;
+    if (y > -3 && y < 64) s_oled.drawVLine(DX[i], y < 0 ? 0 : y, y < 0 ? 3 + y : 3);
+  }
+  // Copa com bordas recortadas e cabo em gancho.
+  s_oled.drawDisc(cx, cy, 15, U8G2_DRAW_UPPER_LEFT | U8G2_DRAW_UPPER_RIGHT);
+  s_oled.setDrawColor(0);
+  for (int k = -1; k <= 1; k++) s_oled.drawDisc(cx + k * 10, cy + 1, 4, U8G2_DRAW_UPPER_LEFT | U8G2_DRAW_UPPER_RIGHT);
+  s_oled.setDrawColor(1);
+  s_oled.drawVLine(cx, cy - 2, 22);
+  s_oled.drawCircle(cx - 3, cy + 20, 3, U8G2_DRAW_LOWER_LEFT | U8G2_DRAW_LOWER_RIGHT);
+}
+
+static void drawAlertScreen() {
+  drawAlertArt(s_dropFrame < 0 ? 0 : s_dropFrame);
+  bool test = s_testUntil && (int32_t)(millis() - s_testUntil) < 0;
+  s_oled.setFont(u8g2_font_7x13B_tf);
+  s_oled.drawUTF8(54, 12, "CHUVA");
+  s_oled.setFont(u8g2_font_6x10_tf);
+  s_oled.drawUTF8(54, 23, test ? "(teste)" : "provável");
+  char v[8], line[20];
+  snprintf(v, sizeof v, "%d", s_alertP);
+  s_oled.setFont(u8g2_font_logisoso28_tf);
+  int w = s_oled.getUTF8Width(v);
+  s_oled.drawUTF8(54, 53, v);
+  s_oled.setFont(u8g2_font_7x13_tf);
+  s_oled.drawUTF8(54 + w + 2, 36, "%");
+  snprintf(line, sizeof line, "em até %d h", s_alertH);
+  s_oled.setFont(u8g2_font_6x10_tf);
+  s_oled.drawUTF8(54, 64, line);
+}
+
 // Tela fixa enquanto a rede de configuração do Wi-Fi estiver aberta.
 static void drawPortal() {
   const NetStatus &n = netStatus();
@@ -338,6 +458,8 @@ static void render() {
     s_oled.setFont(u8g2_font_7x13_tf);
     const char *msg = "Iniciando...";
     s_oled.drawUTF8((128 - s_oled.getUTF8Width(msg)) / 2, 38, msg);
+  } else if (s_alertScreen) {
+    drawAlertScreen();
   } else {
     if (s_page >= pageCount()) s_page = 0;
     const PageCfg &pg = settings().pages[s_page];
@@ -350,6 +472,7 @@ static void render() {
       case PG_FIELDS: drawFields(pg); break;
       case PG_DETAILS: drawDetails(); break;
       case PG_NETWORK: drawNetwork(); break;
+      case PG_RAIN: drawRain(); break;
     }
   }
   s_oled.sendBuffer();
@@ -408,6 +531,47 @@ static void applyNight() {
   log_i("[%s] modo %s", TAG, night ? (c.nightMode == 0 ? "noturno (apagado)" : "noturno (escuro)") : "diurno");
 }
 
+// Reavalia o alerta (a cada segundo). Ao disparar: pisca e mostra a tela de alerta na hora.
+static void evalAlert(uint32_t now) {
+  static uint32_t last = 0;
+  if (last && (uint32_t)(now - last) < 1000) return;
+  last = now;
+  const Settings &c = settings();
+  int h = 0, p = 0;
+  if (s_testUntil && (int32_t)(now - s_testUntil) < 0) {
+    h = 1;
+    p = 72;
+  } else {
+    s_testUntil = 0;
+    RainForecast r = uplinkRain();
+    int limit = c.rainAlertPct - (s_alert ? 10 : 0);
+    if (c.rainAlert && r.fresh())
+      for (int i = 0; i < c.rainAlertHours && i < 3; i++)
+        if (r.p[i] >= limit) { h = i + 1; p = r.p[i]; break; }
+  }
+  bool active = h > 0;
+  bool night = s_night == 1;
+  if (active && !s_alert) {
+    log_i("[%s] alerta de chuva: %d%% em até %d h", TAG, p, h);
+    if (!night) {
+      s_flashLeft = 6;
+      s_flashNext = now;
+      if ((c.rainAlertMode & 2) && !s_paused) {
+        s_alertScreen = true;
+        s_pagesSinceAlert = 0;
+        s_pageSince = now;
+        s_dropFrame = -1;
+      }
+    }
+  }
+  bool changed = active != s_alert || h != s_alertH || p != s_alertP;
+  if (!active) s_alertScreen = false;
+  s_alert = active;
+  s_alertH = h;
+  s_alertP = p;
+  if (changed) render();
+}
+
 void displayLoop() {
   if (!s_ok) return;
   uint32_t now = millis();
@@ -444,6 +608,28 @@ void displayLoop() {
   applyNight();
   if (s_manualOff) return;
   if (s_night == 1 && settings().nightMode == 0) return;  // tela apagada: não precisa redesenhar
+  evalAlert(now);
+  if (s_flashLeft > 0 && (int32_t)(now - s_flashNext) >= 0) {
+    s_inverted = !s_inverted;
+    s_oled.sendF("c", s_inverted ? 0xA7 : 0xA6);  // inverso / normal no próprio SSD1306
+    s_flashLeft--;
+    s_flashNext = now + 220;
+  }
+  if (s_alertScreen) {
+    int frame = now / DROP_FRAME_MS;
+    if (frame != s_dropFrame) {
+      s_dropFrame = frame;
+      drawAlertArt(frame);
+      s_oled.updateDisplayArea(0, 0, 6, 8);
+    }
+    if ((uint32_t)(now - s_pageSince) >= settings().displayPageMs) {
+      s_alertScreen = false;
+      s_pageSince = now;
+      if (!s_paused) s_page = (s_page + 1) % pageCount();
+      render();
+    }
+    return;
+  }
   if (s_paused) return;
   if (s_holdUntil && (int32_t)(now - s_holdUntil) < 0) return;  // segurando após navegação manual
   if (s_holdUntil) {
@@ -453,7 +639,15 @@ void displayLoop() {
 
   if ((uint32_t)(now - s_pageSince) >= settings().displayPageMs) {
     s_pageSince = now;
-    s_page = (s_page + 1) % pageCount();
+    // Com alerta ativo, a tela de alerta entra a cada duas páginas.
+    bool night = s_night == 1;
+    if (s_alert && (settings().rainAlertMode & 2) && !night && (++s_pagesSinceAlert >= 2 || pageCount() <= 2)) {
+      s_pagesSinceAlert = 0;
+      s_alertScreen = true;
+      s_dropFrame = -1;
+    } else {
+      s_page = (s_page + 1) % pageCount();
+    }
     render();
   }
 }
@@ -502,6 +696,7 @@ void displaySetPaused(bool paused) {
 }
 
 static void showPage(int index) {
+  s_alertScreen = false;
   s_page = index;
   s_pageSince = millis();
   if (!s_paused) {
@@ -520,4 +715,16 @@ bool displayGoto(int index) {
   if (index < 0 || index >= pageCount()) return false;
   showPage(index);
   return true;
+}
+
+bool displayRainAlert(int *h, int *p) {
+  if (h) *h = s_alertH;
+  if (p) *p = s_alertP;
+  return s_alert;
+}
+
+void displayAlertTest() {
+  s_testUntil = millis() + 12000;
+  if (s_testUntil == 0) s_testUntil = 1;
+  s_alert = false;  // força o "disparo" (pisca e mostra a tela)
 }

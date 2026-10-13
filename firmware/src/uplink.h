@@ -23,6 +23,19 @@ struct UplinkStatus {
   String url;
   uint32_t configSentEpoch = 0;   // última cópia da configuração aceita pela nuvem
   bool configPending = false;     // configuração mudou e a cópia ainda não chegou
+  uint32_t reportEpoch = 0;       // último aviso "Está chovendo aqui" aceito pela nuvem
+  bool reportPending = false;
+};
+
+// Chance de chuva nas próximas 1, 2 e 3 h, calculada na nuvem e recebida na resposta do envio.
+struct RainForecast {
+  bool valid = false;
+  uint32_t at = 0;       // epoch UTC do cálculo
+  uint8_t p[3] = {0};    // %
+  char method[3][3] = {{0}};  // "M1", "M2", "M3"
+  String reason;
+  // Recente o bastante para mostrar (até 35 min; depois a estação some com ela).
+  bool fresh() const { return valid && at && (uint32_t)time(nullptr) - at <= 35 * 60; }
 };
 
 void uplinkBegin();
@@ -41,3 +54,5 @@ bool uplinkSetToken(const String &token, String &err);
 void uplinkDisable();        // apaga URL e token
 void uplinkSendNow();        // força o envio da fila e da cópia da configuração
 uint32_t uplinkClearQueue(); // descarta a fila; retorna quantas médias foram apagadas
+RainForecast uplinkRain();   // última previsão de chuva recebida
+void uplinkReportRain();     // repassa o aviso "Está chovendo aqui" para a nuvem

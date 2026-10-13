@@ -5,7 +5,7 @@
 
 // Páginas do display e campos da página "Resumo". Os nomes em JSON são os
 // mesmos que o painel usa para mostrar a cópia (web/shared/utils/station-config.ts).
-enum PageType : uint8_t { PG_TEMP, PG_HUM, PG_PRES, PG_CLOCK, PG_TODAY, PG_FIELDS, PG_DETAILS, PG_NETWORK, PG_COUNT };
+enum PageType : uint8_t { PG_TEMP, PG_HUM, PG_PRES, PG_CLOCK, PG_TODAY, PG_FIELDS, PG_DETAILS, PG_NETWORK, PG_RAIN, PG_COUNT };
 enum FieldType : uint8_t { FD_TEMP, FD_HUM, FD_PRES, FD_DEW, FD_HEAT, FD_TEMP_BMP, FD_PRES_STATION, FD_COUNT };
 
 static const int MAX_PAGES = 8;
@@ -46,6 +46,11 @@ struct Settings {
   // pressão calibrada pelo QNH do aeroporto: o desvio vem da nuvem e substitui calPres
   bool presAuto = true;
   float presAutoOffset = 0;  // hPa, somado à pressão ao nível do mar
+  // alerta de chuva no display (a previsão vem da nuvem)
+  bool rainAlert = true;
+  uint8_t rainAlertPct = 60;    // dispara a partir desta chance
+  uint8_t rainAlertHours = 2;   // olhando as próximas 1, 2 ou 3 h
+  uint8_t rainAlertMode = 3;    // bit 0 = ícone no cabeçalho, bit 1 = tela de alerta no carrossel
   // localização para os dados externos (NAN = não definida)
   float lat = NAN, lon = NAN;
   String placeLabel;   // nome curto do local, ex.: "Casa"

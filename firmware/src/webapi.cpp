@@ -201,6 +201,7 @@ static void handlePostDisplay() {
   if (deserializeJson(in, s_srv.arg("plain")) || !in.is<JsonObject>()) return sendError(400, "json_invalido");
   if (in["power"].is<bool>()) displaySetPower(in["power"]);
   if (in["paused"].is<bool>()) displaySetPaused(in["paused"]);
+  if (in["alert_test"] == true) displayAlertTest();
   JsonVariant page = in["page"];
   if (page.is<const char *>()) {
     String p = page.as<const char *>();
@@ -220,6 +221,48 @@ static void handleCloudSync() {
   JsonDocument doc;
   doc["ok"] = true;
   doc["detail"] = "sincronização solicitada";
+  sendJson(202, doc);
+}
+
+// Chance de chuva (calculada na nuvem) e estado do alerta no display. Sem senha.
+static void handleRain() {
+  RainForecast r = uplinkRain();
+  const Settings &c = settings();
+  JsonDocument doc;
+  doc["fresh"] = r.fresh();
+  if (r.valid) {
+    doc["at"] = r.at;
+    doc["age_s"] = (uint32_t)time(nullptr) - r.at;
+    JsonArray p = doc["p"].to<JsonArray>();
+    JsonArray m = doc["m"].to<JsonArray>();
+    for (int i = 0; i < 3; i++) {
+      p.add(r.p[i]);
+      m.add(r.method[i]);
+    }
+    doc["reason"] = r.reason;
+  }
+  int h = 0, pct = 0;
+  JsonObject al = doc["alert"].to<JsonObject>();
+  al["active"] = displayRainAlert(&h, &pct);
+  al["hours"] = h;
+  al["pct"] = pct;
+  al["enabled"] = c.rainAlert;
+  al["threshold"] = c.rainAlertPct;
+  al["window"] = c.rainAlertHours;
+  const UplinkStatus &u = uplinkStatus();
+  if (u.reportEpoch) doc["last_report"] = u.reportEpoch;
+  else doc["last_report"] = nullptr;
+  doc["report_pending"] = u.reportPending;
+  sendJson(200, doc);
+}
+
+// Botão "Está chovendo aqui": a estação repassa para a nuvem. Sem senha.
+static void handleRainReport() {
+  if (!uplinkStatus().configured) return sendError(409, "nuvem_desligada", "configure com nuvem url / nuvem token");
+  uplinkReportRain();
+  JsonDocument doc;
+  doc["ok"] = true;
+  doc["detail"] = "aviso enviado para a nuvem";
   sendJson(202, doc);
 }
 
@@ -243,6 +286,8 @@ static void setupRoutes() {
   s_srv.on("/api/v1/display", HTTP_GET, handleGetDisplay);
   s_srv.on("/api/v1/display", HTTP_POST, handlePostDisplay);
   s_srv.on("/api/v1/cloud/sync", HTTP_POST, handleCloudSync);
+  s_srv.on("/api/v1/rain", HTTP_GET, handleRain);
+  s_srv.on("/api/v1/rain/report", HTTP_POST, handleRainReport);
   s_srv.on("/favicon.svg", HTTP_GET, handleFavicon);
   s_srv.on("/favicon.ico", HTTP_GET, handleFavicon);
   s_srv.onNotFound(handleNotFound);
