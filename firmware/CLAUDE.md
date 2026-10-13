@@ -1,4 +1,4 @@
-# GWeather — firmware
+# GRain — firmware
 
 Firmware ESP32 (PlatformIO, framework `arduino`, placa `esp32dev`).
 

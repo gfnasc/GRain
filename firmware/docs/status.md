@@ -3,16 +3,18 @@
 Memória de continuidade entre sessões. O Claude lê isto ao começar e **atualiza ao terminar** cada tarefa.
 Plano geral: `../../docs/PLANO.md` e `../../docs/plano.html`.
 
-## Arquitetura (v4)
-Painel em Nuxt na Vercel (pasta `web/`, fase 6). O ESP32 mede, mostra no OLED, agenda mensagens,
-envia os dados para a nuvem e mantém uma API local + página mínima em `gweather.local`.
+## Arquitetura (v5, projeto GRain)
+Painel em Nuxt na Vercel (pasta `web/`, projeto `grain`; domínio novo, com o antigo
+mantido como alias). O ESP32 mede, mostra no OLED, envia os dados para a nuvem e
+mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dados externos) + Indoor
+(escritório), chuva em 1–3 h, configurações só no ESP32 (fase 12), painel só leitura, WhatsApp na fase 19.
 
 ## Estado atual
 - Fases 1–3 concluídas (montagem, sensores, OLED com abertura e páginas).
 - Fase 4 concluída e validada na placa:
-  - `src/netmgr.*`: WiFiManager não bloqueante; rede "GWeather-Setup" com senha aleatória
+  - `src/netmgr.*`: WiFiManager não bloqueante; rede de configuração com senha aleatória
     (gerada após ligar o rádio, guardada na NVS em `gweather/portal_pass`) e mostrada no OLED.
-  - NTP com fuso de `/config.json` (`time.tz`); mDNS `gweather.local` (ping ok a partir do Mac).
+  - NTP com fuso de `/config.json` (`time.tz`); mDNS (ping ok a partir do Mac).
   - `src/settings.*`: `/config.json` em LittleFS, criado com valores de `config.h`/`site.h`.
   - `src/console.*`: `ajuda`, `status`, `config`, `set`, `config padrao`, `wifi portal|esquecer`, `reiniciar`.
   - OLED: relógio no cabeçalho, página Rede, tela fixa "Configurar Wi-Fi" com o portal aberto.
@@ -57,18 +59,26 @@ envia os dados para a nuvem e mantém uma API local + página mínima em `gweath
   `POST /api/v1/cloud/sync`, comandos `tela`, `carrossel`, `pagina`; página local com seções Display,
   Nuvem e Manutenção. Painel na nuvem com o mesmo ícone (SVG, ICO e apple-touch-icon).
 
-- Fase 9 implementada na nuvem (em validação), sem mudança no firmware:
-  - Agenda disparada por `GET /api/v1/device/config` (consulta de 1 min da estação); alertas por `POST /api/v1/ingest`.
-  - Mensagens em `web/server/utils/messages.ts` (Open-Meteo, Zambretti, sensação térmica); envio em `notify.ts`.
-  - Tabelas `recipients` e `notifications` (slot único); configuração em `devices.notify`.
-  - Teste: horário criado para 2 min depois disparou no minuto certo e não repetiu.
+- Fase 9 (WhatsApp) chegou a funcionar na nuvem, mas foi encerrada na v5 sem validação e removida na fase 11.
+
+- Fase 11 (em validação): projeto renomeado para GRain.
+  - Firmware 0.8.0: hostname `grain` (migra `gweather` ao carregar o /config.json), rede `GRain-Setup`,
+    nome na abertura, títulos. Namespace da NVS continua `gweather` (URL, token e senha do portal preservados);
+    novos `device_id` usam o prefixo `grain-` (a estação atual mantém o id antigo).
+  - Repositório renomeado para `gfnasc/GRain`; projeto da Vercel `grain`; estação apontada para o domínio novo.
+  - Nuvem: WhatsApp removido (rotas `notify`, agenda, alertas, aba Mensagens, tabelas `recipients`,
+    `notifications` e coluna `devices.notify`); localização copiada para `devices.site`.
+  - Tabela `placements` (`sacada`/`escritorio`) + `pnpm placement`: temperatura e umidade da sacada
+    hachuradas nos gráficos e fora de extremos/médias (readings, daily, latest); coluna `local` no CSV.
+  - Fora do git até a fase 13: `web/server/utils/forecast.ts` e `web/server/api/v1/forecast.get.ts`.
 
 ## Em andamento
-- Fase 9: cadastrar os destinatários (chaves do CallMeBot) e validar o envio real.
+- Fase 11: registrar a mudança para o escritório (`pnpm placement escritorio <horário>`) e validação do usuário.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fase 9: previsão (Zambretti + Open-Meteo) e WhatsApp (CallMeBot).
+1. Fase 12: configurações só no ESP32 (editor do display, calibração e localização na página local),
+   ESP32 para de consultar a configuração na nuvem e envia uma cópia; painel somente leitura.
 
 ## Problemas conhecidos
 - O envio HTTPS bloqueia o loop por ~1–3 s a cada 10 min (display pausa um instante).

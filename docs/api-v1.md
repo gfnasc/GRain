@@ -1,4 +1,4 @@
-# API v1 — GWeather
+# API v1 — GRain
 
 Contrato da API HTTP. As rotas do **ESP32** existem desde a fase 5; as rotas da **nuvem** (Nuxt na Vercel) chegam na fase 6 e usam os mesmos nomes de campos.
 
@@ -12,7 +12,7 @@ Convenções:
 
 ## ESP32 (rede local)
 
-Base: `http://gweather.local` (ou o IP mostrado na página **Rede** do display).
+Base: `http://grain.local` (ou o IP mostrado na página **Rede** do display).
 
 O servidor só responde com Wi-Fi conectado e a rede de configuração fechada. Rotas `GET` são abertas na rede local; rotas que alteram algo exigem **HTTP Basic** com usuário `admin` e a **senha da estação** (a mesma da rede de configuração, exibida pelo comando `status` no console serial).
 
@@ -26,7 +26,7 @@ Página mínima (HTML, sem dependências externas) com leitura atual e estado. A
 
 ```json
 {
-  "device_id": "gweather-a1b2c3",
+  "device_id": "grain-a1b2c3",
   "ts": 1791830406,
   "age_s": 0,
   "temp": 28.02,
@@ -57,10 +57,10 @@ Status: `200`; `503` se ainda não houve nenhuma leitura.
 
 ```json
 {
-  "device": { "id": "gweather-a1b2c3", "firmware": "0.5.0", "uptime_s": 24,
+  "device": { "id": "grain-a1b2c3", "firmware": "0.5.0", "uptime_s": 24,
               "heap_free": 226656, "heap_min": 222612, "fs_used": 8192, "fs_total": 1048576 },
   "wifi": { "connected": true, "ssid": "MinhaRede", "ip": "192.168.1.105", "rssi": -45,
-            "hostname": "gweather.local" },
+            "hostname": "grain.local" },
   "time": { "synced": true, "tz": "<-03>3", "local": "2026-10-12T15:33:51", "epoch": 1791830031 },
   "sensors": { "aht20": true, "bmp280": true }
 }
@@ -72,8 +72,8 @@ Configuração gravada em `/config.json`.
 ```json
 {
   "schema": 1,
-  "device_id": "gweather-a1b2c3",
-  "hostname": "gweather",
+  "device_id": "grain-a1b2c3",
+  "hostname": "grain",
   "time": { "tz": "<-03>3", "ntp1": "pool.ntp.org", "ntp2": "time.google.com" },
   "site": { "ground_alt_m": 600, "floor": 10, "floor_height_m": 2.9, "sensor_height_m": 1 },
   "display": { "page_s": 5, "contrast": 128 }
@@ -86,7 +86,7 @@ Altera um ou mais campos. O corpo é um JSON **parcial** no mesmo formato do `GE
 ```bash
 curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
   -d '{"display":{"page_s":8},"site":{"floor":10}}' \
-  http://gweather.local/api/v1/config
+  http://grain.local/api/v1/config
 ```
 
 | Campo | Regra |
@@ -165,7 +165,7 @@ Horários já recebidos são ignorados, então o ESP32 pode reenviar com seguran
 Respostas: `200 {"accepted": 1, "duplicates": 0}` · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
 
 ### `GET /api/v1/latest` 🔐
-Exige a sessão do painel. Devolve a estação, a média mais recente, as 12 últimas médias e mínimas/máximas de 24 h.
+Exige a sessão do painel. Devolve a estação (com `place`: `sacada`, `escritorio` ou `null`), a média mais recente, as 12 últimas médias e mínimas/máximas de 24 h, sem o período na sacada.
 
 ### `POST /api/auth/login`
 `{"password": "..."}` → `200` e cookie de sessão (30 dias) · `401` senha incorreta.
@@ -188,8 +188,10 @@ Série agregada para os gráficos. A resolução depende do tamanho do período:
       "hum": 65.8, "hum_min": 65.8, "hum_max": 65.8,
       "pres": 1010.55, "pres_min": 1010.55, "pres_max": 1010.55, "dew": 21.0, "n": 1 }
   ],
+  "placements": [ { "place": "sacada", "from": 1791831600, "to": 1791889800 },
+                  { "place": "escritorio", "from": 1791889800, "to": null } ],
   "summary": {
-    "n": 4, "expected": 144,
+    "n": 4, "n_sacada": 0, "expected": 144,
     "temp": { "min": { "v": 27.97, "ts": 1791831600 }, "max": { "v": 28.09, "ts": 1791832800 }, "avg": 28.03 },
     "hum":  { "min": { "...": "..." }, "max": { "...": "..." }, "avg": 66.25 },
     "pres": { "min": { "...": "..." }, "max": { "...": "..." }, "avg": 1010.57 }
@@ -199,11 +201,13 @@ Série agregada para os gráficos. A resolução depende do tamanho do período:
 
 `n` em cada ponto é a quantidade de médias de 10 min agregadas. Os extremos do `summary` são exatos (não médias), com o horário em que ocorreram; `expected` é quantas médias de 10 min cabem no período.
 
+`placements` lista onde a estação estava em cada trecho do período (`to: null` é o local atual). Temperatura e umidade medidas na sacada continuam em `points` (o painel desenha hachurado), mas ficam fora dos extremos e das médias do `summary`; `n_sacada` conta essas médias. A pressão entra sempre.
+
 ### `GET /api/v1/daily` 🔐
-Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umidade e pressão, e a quantidade de médias recebidas (`n`, de 144 possíveis).
+Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umidade e pressão, e a quantidade de médias recebidas (`n`, de 144 possíveis). Temperatura e umidade da sacada ficam de fora; `n_sacada` conta quantas médias do dia foram medidas lá.
 
 ### `GET /api/v1/readings.csv` 🔐
-Médias de 10 min do período em CSV (download). Colunas: `inicio_utc`, `inicio_local`, `temperatura_c`, `umidade_pct`, `pressao_nivel_mar_hpa`, `ponto_orvalho_c`. Com `&excel=1`: separador `;`, vírgula decimal e BOM UTF-8 para abrir direto no Excel em português.
+Médias de 10 min do período em CSV (download). Colunas: `inicio_utc`, `inicio_local`, `temperatura_c`, `umidade_pct`, `pressao_nivel_mar_hpa`, `ponto_orvalho_c`, `local` (`sacada`, `escritorio` ou vazio). Com `&excel=1`: separador `;`, vírgula decimal e BOM UTF-8 para abrir direto no Excel em português.
 
 ### Configuração do display e da calibração
 
@@ -239,19 +243,5 @@ Configuração atual (ou a padrão, com `is_default: true`), `version`, `applied
 #### `PUT /api/v1/config` 🔐
 Salva a configuração completa e gera a próxima `version`. `422` com a regra violada em `message`.
 
-#### Notificações 🔐
-
-| Método | Rota | Descrição |
-|---|---|---|
-| `GET` | `/api/v1/notify` | Agenda, alertas e local; destinatários (sem a chave); últimos 20 envios |
-| `PUT` | `/api/v1/notify` | Salva agenda, alertas e local (validação em `web/shared/utils/notify-config.ts`) |
-| `POST` | `/api/v1/notify/recipients` | `{name, phone, apikey}`; telefone no formato `+5511999999999` |
-| `PATCH` | `/api/v1/notify/recipients/:id` | `{name?, phone?, apikey?, enabled?}` |
-| `DELETE` | `/api/v1/notify/recipients/:id` | Remove |
-| `GET` | `/api/v1/notify/preview?type=` | Monta a mensagem (`forecast`, `current`, `trend`, `summary`) sem enviar |
-| `POST` | `/api/v1/notify/test` | `{type, recipient_id?}`: envia agora e registra como teste |
-
-A chave do CallMeBot nunca é devolvida ao navegador. Cada envio grava um `slot` único (`agenda:<id>:<data>`, `alerta:<tipo>:<ts>`, `teste:<ts>`), o que impede duplicatas.
-
 #### `GET /api/v1/device/config?v=<versão aplicada>` 🔑
-Consultado pelo ESP32 a cada minuto com o token da estação. `204` se a estação já está na versão atual; senão `200 {"version": 3, "config": {...}}`. Cada consulta registra `applied_version` e `last_poll_at`, que o painel usa para confirmar a aplicação e o estado Online. A mesma consulta dispara a agenda de mensagens; o `POST /api/v1/ingest` dispara a avaliação dos alertas.
+Consultado pelo ESP32 a cada minuto com o token da estação. `204` se a estação já está na versão atual; senão `200 {"version": 3, "config": {...}}`. Cada consulta registra `applied_version` e `last_poll_at`, que o painel usa para confirmar a aplicação e o estado Online. Na fase 12 esta consulta deixa de existir: a configuração passa a ficar só no ESP32.

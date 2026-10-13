@@ -1,8 +1,8 @@
-# GWeather
+# GRain
 
-Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e display **OLED SSD1306**. Mede temperatura, umidade e pressão, mostra os dados no display, conecta ao Wi-Fi com hora pela internet e, nas próximas fases, envia os dados para um painel em **Nuxt na Vercel**, com histórico e mensagens de WhatsApp.
+Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e display **OLED SSD1306** (antes chamada GWeather). Mede temperatura, umidade e pressão, mostra os dados no display e envia médias de 10 min para um painel em **Nuxt na Vercel**, com histórico e gráficos. O objetivo da versão 5 é prever chuva para 1 h, 2 h e 3 h cruzando o barômetro da estação com dados externos, com dois modos: **Outdoor** (lá fora) e **Indoor** (o ambiente onde a estação fica).
 
-> *ESP32 weather station (AHT20 + BMP280 + SSD1306 OLED). Documentation in Portuguese.*
+> *ESP32 rain station (AHT20 + BMP280 + SSD1306 OLED). Documentation in Portuguese.*
 
 > [!IMPORTANT]
 > **Projeto pessoal, publicado como está.** O código foi escrito e testado para **um hardware específico**: a combinação exata de placa, sensores, display e ligações descrita abaixo. Para usar sem alterações, você precisa da **mesma configuração de módulos e componentes**. Outras placas, sensores ou displays exigem adaptar o código.
@@ -18,13 +18,22 @@ Estação meteorológica com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280*
 | 1 | Montagem na protoboard | ✅ Concluída |
 | 2 | Scanner I2C e leitura dos sensores | ✅ Concluída |
 | 3 | Display OLED com páginas rotativas | ✅ Concluída |
-| 4 | Wi-Fi, hora pela internet (NTP), `gweather.local`, configuração e console serial | ✅ Concluída |
+| 4 | Wi-Fi, hora pela internet (NTP), mDNS, configuração e console serial | ✅ Concluída |
 | 5 | API local `/api/v1` e página mínima no ESP32 | ✅ Concluída |
 | 6 | Nuvem: Nuxt na Vercel, banco e envio de dados pelo ESP32 | ✅ Concluída |
 | 7 | Histórico, gráficos e exportação CSV no painel | ✅ Concluída |
 | 8 | Personalização do display pelo painel | ✅ Concluída |
-| 9 | Previsão do dia e mensagens de WhatsApp (CallMeBot) | 🔧 Em validação |
-| 10 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
+| 9 | Previsão e WhatsApp | ⏹️ Encerrada na v5 (volta na 19) |
+| 10 | Robustez | ➡️ Movida para a 18 |
+| 11 | GRain: novo nome, flag "sacada" no histórico, remoção do WhatsApp | 🔧 Em validação |
+| 12 | Configurações só no ESP32; painel só para visualização | Planejada |
+| 13 | Outdoor: dados externos (METAR e Open-Meteo) | Planejada |
+| 14 | Pressão calibrada pelo aeroporto | Planejada |
+| 15 | Chuva v1: métodos M1 a M3 e placar de acertos | Planejada |
+| 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |
+| 17 | Chuva v2: método combinado com aprendizado | Planejada |
+| 18 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
+| 19 | WhatsApp, configurado no ESP32 | Planejada |
 
 Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama interativo de ligações e montagem passo a passo: [docs/plano.html](docs/plano.html) (baixe o arquivo e abra no navegador).
 
@@ -33,11 +42,11 @@ Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama int
 ```
 ESP32 ──envia leituras a cada 10 min (HTTPS)──► Nuxt na Vercel (API + banco)
   │                                                   │
-  └─ página mínima em gweather.local                  └─ painel completo, com login,
+  └─ página mínima em grain.local                     └─ painel completo, com login,
      (funciona sem internet)                             acessível de qualquer lugar
 ```
 
-O ESP32 mede, mostra no display e envia os dados. As mensagens de WhatsApp saem da nuvem: a consulta que a estação faz a cada minuto serve de relógio para a agenda (o cron gratuito da Vercel só roda 1 vez por dia). O painel fica na nuvem porque um site HTTPS não consegue ler a API HTTP local do ESP32 e porque `gweather.local` só existe dentro de casa.
+O ESP32 mede, mostra no display e envia os dados. O painel fica na nuvem porque um site HTTPS não consegue ler a API HTTP local do ESP32 e porque `grain.local` só existe dentro de casa. A partir da fase 12, todas as configurações passam para a página local do ESP32 e o painel fica só para visualização.
 
 ---
 
@@ -117,8 +126,8 @@ As bibliotecas são instaladas automaticamente pelo PlatformIO, com versões fix
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/gfnasc/GWeather.git
-   cd GWeather/firmware
+   git clone https://github.com/gfnasc/GRain.git
+   cd GRain/firmware
    ```
 2. Crie o arquivo de configuração do local a partir do modelo:
    ```bash
@@ -140,16 +149,16 @@ Se houver mais de uma porta serial, o PlatformIO pergunta qual usar. Para fixar 
 
 Na primeira vez, sem Wi-Fi salvo, o display mostra **"Configurar Wi-Fi"** com o nome de uma rede e uma senha:
 
-1. No celular, conecte na rede **GWeather-Setup** usando a senha do display. Ela é aleatória, gerada uma vez por placa.
+1. No celular, conecte na rede **GRain-Setup** usando a senha do display. Ela é aleatória, gerada uma vez por placa.
 2. A página de configuração abre sozinha. Se não abrir, acesse `http://192.168.4.1`.
 3. Toque em **Configure WiFi**, escolha sua rede (**2,4 GHz**; o ESP32 não conecta em 5 GHz), digite a senha e toque em **Save**.
-4. O display volta às páginas normais, com a hora no canto. Na rede local, a estação responde em `gweather.local`.
+4. O display volta às páginas normais, com a hora no canto. Na rede local, a estação responde em `grain.local`.
 
 O Wi-Fi fica salvo na placa. Para trocar de rede, use o comando `wifi esquecer` no console.
 
 ### Página local e API
 
-Com a estação no Wi-Fi, abra **http://gweather.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. A página funciona sem internet e atualiza a cada 5 s:
+Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. A página funciona sem internet e atualiza a cada 5 s:
 
 - **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
 - **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar (a configuração permanente fica no painel na nuvem).
@@ -172,9 +181,9 @@ A mesma porta serve a API `/api/v1`:
 🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
 
 ```bash
-curl http://gweather.local/api/v1/now
+curl http://grain.local/api/v1/now
 curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
-  -d '{"display":{"page_s":8}}' http://gweather.local/api/v1/config
+  -d '{"display":{"page_s":8}}' http://grain.local/api/v1/config
 ```
 
 ### Painel na nuvem (Nuxt na Vercel)
@@ -191,26 +200,19 @@ nuvem
 
 O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `desligada`).
 
-O painel tem duas seções:
-- **Agora:** média mais recente, mínima e máxima de 24 h, últimas médias e estado da estação.
+O painel tem três seções:
+- **Agora:** média mais recente, local da estação, mínima e máxima de 24 h, últimas médias e estado da estação.
 - **Display:** escolha das páginas do OLED (até 8, em qualquer ordem), tempo por página, brilho, modo noturno (apagar ou escurecer num horário) e calibração dos sensores, com prévia do OLED. Ao salvar, a estação aplica sozinha em até 1 minuto e o painel mostra quando a versão foi confirmada.
-- **Mensagens:** destinatários do WhatsApp (CallMeBot, uma chave por pessoa, guardada só no banco), agenda de até 8 horários com tipo de mensagem e dias da semana, alertas de calor, frio e queda de pressão, local para a previsão (Open-Meteo), prévia com os dados de agora, envio de teste e registro dos últimos envios.
-- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e ponto de orvalho, umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel).
+- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e ponto de orvalho, umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
 
-### Mensagens no WhatsApp
+### Local da estação (sacada ou escritório)
 
-1. Cada pessoa ativa a própria chave no [CallMeBot](https://www.callmebot.com/blog/free-api-whatsapp-messages/) pelo celular.
-2. No painel, seção **Mensagens**, cadastre nome, número (com DDI) e chave, e use **Enviar teste**.
-3. Ajuste a agenda (padrão: 07:00 previsão do dia, 13:00 condições atuais, 19:00 tendência; 22:00 resumo desligado), os alertas e a latitude/longitude para a previsão.
+Na sacada, sol direto e calor do prédio distorcem a temperatura e a umidade; a pressão vale em qualquer lugar. O banco guarda onde a estação estava em cada período (tabela `placements`), e o painel usa isso para marcar o histórico. Para registrar uma mudança, dentro de `web/`:
 
-| Tipo | Conteúdo |
-|---|---|
-| Previsão do dia | Condições de agora, máxima/mínima/chuva do dia (Open-Meteo) e tendência da pressão (Zambretti) |
-| Condições atuais | Temperatura, sensação, umidade e pressão com tendência |
-| Tendência | Variação da pressão em 3 h, interpretação e previsão de amanhã |
-| Resumo do dia | Máxima e mínima com horário, faixa de umidade, pressão média e previsão de amanhã |
-
-A mensagem sai no horário ou até 30 min depois (se a estação estava fora do ar) e nunca é enviada duas vezes. Alertas são avaliados a cada média de 10 min e respeitam um intervalo mínimo entre envios do mesmo tipo.
+```bash
+pnpm placement escritorio 2026-10-13T08:10-03:00   # a partir desse horário (sem horário = agora)
+pnpm placement                                     # lista os períodos
+```
 
 ### Console serial
 
@@ -270,7 +272,7 @@ AHT20 : ok (0x38)
 BMP280: ok (0x76), chip id 0x58 = BMP280
 OLED  : ok (0x3C)
 [net] conectado em "MinhaRede", IP 192.168.1.105
-[net] mDNS: gweather.local
+[net] mDNS: grain.local
 [net] hora sincronizada: 12/10/2026 15:23:12
 Digite "ajuda" para ver os comandos.
 [15:23:16] 28.16 °C  65.4 %  orvalho 21.1 °C  sensação 30.4 °C  |  1010.82 hPa (local 936.60)  BMP 27.82 °C
@@ -278,7 +280,7 @@ Digite "ajuda" para ver os comandos.
 Uma linha por leitura, a cada 5 s. O LED azul da placa pisca a cada leitura.
 
 ### Display
-No boot aparece a tela “Iniciando...” com um spinner animado por 2,5 s. Depois, as páginas alternam no tempo configurado. As páginas, a ordem e o tempo de cada uma são escolhidos no painel (seção **Display**). Tipos disponíveis:
+No boot aparece a tela de abertura com o nome GRain e um spinner animado por 2,5 s. Depois, as páginas alternam no tempo configurado. As páginas, a ordem e o tempo de cada uma são escolhidos no painel (seção **Display**). Tipos disponíveis:
 
 | Página | Conteúdo |
 |---|---|
@@ -308,9 +310,9 @@ Enquanto a rede de configuração estiver aberta, o display fica fixo nas instru
 | OLED aparece em `0x3D` | Jumper de endereço do módulo | Troque `ADDR_OLED` em `include/config.h` |
 | Temperatura 1–3 °C acima do real | Calor do ESP32 | Afaste os sensores do ESP32 |
 | Erro `Falta include/site.h` ao compilar | Configuração do local não criada | `cp include/site.h.example include/site.h` |
-| Não aparece a rede GWeather-Setup | Já existe Wi-Fi salvo | Use `wifi portal` no console |
+| Não aparece a rede GRain-Setup | Já existe Wi-Fi salvo | Use `wifi portal` no console |
 | Não conecta ao Wi-Fi | Rede de 5 GHz ou senha errada | Use uma rede de 2,4 GHz; `wifi esquecer` e configure de novo |
-| `gweather.local` não abre | Aparelho sem suporte a mDNS (alguns Android) ou em outra rede | Use o IP mostrado na página Rede do display |
+| `grain.local` não abre | Aparelho sem suporte a mDNS (alguns Android) ou em outra rede | Use o IP mostrado na página Rede do display |
 | `PUT` responde 415 | Falta o cabeçalho JSON | Envie `Content-Type: application/json` |
 | Página Rede mostra `erro` na nuvem | Token errado, URL errada ou internet fora | Comando `nuvem` mostra o último erro; a fila guarda as médias e reenvia depois |
 | Computador não reconhece a placa | Cabo só de carga ou falta de driver | Troque o cabo; instale o driver CP210x ou CH340 |
@@ -320,7 +322,7 @@ Enquanto a rede de configuração estiver aberta, o display fica fixo nas instru
 ## Estrutura do repositório
 
 ```
-GWeather/
+GRain/
 ├── README.md
 ├── LICENSE
 ├── web/                      Painel Nuxt na Vercel (ver web/README.md)

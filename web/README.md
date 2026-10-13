@@ -1,6 +1,6 @@
-# GWeather — painel (Nuxt na Vercel)
+# GRain — painel (Nuxt na Vercel)
 
-Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pelo ESP32, guarda no Postgres (Neon) e mostra os dados com login.
+Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pelo ESP32, guarda no Postgres (Neon) e mostra os dados com login. O local da estação em cada período fica na tabela `placements`: temperatura e umidade medidas na sacada aparecem marcadas e ficam fora dos extremos.
 
 ## Stack
 - Nuxt 4 + Nitro (rotas de servidor em `server/api`)
@@ -14,10 +14,11 @@ Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pel
 | Rota | Autenticação | Descrição |
 |---|---|---|
 | `POST /api/v1/ingest` | `Authorization: Bearer <token da estação>` | Recebe lote de médias; horários repetidos são ignorados |
-| `GET /api/v1/latest` | Sessão do painel | Leitura mais recente, últimas 12 médias, mín./máx. de 24 h e estado da estação |
-| `GET /api/v1/readings` | Sessão do painel | Série agregada para os gráficos (`?range=24h\|7d\|30d` ou `?from=&to=`) |
+| `GET /api/v1/latest` | Sessão do painel | Leitura mais recente, últimas 12 médias, mín./máx. de 24 h (sem a sacada), local e estado da estação |
+| `GET /api/v1/readings` | Sessão do painel | Série agregada para os gráficos (`?range=24h\|7d\|30d` ou `?from=&to=`) e períodos de cada local |
 | `GET /api/v1/daily` | Sessão do painel | Resumo por dia |
-| `GET /api/v1/readings.csv` | Sessão do painel | Exportação CSV (`&excel=1` para Excel em português) |
+| `GET /api/v1/readings.csv` | Sessão do painel | Exportação CSV com a coluna `local` (`&excel=1` para Excel em português) |
+| `GET /api/v1/device/config` | Token da estação | Configuração do display (até a fase 12) |
 | `POST /api/auth/login` | — | Login com a senha do painel |
 
 Contrato completo: [../docs/api-v1.md](../docs/api-v1.md).
@@ -47,7 +48,7 @@ vercel env add NUXT_SESSION_PASSWORD production
 Cadastrar a estação (o `device_id` aparece em `config` no console serial do ESP32):
 
 ```bash
-pnpm device:token gweather-xxxxxx   # token em .device-token-gweather-xxxxxx.txt
+pnpm device:token grain-xxxxxx   # token em .device-token-grain-xxxxxx.txt
 ```
 
 No console serial do ESP32:
@@ -55,6 +56,13 @@ No console serial do ESP32:
 ```
 nuvem url https://SEU-PROJETO.vercel.app
 nuvem token <conteúdo do arquivo>
+```
+
+Registrar onde a estação está (opcional; sem registro, nada é marcado):
+
+```bash
+pnpm placement escritorio            # a partir de agora; ou passe um horário ISO
+pnpm placement                       # lista os períodos
 ```
 
 `.env.local`, `.panel-password.txt` e `.device-token-*.txt` ficam fora do git.
