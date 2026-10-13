@@ -198,7 +198,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
   <div class="stack">
     <span class="eyebrow">Plano do projeto · v5 · 13/out/2026</span>
     <h1>GRain <span class="muted" style="font-size:.45em;font-weight:600">antigo GWeather</span></h1>
-    <p class="muted">ESP32 DevKit v1 com AHT20, BMP280 e OLED SSD1306. Painel em Nuxt na Vercel, histórico na nuvem, mensagens de WhatsApp em horários definidos e uma página mínima local no próprio ESP32 para quando faltar internet.</p>
+    <p class="muted">ESP32 DevKit v1 com AHT20, BMP280 e OLED SSD1306, no escritório. Previsão de chuva para 1 h, 2 h e 3 h, cruzando o barômetro da estação com dados externos; Outdoor (lá fora) e Indoor (escritório). Configurações no app do próprio ESP32 e painel em Nuxt na Vercel só para visualização.</p>
     <p class="muted"><b>Projeto aberto, feito para um hardware específico:</b> para reproduzir, use exatamente os mesmos módulos e as mesmas ligações descritas aqui. Outras placas, sensores ou displays exigem adaptar o código.</p>
   </div>
   <div class="facts">
@@ -206,8 +206,8 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Display</span><span class="v">OLED 0,96" I2C</span></div>
     <div class="fact"><span class="k">Montagem</span><span class="v">Protoboard</span></div>
     <div class="fact"><span class="k">Sensores</span><span class="v">AHT20 + BMP280</span></div>
-    <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
-    <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel</span></div>
+    <div class="fact"><span class="k">Foco</span><span class="v">Chuva em 1–3 h</span></div>
+    <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel · só leitura</span></div>
   </div>
   <span class="status">Fases 1 a 8 concluídas · Próxima: Fase 11, GRain e escritório</span>
 </header>
@@ -349,109 +349,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     </table></div>
 
     <h3>Fases da reformulação</h3>
-    <p class="muted">A Fase 9 (WhatsApp) é encerrada sem validação e o código é removido; o WhatsApp volta como a Fase 19. A antiga Fase 10 (robustez) vira a 18. As configurações vão para o ESP32 antes do Outdoor, porque o Outdoor depende da localização. A Chuva v2 fica depois do Indoor de propósito: ela precisa de algumas semanas de previsões registradas para aprender.</p>
-    <div class="phases">
-      <div class="phase next">
-        <div class="n">11</div>
-        <div class="body">
-          <div class="meta"><h3>GRain, escritório e limpeza</h3><span class="chip">1 dia</span></div>
-          <ul>
-            <li>Renomear para GRain: repositório no GitHub (o endereço antigo redireciona sozinho), projeto na Vercel com domínio novo (o antigo fica como alias até a estação apontar para o novo) e firmware (abertura, rede Wi-Fi de configuração <code>GRain-XXXX</code>, <code>grain.local</code>, títulos). O <code>device_id</code> e o token continuam os mesmos, então não há migração de dados.</li>
-            <li>Tabela <code>placements</code>: flag sacada no histórico antigo e escritório a partir da data da mudança.</li>
-            <li>Remover o WhatsApp: aba Mensagens, rotas <code>notify</code>, envio, agenda, alertas, textos e tabelas.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> GRain no ar no endereço novo, estação enviando do escritório, histórico antigo marcado como sacada e nenhum resto de WhatsApp no código.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">12</div>
-        <div class="body">
-          <div class="meta"><h3>Configurações só no ESP32, painel só para ver</h3><span class="chip">1–2 dias</span></div>
-          <ul>
-            <li>Página local do ESP32 ganha o editor do display com prévia do OLED, calibração e localização, além do que já existe (rede, nuvem, controles do display, manutenção).</li>
-            <li>A estação deixa de buscar configuração na nuvem e envia uma cópia da configuração e da localização junto com o estado.</li>
-            <li>Painel: sai o editor da aba Display e saem as rotas de escrita de configuração. A aba vira <b>Estação</b>, só leitura, com o estado e a prévia do que está no OLED.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> tudo é configurado pelo <code>grain.local</code>, a mudança aparece no OLED na hora e o painel mostra a configuração nova sem permitir editar.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">13</div>
-        <div class="body">
-          <div class="meta"><h3>Outdoor: dados externos</h3><span class="chip">1–2 dias</span></div>
-          <ul>
-            <li>METAR do aeroporto mais próximo (detectado pela localização) e Open-Meteo, coletados a cada envio da estação e gravados em <code>outdoor_obs</code>.</li>
-            <li>Aba Agora com os cards <b>Outdoor</b> e <b>Indoor</b> lado a lado, mais o card de previsão de hoje e amanhã (a rota já está pronta e falta só o card).</li>
-            <li>Histórico com Indoor × Outdoor.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> o Outdoor mostra a fonte e a hora da observação, e a temperatura bate com o aeroporto.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">14</div>
-        <div class="body">
-          <div class="meta"><h3>Pressão calibrada pelo aeroporto</h3><span class="chip">½ dia</span></div>
-          <ul>
-            <li>A nuvem calcula o desvio em relação ao QNH (mediana de 7 dias) e devolve na resposta do envio; a estação aplica o ajuste se a chave estiver ligada no app local.</li>
-            <li>Gráfico de pressão da estação × QNH no painel.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> diferença média menor que 0,5 hPa em relação ao QNH, mantendo a mesma tendência, no painel e no OLED.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">15</div>
-        <div class="body">
-          <div class="meta"><h3>Chuva v1: métodos M1 a M3 e placar</h3><span class="chip">2 dias</span></div>
-          <ul>
-            <li>M1 (barômetro), M2 (barômetro + METAR/TAF) e M3 (modelo), calculados a cada 10 min para as janelas de 1 h, 2 h e 3 h, com o motivo de cada um.</li>
-            <li>Registro em <code>rain_predictions</code>, chuva observada em <code>rain_truth</code> e botão “Está chovendo aqui” no painel e na página local.</li>
-            <li>Card “Chuva nas próximas horas” na aba Agora e nova aba <b>Chuva</b> com os métodos lado a lado e o placar.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> previsões gravadas sem falhas por 3 dias e placar calculando corretamente contra o METAR e o botão.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">16</div>
-        <div class="body">
-          <div class="meta"><h3>Indoor: o escritório</h3><span class="chip">1 dia</span></div>
-          <ul>
-            <li>Conforto, ar seco, risco de mofo, “abra ou feche a janela” e atraso térmico, no painel.</li>
-            <li>Resumo do dia com os blocos Indoor e Outdoor na aba Histórico.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> as recomendações aparecem coerentes com o que você sente no escritório ao longo de uma semana.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">17</div>
-        <div class="body">
-          <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip">2 dias + semanas de dados</span></div>
-          <ul>
-            <li>M4 combinado: pesos fixos no início e, com dados suficientes (cerca de 20 a 30 eventos de chuva), pesos ajustados pelo histórico.</li>
-            <li>M5 (radar) como experimento, se houver uma fonte gratuita viável.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, nos últimos 30 dias.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">18</div>
-        <div class="body">
-          <div class="meta"><h3>Robustez (antiga Fase 10)</h3><span class="chip">1 dia + 72 h</span></div>
-          <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
-          <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
-        </div>
-      </div>
-      <div class="phase next">
-        <div class="n">19</div>
-        <div class="body">
-          <div class="meta"><h3>WhatsApp (por último)</h3><span class="chip">1–2 dias</span></div>
-          <ul>
-            <li>Redesenhado para a regra nova: números, chaves do CallMeBot, horários e alertas configurados no app do ESP32 (chaves guardadas na NVS).</li>
-            <li>Mensagens com blocos Outdoor, Indoor e Chuva, montadas pela nuvem, e alerta de chuva usando o melhor método do placar.</li>
-          </ul>
-          <p class="accept"><b>Aceite:</b> mensagem de teste chega a todos os números; envios nos horários certos, sem duplicar após reiniciar.</p>
-        </div>
-      </div>
-    </div>
+    <p class="muted">As fases 11 a 19 estão no roteiro completo, em <a href="#fases">Fases do projeto</a>.</p>
 
     <div class="note ok">
       <strong>Decidido</strong>
@@ -467,6 +365,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <h2>O que vamos construir e as decisões já tomadas</h2>
   </div>
   <div class="stack-lg">
+    <div class="note warn"><strong>Visão da v4 (fases 1 a 10)</strong><span>Esta seção registra as decisões originais. Na v5 mudaram quatro coisas: as configurações saíram do painel e foram para o app do ESP32, o painel ficou só para visualização, o WhatsApp foi adiado para a Fase 19 e a temperatura de fora passou a vir de dados externos. Veja <a href="#v5">Reformulação v5</a>.</span></div>
     <div class="cols">
       <div class="stack">
         <h3>Funções</h3>
@@ -706,7 +605,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
   <div class="head">
     <span class="eyebrow">Roteiro</span>
     <h2>Fases do projeto</h2>
-    <p class="muted">Cada fase termina com um critério de aceite. Na v4 o painel saiu do ESP32 e foi para um app Nuxt na Vercel; a nuvem deixou de ser a última fase e virou a 6.</p>
+    <p class="muted">Cada fase termina com um critério de aceite. Na v4 o painel saiu do ESP32 e foi para um app Nuxt na Vercel. Na v5 o projeto virou GRain: a Fase 9 foi encerrada, a robustez passou para a 18 e o WhatsApp voltou como a 19.</p>
   </div>
   <div class="phases">
     <div class="phase done">
@@ -828,6 +727,114 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         <ul><li>Watchdog, OTA e teste de 72 h agora fecham a reformulação. Veja <a href="#v5">Reformulação v5</a>.</li></ul>
       </div>
     </div>
+    <div class="phase" style="background:var(--bg)">
+      <div class="n" style="color:var(--accent)">v5</div>
+      <div class="body">
+        <div class="meta"><h3>Reformulação: GRain</h3><span class="chip v5">Aprovada em 13/out/2026</span></div>
+        <p class="muted">A partir daqui: estação no escritório, Outdoor + Indoor, chuva em 1 h, 2 h e 3 h, configurações só no ESP32, painel só para visualização e WhatsApp por último. Detalhes em <a href="#v5">Reformulação v5</a>.</p>
+      </div>
+    </div>
+      <div class="phase now">
+        <div class="n">11</div>
+        <div class="body">
+          <div class="meta"><h3>GRain, escritório e limpeza</h3><span class="chip now">Próxima</span><span class="chip">1 dia</span></div>
+          <ul>
+            <li>Renomear para GRain: repositório no GitHub (o endereço antigo redireciona sozinho), projeto na Vercel com domínio novo (o antigo fica como alias até a estação apontar para o novo) e firmware (abertura, rede Wi-Fi de configuração <code>GRain-XXXX</code>, <code>grain.local</code>, títulos). O <code>device_id</code> e o token continuam os mesmos, então não há migração de dados.</li>
+            <li>Tabela <code>placements</code>: flag sacada no histórico antigo e escritório a partir da data da mudança.</li>
+            <li>Remover o WhatsApp: aba Mensagens, rotas <code>notify</code>, envio, agenda, alertas, textos e tabelas.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> GRain no ar no endereço novo, estação enviando do escritório, histórico antigo marcado como sacada e nenhum resto de WhatsApp no código.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">12</div>
+        <div class="body">
+          <div class="meta"><h3>Configurações só no ESP32, painel só para ver</h3><span class="chip">1–2 dias</span></div>
+          <ul>
+            <li>Página local do ESP32 ganha o editor do display com prévia do OLED, calibração e localização, além do que já existe (rede, nuvem, controles do display, manutenção).</li>
+            <li>A estação deixa de buscar configuração na nuvem e envia uma cópia da configuração e da localização junto com o estado.</li>
+            <li>Painel: sai o editor da aba Display e saem as rotas de escrita de configuração. A aba vira <b>Estação</b>, só leitura, com o estado e a prévia do que está no OLED.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> tudo é configurado pelo <code>grain.local</code>, a mudança aparece no OLED na hora e o painel mostra a configuração nova sem permitir editar.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">13</div>
+        <div class="body">
+          <div class="meta"><h3>Outdoor: dados externos</h3><span class="chip">1–2 dias</span></div>
+          <ul>
+            <li>METAR do aeroporto mais próximo (detectado pela localização) e Open-Meteo, coletados a cada envio da estação e gravados em <code>outdoor_obs</code>.</li>
+            <li>Aba Agora com os cards <b>Outdoor</b> e <b>Indoor</b> lado a lado, mais o card de previsão de hoje e amanhã (a rota já está pronta e falta só o card).</li>
+            <li>Histórico com Indoor × Outdoor.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> o Outdoor mostra a fonte e a hora da observação, e a temperatura bate com o aeroporto.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">14</div>
+        <div class="body">
+          <div class="meta"><h3>Pressão calibrada pelo aeroporto</h3><span class="chip">½ dia</span></div>
+          <ul>
+            <li>A nuvem calcula o desvio em relação ao QNH (mediana de 7 dias) e devolve na resposta do envio; a estação aplica o ajuste se a chave estiver ligada no app local.</li>
+            <li>Gráfico de pressão da estação × QNH no painel.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> diferença média menor que 0,5 hPa em relação ao QNH, mantendo a mesma tendência, no painel e no OLED.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">15</div>
+        <div class="body">
+          <div class="meta"><h3>Chuva v1: métodos M1 a M3 e placar</h3><span class="chip">2 dias</span></div>
+          <ul>
+            <li>M1 (barômetro), M2 (barômetro + METAR/TAF) e M3 (modelo), calculados a cada 10 min para as janelas de 1 h, 2 h e 3 h, com o motivo de cada um.</li>
+            <li>Registro em <code>rain_predictions</code>, chuva observada em <code>rain_truth</code> e botão “Está chovendo aqui” no painel e na página local.</li>
+            <li>Card “Chuva nas próximas horas” na aba Agora e nova aba <b>Chuva</b> com os métodos lado a lado e o placar.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> previsões gravadas sem falhas por 3 dias e placar calculando corretamente contra o METAR e o botão.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">16</div>
+        <div class="body">
+          <div class="meta"><h3>Indoor: o escritório</h3><span class="chip">1 dia</span></div>
+          <ul>
+            <li>Conforto, ar seco, risco de mofo, “abra ou feche a janela” e atraso térmico, no painel.</li>
+            <li>Resumo do dia com os blocos Indoor e Outdoor na aba Histórico.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> as recomendações aparecem coerentes com o que você sente no escritório ao longo de uma semana.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">17</div>
+        <div class="body">
+          <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip">2 dias + semanas de dados</span></div>
+          <ul>
+            <li>M4 combinado: pesos fixos no início e, com dados suficientes (cerca de 20 a 30 eventos de chuva), pesos ajustados pelo histórico.</li>
+            <li>M5 (radar) como experimento, se houver uma fonte gratuita viável.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, nos últimos 30 dias.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">18</div>
+        <div class="body">
+          <div class="meta"><h3>Robustez (antiga Fase 10)</h3><span class="chip">1 dia + 72 h</span></div>
+          <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
+          <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">19</div>
+        <div class="body">
+          <div class="meta"><h3>WhatsApp (por último)</h3><span class="chip">1–2 dias</span></div>
+          <ul>
+            <li>Redesenhado para a regra nova: números, chaves do CallMeBot, horários e alertas configurados no app do ESP32 (chaves guardadas na NVS).</li>
+            <li>Mensagens com blocos Outdoor, Indoor e Chuva, montadas pela nuvem, e alerta de chuva usando o melhor método do placar.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> mensagem de teste chega a todos os números; envios nos horários certos, sem duplicar após reiniciar.</p>
+        </div>
+      </div>
+    
   </div>
 </section>
 
