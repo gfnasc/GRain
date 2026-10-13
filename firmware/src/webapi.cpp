@@ -46,10 +46,11 @@ static void sendError(int code, const char *error, const String &detail = "") {
 
 // Rotas que alteram algo exigem usuário "admin" e a senha da estação
 // (a mesma da rede de configuração, mostrada pelo comando "status").
+// Responde 401 sem WWW-Authenticate: assim o navegador não abre a janela própria de
+// usuário e senha e a página local mostra "Senha incorreta". (curl -u continua funcionando.)
 static bool requireAuth() {
   if (s_srv.authenticate(API_USER, netStatus().apPass.c_str())) return true;
-  cors();
-  s_srv.requestAuthentication(BASIC_AUTH, "GRain");
+  sendError(401, "senha_incorreta", "use o usuário admin e a senha da estação (comando status no console)");
   return false;
 }
 
