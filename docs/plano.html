@@ -1,4 +1,4 @@
-<title>GWeather</title>
+<title>GRain</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -168,6 +168,22 @@ pre{margin:0;background:var(--sunk);border:1px solid var(--line);border-radius:8
 .flow .box .k{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
 .flow .box.future{border-style:dashed}
 
+/* v5: reformulação */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.mode{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:8px;align-content:start;min-width:0}
+.mode .tag{font-family:var(--ff-display);font-weight:800;font-stretch:120%;font-size:1.5rem;line-height:1}
+.mode ul{margin:0;padding-left:1.1em;display:grid;gap:3px;font-size:.93rem}
+.meter{display:inline-flex;gap:3px;vertical-align:middle}
+.meter i{width:10px;height:10px;border-radius:2px;background:var(--line)}
+.meter i.on{background:var(--accent)}
+.names{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.name{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:4px;align-content:start;min-width:0}
+.name.pick{border:2px solid var(--accent)}
+.name .nm{font-family:var(--ff-display);font-weight:800;font-stretch:118%;font-size:1.35rem;line-height:1.1}
+.name .why{font-size:.9rem;color:var(--muted)}
+.phase.next{background:var(--sunk)}
+.chip.v5{border-color:var(--accent);color:var(--accent)}
+
 footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:grid;gap:8px}
 
 @media (max-width:560px){
@@ -180,8 +196,8 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
 <div class="wrap">
 <header class="top">
   <div class="stack">
-    <span class="eyebrow">Plano do projeto · v4 · 12/out/2026</span>
-    <h1>GWeather</h1>
+    <span class="eyebrow">Plano do projeto · v5 · 13/out/2026</span>
+    <h1>GRain <span class="muted" style="font-size:.45em;font-weight:600">antigo GWeather</span></h1>
     <p class="muted">ESP32 DevKit v1 com AHT20, BMP280 e OLED SSD1306. Painel em Nuxt na Vercel, histórico na nuvem, mensagens de WhatsApp em horários definidos e uma página mínima local no próprio ESP32 para quando faltar internet.</p>
     <p class="muted"><b>Projeto aberto, feito para um hardware específico:</b> para reproduzir, use exatamente os mesmos módulos e as mesmas ligações descritas aqui. Outras placas, sensores ou displays exigem adaptar o código.</p>
   </div>
@@ -193,10 +209,11 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Mensagens</span><span class="v">CallMeBot · por número</span></div>
     <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel</span></div>
   </div>
-  <span class="status">Fases 1 a 8 concluídas · Etapa atual: Fase 9, previsão e WhatsApp</span>
+  <span class="status">Fases 1 a 8 concluídas · Próxima: Fase 11, GRain e escritório</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
+  <a href="#v5">Reformulação v5</a>
   <a href="#visao">Visão geral</a>
   <a href="#ligacoes">Ligações</a>
   <a href="#montagem">Montagem passo a passo</a>
@@ -208,6 +225,240 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
   <a href="#vercel">Vercel</a>
   <a href="#riscos">Riscos</a>
 </nav>
+
+<!-- ============ REFORMULAÇÃO v5 ============ -->
+<section id="v5">
+  <div class="head">
+    <span class="eyebrow">Reformulação · v5 · aprovada em 13/out/2026</span>
+    <h2>GRain: estação de chuva com Outdoor + Indoor</h2>
+    <p class="muted">O projeto passa a se chamar <b>GRain</b> (Guilherme + Rain, na mesma lógica do GWeather). A estação sai da sacada e vai para o escritório. O <b>Outdoor</b> passa a vir de dados externos (aeroporto mais próximo e modelo numérico), cruzados com a pressão medida pela estação. O <b>Indoor</b> é o escritório, medido pelos sensores. O foco principal é responder <b>“vai chover na próxima 1 h, 2 h ou 3 h?”</b>, com vários métodos, do menos ao mais preciso, e um placar de acertos de cada um.</p>
+    <p class="muted">Duas regras novas: <b>todas as configurações ficam no app do ESP32</b> e o <b>painel web serve só para ver os dados</b>. O <b>WhatsApp sai agora</b>: o que já foi feito é removido, e ele volta como a última fase.</p>
+  </div>
+
+  <div class="stack-lg">
+    <div class="note">
+      <strong>Por que mudar</strong>
+      <span>Ao comparar as leituras da sacada com o aeroporto mais próximo e com o modelo numérico, a <b>temperatura</b> ficou 3 a 4 °C acima à noite (calor do prédio) e até 10 °C acima com sol direto, e a <b>umidade relativa</b> ficou distorcida por causa disso. Já o <b>ponto de orvalho</b> bateu e a <b>pressão</b> seguiu a mesma tendência, só com um desvio fixo de cerca de 2 hPa. Ou seja, o barômetro é bom para prever chuva, e o termômetro serve para medir o ambiente onde ele está.</span>
+    </div>
+
+    <h3>Os dois modos</h3>
+    <div class="modes">
+      <div class="mode">
+        <span class="tag">Outdoor</span>
+        <span class="muted">O tempo lá fora, a partir de dados externos e do barômetro da estação.</span>
+        <ul>
+          <li><b>METAR</b> do aeroporto mais próximo, detectado pela localização configurada no ESP32: temperatura, ponto de orvalho, vento, rajada, nuvens (inclusive CB, as nuvens de trovoada), visibilidade e tempo presente (chuva, trovoada). Atualiza de hora em hora, ou antes disso quando o tempo muda.</li>
+          <li><b>Open-Meteo</b>: condição atual, previsão hora a hora (probabilidade e volume de chuva, CAPE), previsão de hoje e amanhã. Serve também de reserva quando o METAR atrasa.</li>
+          <li><b>Pressão da estação</b>: a pressão é a mesma dentro e fora de casa, então o BMP280 no escritório continua medindo a pressão lá de fora, com resolução melhor que a do aeroporto (0,1 hPa a cada 10 min contra 1 hPa por hora).</li>
+        </ul>
+      </div>
+      <div class="mode">
+        <span class="tag">Indoor</span>
+        <span class="muted">O escritório, medido pela estação.</span>
+        <ul>
+          <li><b>AHT20</b>: temperatura, umidade e ponto de orvalho do ambiente.</li>
+          <li>Conforto (faixa de 20 a 26 °C e de 40 a 60 %), aviso de ar seco e de risco de mofo.</li>
+          <li>“Abra a janela” ou “feche a janela”, cruzando com o Outdoor: quando lá fora está mais fresco e não está mais úmido.</li>
+          <li>Diferença entre Indoor e Outdoor e atraso térmico, ou seja, quanto tempo o escritório leva para acompanhar a temperatura de fora.</li>
+          <li>O display OLED continua mostrando os dados da estação, agora com o rótulo Indoor. Não haverá página de previsão no display, como já decidido.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Onde fica cada coisa</h3>
+    <div class="tbl"><table>
+      <thead><tr><th></th><th>App do ESP32 (<code>grain.local</code>)</th><th>Painel web (Vercel)</th></tr></thead>
+      <tbody>
+        <tr><td><b>Papel</b></td><td>Todas as configurações e os controles da estação</td><td>Só visualização: agora, chuva, histórico e placar</td></tr>
+        <tr><td><b>Display</b></td><td>Editor de páginas, campos, tempo por página, brilho e modo noturno, com prévia do OLED; navegar, pausar e ligar ou desligar a tela</td><td>Não edita nada. Mostra, só para leitura, a configuração atual que a estação informa</td></tr>
+        <tr><td><b>Calibração</b></td><td>Ajustes manuais e a chave “calibrar pressão pelo aeroporto” (ligada por padrão)</td><td>Mostra o desvio calculado em relação ao aeroporto</td></tr>
+        <tr><td><b>Localização</b></td><td>Latitude, longitude e um nome curto, usados para encontrar o aeroporto e a previsão</td><td>Usa a localização que a estação envia. Ela fica no banco, nunca no repositório</td></tr>
+        <tr><td><b>Rede e nuvem</b></td><td>Wi-Fi, endereço e token da nuvem, sincronizar agora, reiniciar e restaurar padrões</td><td>Mostra o estado: online, firmware, sinal, fila</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note warn">
+      <strong>O que isso significa na prática</strong>
+      <span>As configurações só podem ser mudadas na rede de casa, pelo <code>grain.local</code>. Em troca, o ESP32 vira a única fonte de verdade: ele não busca mais a configuração na nuvem e manda uma cópia junto com o estado da estação. O botão “Está chovendo aqui” continua no painel, porque registra uma observação e não altera nenhuma configuração; ele também aparece na página local.</span>
+    </div>
+
+    <h3>Chuva em 1 h, 2 h e 3 h: do menos ao mais preciso</h3>
+    <p class="muted">Cada método calcula, a cada 10 minutos, uma probabilidade de chuva para cada janela (próxima 1 h, 2 h e 3 h) e explica o motivo. Todos ficam registrados no banco para medir o acerto depois. A aba Agora mostra o melhor método disponível, e a nova aba Chuva mostra todos lado a lado.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Método</th><th>Usa</th><th>Ponto forte e ponto fraco</th><th>Precisão esperada</th></tr></thead>
+      <tbody>
+        <tr><td><b>M1 · Barômetro</b></td><td>Queda ou subida da pressão em 1 h e em 3 h, nível da pressão (Zambretti)</td><td>Funciona sem internet externa e já tem histórico desde a sacada. É fraco para as pancadas de verão, porque a pressão quase não muda antes delas e só “pula” quando a frente de rajada chega.</td><td><span class="meter" aria-label="1 de 5"><i class="on"></i><i></i><i></i><i></i><i></i></span></td></tr>
+        <tr><td><b>M2 · Barômetro + observação</b></td><td>M1 + METAR: diferença entre temperatura e ponto de orvalho, nuvens CB/TCU, teto baixo, mudança do vento, chuva ou trovoada nas proximidades (VCSH/VCTS) e TAF do aeroporto (TEMPO/PROB com TS ou RA)</td><td>Pega sinais reais de formação de chuva. Em compensação, o aeroporto fica a alguns quilômetros e as células de chuva de verão são bem localizadas.</td><td><span class="meter" aria-label="2 de 5"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></td></tr>
+        <tr><td><b>M3 · Modelo numérico</b></td><td>Open-Meteo: probabilidade e volume hora a hora, dados de 15 em 15 min e CAPE, que indica energia para trovoada</td><td>Enxerga o cenário regional e a evolução nas próximas horas. Costuma errar o horário das pancadas por 1 ou 2 horas.</td><td><span class="meter" aria-label="3 de 5"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></td></tr>
+        <tr><td><b>M4 · Combinado</b></td><td>M1 + M2 + M3 + hora do dia e época do ano, porque a chuva de verão costuma vir à tarde</td><td>Começa com pesos fixos e, depois de algumas semanas, os pesos passam a ser ajustados pelo próprio histórico de acertos (regressão logística simples, sem serviço externo). É o objetivo principal.</td><td><span class="meter" aria-label="4 de 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></td></tr>
+        <tr><td><b>M5 · Radar</b> <span class="chip">opcional</span></td><td>Refletividade de radar num raio ao redor da localização e o deslocamento entre imagens, para estimar o tempo de chegada</td><td>É o melhor método para até 2 h. A fonte ainda precisa ser escolhida: as APIs gratuitas de radar mudaram em 2025–26 e as fontes nacionais exigem cadastro. Fica como experimento.</td><td><span class="meter" aria-label="5 de 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted" style="font-size:.9rem">Na tela, cada janela aparece como porcentagem e nível (baixa abaixo de 30 %, média de 30 a 60 %, alta acima de 60 %), junto com o motivo. Exemplo: <i>“2 h: 65 % · pressão caiu 1,8 hPa em 3 h, CB reportado no aeroporto, modelo 55 %”</i>.</p>
+
+    <h3>Como medir o acerto</h3>
+    <div class="cols">
+      <div class="stack">
+        <p><b>O que conta como “choveu”</b></p>
+        <ul style="margin:0;padding-left:1.1em;display:grid;gap:3px">
+          <li>METAR do aeroporto informando chuva, garoa, pancada ou trovoada (RA, DZ, SHRA, TSRA) dentro da janela.</li>
+          <li>Botão <b>“Está chovendo aqui”</b>: um toque registra a observação no local, que vale mais que a do aeroporto.</li>
+          <li>Volume de chuva registrado pelo Open-Meteo, como reserva (é dado de modelo, então tem peso menor).</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <p><b>Placar por método e por janela (últimos 30 dias)</b></p>
+        <ul style="margin:0;padding-left:1.1em;display:grid;gap:3px">
+          <li><b>Brier</b>: erro médio das probabilidades (0 é perfeito; 0,25 equivale a chutar 50 %).</li>
+          <li><b>Acertos e alarmes falsos</b> considerando “vai chover” a partir de 50 %.</li>
+          <li><b>Confiabilidade</b>: das vezes em que o método disse 70 %, quantas vezes choveu de fato.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note warn">
+      <strong>Expectativa honesta</strong>
+      <span>Sozinho, o barômetro (M1) deve acertar pouco mais que um palpite nas pancadas de verão. O ganho vem da combinação e do ajuste com o histórico. A estação chuvosa começa agora (outubro a março), então os eventos de chuva para treinar o M4 se acumulam rápido.</span>
+    </div>
+
+    <h3>Comparação com dados externos</h3>
+    <ul style="margin:0;padding-left:1.1em;display:grid;gap:3px;max-width:75ch">
+      <li><b>Pressão</b>: estação × QNH do aeroporto. A nuvem calcula o desvio pela mediana dos últimos 7 dias e devolve esse valor na resposta do envio; se a chave estiver ligada no app do ESP32, a estação aplica o ajuste sozinha. Isso também resolve a altitude se o escritório ficar em outro andar ou endereço.</li>
+      <li><b>Temperatura</b>: Indoor × Outdoor no mesmo gráfico (mesma unidade, um único eixo).</li>
+      <li><b>Previsão do dia</b>: máxima e mínima previstas de manhã × observadas no aeroporto, para medir o acerto da previsão geral.</li>
+    </ul>
+
+    <h3>Fluxo de dados</h3>
+    <div class="flow">
+      <div class="box"><span class="k">Estação (escritório)</span><span>Envia as médias de 10 min (Indoor + pressão) e, junto, uma cópia da configuração e da localização. Não busca mais configuração na nuvem.</span></div>
+      <div class="box"><span class="k">Batida do relógio</span><span>Cada envio da estação, a cada 10 min, dispara as tarefas na nuvem: METAR a cada 10 min, Open-Meteo a cada hora e cálculo da chuva. Assim o cron diário da Vercel não limita nada.</span></div>
+      <div class="box"><span class="k">Nuvem</span><span>Grava as observações externas, as previsões de cada método e o resultado observado, e calcula o placar. O painel só lê.</span></div>
+      <div class="box future"><span class="k">Reserva (opcional)</span><span>Se a estação ficar fora do ar, um agendador externo gratuito pode manter a coleta do Outdoor. Sem ele, o painel avisa “Outdoor desatualizado”.</span></div>
+    </div>
+
+    <h3>Banco de dados</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Tabela</th><th>Guarda</th></tr></thead>
+      <tbody>
+        <tr><td><code>placements</code> <span class="chip v5">nova</span></td><td>Onde a estação estava em cada período: flag <b>sacada</b> até a mudança e <b>escritório</b> depois. O histórico da sacada é mantido e marcado, e a pressão daquele período continua valendo para calibração e treino.</td></tr>
+        <tr><td><code>outdoor_obs</code> <span class="chip v5">nova</span></td><td>Observações externas: METAR e Open-Meteo atual (temperatura, orvalho, QNH, vento, nuvens, tempo presente e texto original).</td></tr>
+        <tr><td><code>forecast_snapshots</code> <span class="chip v5">nova</span></td><td>O que o modelo previa a cada hora para as horas seguintes, para comparar com o que aconteceu.</td></tr>
+        <tr><td><code>rain_predictions</code> <span class="chip v5">nova</span></td><td>Probabilidade de cada método para cada janela de 1 h, 2 h e 3 h, com os dados usados no cálculo. São cerca de 2 mil linhas por dia (~70 MB por ano), dentro do plano gratuito do Neon.</td></tr>
+        <tr><td><code>rain_truth</code> <span class="chip v5">nova</span></td><td>Chuva observada: METAR e o botão “Está chovendo aqui”.</td></tr>
+        <tr><td><code>devices.site</code>, <code>devices.station_config</code> <span class="chip v5">nova</span></td><td>Localização e cópia da configuração enviadas pela estação, além do aeroporto detectado.</td></tr>
+        <tr><td><code>devices.config*</code>, <code>notify</code>, <code>recipients</code>, <code>notifications</code> <span class="chip">removidas</span></td><td>Edição de configuração pelo painel e WhatsApp saem. O WhatsApp volta na última fase, com novo desenho.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Fases da reformulação</h3>
+    <p class="muted">A Fase 9 (WhatsApp) é encerrada sem validação e o código é removido; o WhatsApp volta como a Fase 19. A antiga Fase 10 (robustez) vira a 18. As configurações vão para o ESP32 antes do Outdoor, porque o Outdoor depende da localização. A Chuva v2 fica depois do Indoor de propósito: ela precisa de algumas semanas de previsões registradas para aprender.</p>
+    <div class="phases">
+      <div class="phase next">
+        <div class="n">11</div>
+        <div class="body">
+          <div class="meta"><h3>GRain, escritório e limpeza</h3><span class="chip">1 dia</span></div>
+          <ul>
+            <li>Renomear para GRain: repositório no GitHub (o endereço antigo redireciona sozinho), projeto na Vercel com domínio novo (o antigo fica como alias até a estação apontar para o novo) e firmware (abertura, rede Wi-Fi de configuração <code>GRain-XXXX</code>, <code>grain.local</code>, títulos). O <code>device_id</code> e o token continuam os mesmos, então não há migração de dados.</li>
+            <li>Tabela <code>placements</code>: flag sacada no histórico antigo e escritório a partir da data da mudança.</li>
+            <li>Remover o WhatsApp: aba Mensagens, rotas <code>notify</code>, envio, agenda, alertas, textos e tabelas.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> GRain no ar no endereço novo, estação enviando do escritório, histórico antigo marcado como sacada e nenhum resto de WhatsApp no código.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">12</div>
+        <div class="body">
+          <div class="meta"><h3>Configurações só no ESP32, painel só para ver</h3><span class="chip">1–2 dias</span></div>
+          <ul>
+            <li>Página local do ESP32 ganha o editor do display com prévia do OLED, calibração e localização, além do que já existe (rede, nuvem, controles do display, manutenção).</li>
+            <li>A estação deixa de buscar configuração na nuvem e envia uma cópia da configuração e da localização junto com o estado.</li>
+            <li>Painel: sai o editor da aba Display e saem as rotas de escrita de configuração. A aba vira <b>Estação</b>, só leitura, com o estado e a prévia do que está no OLED.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> tudo é configurado pelo <code>grain.local</code>, a mudança aparece no OLED na hora e o painel mostra a configuração nova sem permitir editar.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">13</div>
+        <div class="body">
+          <div class="meta"><h3>Outdoor: dados externos</h3><span class="chip">1–2 dias</span></div>
+          <ul>
+            <li>METAR do aeroporto mais próximo (detectado pela localização) e Open-Meteo, coletados a cada envio da estação e gravados em <code>outdoor_obs</code>.</li>
+            <li>Aba Agora com os cards <b>Outdoor</b> e <b>Indoor</b> lado a lado, mais o card de previsão de hoje e amanhã (a rota já está pronta e falta só o card).</li>
+            <li>Histórico com Indoor × Outdoor.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> o Outdoor mostra a fonte e a hora da observação, e a temperatura bate com o aeroporto.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">14</div>
+        <div class="body">
+          <div class="meta"><h3>Pressão calibrada pelo aeroporto</h3><span class="chip">½ dia</span></div>
+          <ul>
+            <li>A nuvem calcula o desvio em relação ao QNH (mediana de 7 dias) e devolve na resposta do envio; a estação aplica o ajuste se a chave estiver ligada no app local.</li>
+            <li>Gráfico de pressão da estação × QNH no painel.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> diferença média menor que 0,5 hPa em relação ao QNH, mantendo a mesma tendência, no painel e no OLED.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">15</div>
+        <div class="body">
+          <div class="meta"><h3>Chuva v1: métodos M1 a M3 e placar</h3><span class="chip">2 dias</span></div>
+          <ul>
+            <li>M1 (barômetro), M2 (barômetro + METAR/TAF) e M3 (modelo), calculados a cada 10 min para as janelas de 1 h, 2 h e 3 h, com o motivo de cada um.</li>
+            <li>Registro em <code>rain_predictions</code>, chuva observada em <code>rain_truth</code> e botão “Está chovendo aqui” no painel e na página local.</li>
+            <li>Card “Chuva nas próximas horas” na aba Agora e nova aba <b>Chuva</b> com os métodos lado a lado e o placar.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> previsões gravadas sem falhas por 3 dias e placar calculando corretamente contra o METAR e o botão.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">16</div>
+        <div class="body">
+          <div class="meta"><h3>Indoor: o escritório</h3><span class="chip">1 dia</span></div>
+          <ul>
+            <li>Conforto, ar seco, risco de mofo, “abra ou feche a janela” e atraso térmico, no painel.</li>
+            <li>Resumo do dia com os blocos Indoor e Outdoor na aba Histórico.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> as recomendações aparecem coerentes com o que você sente no escritório ao longo de uma semana.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">17</div>
+        <div class="body">
+          <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip">2 dias + semanas de dados</span></div>
+          <ul>
+            <li>M4 combinado: pesos fixos no início e, com dados suficientes (cerca de 20 a 30 eventos de chuva), pesos ajustados pelo histórico.</li>
+            <li>M5 (radar) como experimento, se houver uma fonte gratuita viável.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, nos últimos 30 dias.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">18</div>
+        <div class="body">
+          <div class="meta"><h3>Robustez (antiga Fase 10)</h3><span class="chip">1 dia + 72 h</span></div>
+          <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
+          <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">19</div>
+        <div class="body">
+          <div class="meta"><h3>WhatsApp (por último)</h3><span class="chip">1–2 dias</span></div>
+          <ul>
+            <li>Redesenhado para a regra nova: números, chaves do CallMeBot, horários e alertas configurados no app do ESP32 (chaves guardadas na NVS).</li>
+            <li>Mensagens com blocos Outdoor, Indoor e Chuva, montadas pela nuvem, e alerta de chuva usando o melhor método do placar.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> mensagem de teste chega a todos os números; envios nos horários certos, sem duplicar após reiniciar.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note ok">
+      <strong>Decidido</strong>
+      <span>Nome <b>GRain</b>. Histórico da sacada mantido com a flag <b>sacada</b>. Configurações só no ESP32 e painel só para visualização. WhatsApp removido agora e de volta na última fase. Ordem das fases aprovada.</span>
+    </div>
+  </div>
+</section>
 
 <!-- ============ VISÃO GERAL ============ -->
 <section id="visao">
@@ -554,7 +805,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="phase done">
       <div class="n">08</div>
       <div class="body">
-        <div class="meta"><h3>Personalização do display</h3><span class="chip done">Concluída</span><span class="chip">1 dia</span></div>
+        <div class="meta"><h3>Personalização do display</h3><span class="chip done">Concluída</span><span class="chip">1 dia</span><span class="chip v5">Editor vai para o ESP32 na Fase 12</span></div>
         <ul><li>Editor no painel: páginas, campos, ordem, tempo de rotação, brilho e horário para desligar à noite, com prévia do OLED. Ajuste fino (offset) dos sensores. O ESP32 busca a configuração na nuvem a cada poucos minutos.</li></ul>
         <p class="accept"><b>Aceite:</b> mudança salva no painel aparece no OLED em até 5 min (ou na hora, pelo botão “aplicar agora” quando estiver na mesma rede) e continua após reiniciar.</p>
         <div class="result">
@@ -563,24 +814,18 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         </div>
       </div>
     </div>
-    <div class="phase now">
+    <div class="phase">
       <div class="n">09</div>
       <div class="body">
-        <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip now">Agora</span><span class="chip">1–2 dias</span></div>
-        <ul>
-          <li>Previsão por tendência de pressão (Zambretti, últimas 3 h) e Open-Meteo para a latitude e longitude configuradas.</li>
-          <li>Envio via CallMeBot para cada número cadastrado, com fila e nova tentativa em caso de falha. Agenda no próprio ESP32.</li>
-          <li>Agenda de 3 a 4 horários e alertas com intervalo mínimo entre eles, editáveis no painel.</li>
-        </ul>
-        <p class="accept"><b>Aceite:</b> mensagem de teste chega a todos os números; envios nos horários certos, sem duplicar após reiniciar.</p>
+        <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip v5">Encerrada na v5</span></div>
+        <ul><li>Chegou a funcionar (agenda pela consulta do ESP32, alertas, Open-Meteo e Zambretti), mas foi encerrada sem validação: o código é removido na Fase 11 e o WhatsApp volta, redesenhado, como a Fase 19. Veja <a href="#v5">Reformulação v5</a>.</li></ul>
       </div>
     </div>
     <div class="phase">
       <div class="n">10</div>
       <div class="body">
-        <div class="meta"><h3>Robustez</h3><span class="chip">1 dia</span></div>
-        <ul><li>Watchdog, atualização por Wi-Fi (OTA), reinício se ficar sem rede, aviso de erro no OLED e teste contínuo de 72 h.</li></ul>
-        <p class="accept"><b>Aceite:</b> 72 h sem travar, sem buracos no histórico e memória estável.</p>
+        <div class="meta"><h3>Robustez</h3><span class="chip v5">Movida para a Fase 18 na v5</span></div>
+        <ul><li>Watchdog, OTA e teste de 72 h agora fecham a reformulação. Veja <a href="#v5">Reformulação v5</a>.</li></ul>
       </div>
     </div>
   </div>
@@ -634,6 +879,7 @@ P_mar = P_medida / (1 − altitude / 44330) ^ 5,255</pre>
   <div class="head">
     <span class="eyebrow">Notificações</span>
     <h2>WhatsApp via CallMeBot, uma mensagem para cada número</h2>
+    <div class="note warn"><strong>Adiado na v5</strong><span>O WhatsApp sai agora e volta como a última fase (19), com números, chaves e horários configurados no app do ESP32. Esta seção fica como referência.</span></div>
     <p class="muted">O CallMeBot envia para números individuais; envio a grupo não é documentado. Cada pessoa ativa a própria chave, e o ESP32 manda a mesma mensagem para cada número, com alguns segundos de intervalo.</p>
   </div>
   <div class="stack-lg">
