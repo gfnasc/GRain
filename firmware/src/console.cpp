@@ -7,6 +7,7 @@
 #include "netmgr.h"
 #include "sensors.h"
 #include "settings.h"
+#include "health.h"
 #include "uplink.h"
 
 static String s_line;
@@ -158,8 +159,7 @@ static void handle(String line) {
       Serial.printf("Erro: %s\n", err.c_str());
   } else if (cmd == "reiniciar" || cmd == "reboot") {
     Serial.println("Reiniciando...");
-    delay(200);
-    ESP.restart();
+    healthRestart("reinício pelo console");
   } else {
     Serial.printf("Comando desconhecido: %s (digite \"ajuda\")\n", cmd.c_str());
   }

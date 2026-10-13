@@ -20,6 +20,25 @@ const rainPreview = computed(() => ({
   p: rain.value?.now ? rain.value.now.best.map((b) => Math.round(b.prob * 100)) : null,
   threshold: cfg.value?.rain_alert?.enabled ? cfg.value.rain_alert.threshold : null,
 }))
+type Health = {
+  hours: number; observed_h: number; samples: number; fw: string | null; uptime_s: number | null; last_reset: string | null; boots: number | null
+  restarts: { ts: string; reason: string | null }[]; gaps: { from: string; to: string; minutes: number }[]; coverage: number | null
+  heap_min: { first: number; last: number; lowest: number } | null; heap_now: number | null; rssi: { avg: number; min: number } | null
+}
+const { data: health } = await useFetch<Health>('/api/v1/health', { query: { hours: 72 } })
+const kb = (v: number | null | undefined) => (v == null ? '–' : `${Math.round(v / 1024)} KB`)
+const checks = computed(() => {
+  const h = health.value
+  if (!h) return []
+  const full = h.observed_h >= 72
+  const memOk = !!h.heap_min && h.heap_min.last >= h.heap_min.first * 0.9 && h.heap_min.lowest > 40_000
+  return [
+    { ok: full, label: `72 h de observação (${h.observed_h.toLocaleString('pt-BR')} h até agora)` },
+    { ok: h.restarts.length === 0, label: h.restarts.length ? `${h.restarts.length} reinício(s) no período` : 'Sem reinícios no período' },
+    { ok: h.gaps.length === 0, label: h.gaps.length ? `${h.gaps.length} buraco(s) de mais de 15 min no histórico` : 'Sem buracos no histórico' },
+    { ok: memOk, label: h.heap_min ? `Memória estável (menor livre: ${kb(h.heap_min.first)} no início, ${kb(h.heap_min.last)} agora)` : 'Memória: aguardando dados' },
+  ]
+})
 const ALERT_MODE = { both: 'ícone no cabeçalho e tela no carrossel', icon: 'só o ícone no cabeçalho', screen: 'só a tela no carrossel' } as const
 const tz = useRuntimeConfig().public.tz as string
 
@@ -176,6 +195,29 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
           </div>
         </aside>
       </div>
+      <section v-if="health" class="block health">
+        <h3>Saúde nas últimas {{ health.hours }} h (teste de robustez)</h3>
+        <ul class="checks">
+          <li v-for="c in checks" :key="c.label" :class="c.ok ? 'ok' : 'wait'"><span aria-hidden="true">{{ c.ok ? '✓' : '…' }}</span>{{ c.label }}</li>
+        </ul>
+        <dl class="kv">
+          <dt>Ligada há</dt><dd>{{ uptime(health.uptime_s ?? undefined) }}</dd>
+          <dt>Último reinício</dt><dd>{{ health.last_reset ?? '–' }}</dd>
+          <dt>Reinícios registrados (total)</dt><dd>{{ health.boots ?? '–' }}</dd>
+          <dt>Memória livre agora</dt><dd>{{ kb(health.heap_now) }}</dd>
+          <dt>Menor memória livre</dt><dd>{{ health.heap_min ? kb(health.heap_min.lowest) : '–' }}</dd>
+          <dt>Sinal Wi-Fi</dt><dd>{{ health.rssi ? `média ${health.rssi.avg} dBm, pior ${health.rssi.min} dBm` : '–' }}</dd>
+          <dt>Médias recebidas</dt><dd>{{ health.coverage != null ? `${health.coverage} % do esperado` : '–' }}</dd>
+        </dl>
+        <div v-if="health.restarts.length" class="list">
+          <b>Reinícios</b>
+          <span v-for="r in health.restarts" :key="r.ts">{{ when(r.ts) }} · {{ r.reason ?? 'motivo desconhecido' }}</span>
+        </div>
+        <div v-if="health.gaps.length" class="list">
+          <b>Buracos no histórico</b>
+          <span v-for="g in health.gaps" :key="g.from">{{ when(g.from) }} → {{ when(g.to) }} ({{ g.minutes }} min)</span>
+        </div>
+      </section>
     </template>
   </main>
 </template>
@@ -203,6 +245,14 @@ h3 { font-size: 1.05rem; font-weight: 700; font-stretch: 106%; }
 .kv dt { color: var(--muted); font-size: 0.9rem; padding-right: 12px; }
 .kv dd { text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .kv dt:last-of-type, .kv dd:last-of-type { border-bottom: none; }
+.health { margin-top: 4px; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checks li { display: flex; gap: 8px; align-items: baseline; font-size: 0.95rem; }
+.checks li span { width: 18px; text-align: center; font-weight: 700; }
+.checks li.ok span { color: var(--ok); }
+.checks li.wait span { color: var(--warn); }
+.list { display: grid; gap: 2px; font-size: 0.88rem; }
+.list span { color: var(--muted); font-family: var(--ff-mono); font-size: 0.8rem; }
 .notice { background: var(--surface); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; display: grid; gap: 4px; margin: 0; }
 .notice span { font-size: 0.92rem; color: var(--muted); }
 .notice.crit { border-left-color: var(--crit); }

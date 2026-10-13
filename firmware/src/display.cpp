@@ -79,8 +79,17 @@ static void drawHeader(const char *title) {
     s_oled.drawHLine(0, 11, 128);
     return;
   }
-  // Guarda-chuva do alerta (tem prioridade sobre o relógio), antes das bolinhas.
+  // Guarda-chuva do alerta e aviso de erro (têm prioridade sobre o relógio), antes das bolinhas.
   int right = 128 - (n > 1 ? n * step : 0) - 3;
+  bool problem = !s_last.ahtOk || !s_last.bmpOk || !netStatus().connected || uplinkStatus().lastError.length();
+  if (problem && s_hasReading) {
+    s_oled.drawBox(right - 6, 0, 6, 9);
+    s_oled.setDrawColor(0);
+    s_oled.setFont(u8g2_font_5x8_tf);
+    s_oled.drawUTF8(right - 5, 8, "!");
+    s_oled.setDrawColor(1);
+    right -= 9;
+  }
   if (s_alert && (settings().rainAlertMode & 1)) {
     drawUmbrellaSmall(right - 9, 0);
     right -= 12;
@@ -727,4 +736,25 @@ void displayAlertTest() {
   s_testUntil = millis() + 12000;
   if (s_testUntil == 0) s_testUntil = 1;
   s_alert = false;  // força o "disparo" (pisca e mostra a tela)
+}
+
+void displayOta(int pct, const char *msg) {
+  if (!s_ok) return;
+  s_oled.setPowerSave(0);
+  s_oled.clearBuffer();
+  s_oled.setFont(u8g2_font_7x13B_tf);
+  const char *t = "Atualizando";
+  s_oled.drawUTF8((128 - s_oled.getUTF8Width(t)) / 2, 16, t);
+  s_oled.setFont(u8g2_font_6x10_tf);
+  const char *sub = "firmware pelo Wi-Fi";
+  s_oled.drawUTF8((128 - s_oled.getUTF8Width(sub)) / 2, 28, sub);
+  if (pct >= 0) {
+    s_oled.drawFrame(8, 36, 112, 10);
+    s_oled.drawBox(10, 38, 108 * pct / 100, 6);
+  }
+  char line[32];
+  if (msg) snprintf(line, sizeof line, "%s", msg);
+  else snprintf(line, sizeof line, "%d%%  não desligue", pct);
+  s_oled.drawUTF8((128 - s_oled.getUTF8Width(line)) / 2, 60, line);
+  s_oled.sendBuffer();
 }

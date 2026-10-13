@@ -32,6 +32,9 @@ void displayStep(int delta);
 // Vai direto para a página (0..count-1), com a mesma espera de 60 s.
 bool displayGoto(int index);
 
+// Tela de atualização pelo Wi-Fi: progresso (0..100) ou erro (pct < 0) com a mensagem.
+void displayOta(int pct, const char *msg);
+
 // --- Alerta de chuva (previsão da nuvem + limite configurado) ---
 // Ativo agora? h = janela (1..3 h) e p = chance (%) que dispararam.
 bool displayRainAlert(int *h, int *p);

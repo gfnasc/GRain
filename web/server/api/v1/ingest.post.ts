@@ -60,6 +60,22 @@ export default defineEventHandler(async (event) => {
   const status = statusJson && statusJson.length <= 2000 ? statusJson : null
   await sql`update devices set last_seen_at = now(), last_status = coalesce(${status}::jsonb, last_status) where id = ${deviceId}`
 
+  // Saúde (teste de 72 h): um registro por envio; apaga os de mais de 30 dias.
+  if (body.status && typeof body.status === 'object') {
+    const st = body.status as Record<string, unknown>
+    const int = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : null)
+    try {
+      await sql`
+        insert into status_log (device_id, fw, uptime_s, heap, heap_min, rssi, queue, boots, reset)
+        values (${deviceId}, ${typeof st.fw === 'string' ? st.fw.slice(0, 20) : null}, ${int(st.uptime_s)}, ${int(st.heap)}, ${int(st.heap_min)},
+                ${int(st.rssi)}, ${int(st.queue)}, ${int(st.boots)}, ${typeof st.reset === 'string' ? st.reset.slice(0, 48) : null})
+        on conflict do nothing`
+      if (Math.random() < 0.02) await sql`delete from status_log where ts < now() - interval '30 days'`
+    } catch (e) {
+      console.warn('registro de saúde falhou:', (e as Error).message)
+    }
+  }
+
   // Cópia da configuração: inválida é ignorada (as médias já foram gravadas).
   if (body.config !== undefined) {
     try {

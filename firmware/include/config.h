@@ -2,7 +2,7 @@
 
 // Pinos e constantes. Mantenha docs/hardware.md sincronizado.
 
-#define FW_VERSION "0.12.1"
+#define FW_VERSION "0.13.0"
 
 // Barramento I2C (AHT20, BMP280 e OLED compartilham)
 #define PIN_I2C_SDA 21
@@ -54,6 +54,11 @@
 #define UPLINK_QUEUE_MAX 4032              // reserva offline: 14 dias
 #define UPLINK_RETRY_MS 600000
 #define UPLINK_BACKOFF_MAX_MS 1800000      // espera máxima entre tentativas com falha
+
+// Robustez
+#define WDT_TIMEOUT_S 60                    // loop ou tarefa da nuvem parados por mais que isso: reinicia
+#define NET_RESTART_AFTER_MS (30UL * 60 * 1000)        // sem Wi-Fi por 30 min: reinicia
+#define CLOUD_RESTART_AFTER_MS (6UL * 60 * 60 * 1000)  // nuvem falhando por 6 h (com Wi-Fi): reinicia
 
 // Diferença de temperatura AHT20 x BMP280 acima da qual avisamos
 #define TEMP_MISMATCH_WARN_C 2.0f

@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "settings.h"
+#include "health.h"
 
 static const char *TAG = "net";
 
@@ -171,7 +172,7 @@ void netForgetWifi() {
   log_w("[%s] apagando Wi-Fi salvo e reiniciando", TAG);
   s_wm.resetSettings();
   delay(300);
-  ESP.restart();
+  healthRestart("Wi-Fi apagado");
 }
 
 void netOpenPortal() {

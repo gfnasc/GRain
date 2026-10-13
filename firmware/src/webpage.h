@@ -234,6 +234,10 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
       <tr><td>Memória livre</td><td id="mem">–</td></tr>
       <tr><td>Sensores</td><td id="sens">–</td></tr>
       <tr><td>Firmware</td><td id="fw">–</td></tr>
+      <tr><td>Último reinício</td><td id="rst">–</td></tr>
+      <tr><td>Reinícios registrados</td><td id="boots">–</td></tr>
+      <tr><td>Menor memória livre</td><td id="memmin">–</td></tr>
+      <tr><td>Atualização pelo Wi-Fi</td><td id="ota">–</td></tr>
     </table>
     <h2>Senha da estação</h2>
     <div class="box">
@@ -462,6 +466,10 @@ async function tick(){
     const s=st.sensors;
     $("sens").innerHTML="AHT20 "+(s.aht20?"ok":'<span class="err">erro</span>')+" · BMP280 "+(s.bmp280?"ok":'<span class="err">erro</span>');
     $("fw").textContent=st.device.firmware+" · "+st.device.id;
+    $("rst").textContent=st.device.reset_reason||"–";
+    $("boots").textContent=st.device.boots??"–";
+    $("memmin").textContent=st.device.heap_min?Math.round(st.device.heap_min/1024)+" KB":"–";
+    $("ota").textContent=st.device.ota?"ativa (porta 3232, senha da estação)":"indisponível";
     const c=st.cloud;
     if(!c.configured){$("c_ok").textContent="nuvem não configurada";$("sync").disabled=true}
     else{$("c_ok").innerHTML=c.last_error?'<span class="err">'+c.last_error+"</span>":(c.last_ok?hm(c.last_ok):"ainda não (envia a cada 10 min)");}

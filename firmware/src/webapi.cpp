@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "display.h"
+#include "health.h"
 #include "netmgr.h"
 #include "sensors.h"
 #include "settings.h"
@@ -99,6 +100,9 @@ static void handleStatus() {
   dev["uptime_s"] = millis() / 1000;
   dev["heap_free"] = ESP.getFreeHeap();
   dev["heap_min"] = ESP.getMinFreeHeap();
+  dev["reset_reason"] = healthResetReason();
+  dev["boots"] = healthBoots();
+  dev["ota"] = true;
   dev["fs_used"] = LittleFS.usedBytes();
   dev["fs_total"] = LittleFS.totalBytes();
   JsonObject wifi = doc["wifi"].to<JsonObject>();
@@ -340,8 +344,5 @@ void webapiLoop() {
 
   if (s_running) s_srv.handleClient();
 
-  if (s_rebootAt && (int32_t)(millis() - s_rebootAt) >= 0) {
-    log_w("[%s] reiniciando a pedido da API", TAG);
-    ESP.restart();
-  }
+  if (s_rebootAt && (int32_t)(millis() - s_rebootAt) >= 0) healthRestart("reinício pela página local");
 }

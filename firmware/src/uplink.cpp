@@ -12,6 +12,8 @@
 #include "config.h"
 #include "netmgr.h"
 #include "settings.h"
+#include "health.h"
+#include <esp_task_wdt.h>
 
 static const char *TAG = "uplink";
 static const char *QUEUE = "/queue.jsonl";
@@ -309,6 +311,9 @@ static void sendBatch() {
     st["rssi"] = WiFi.RSSI();
     st["uptime_s"] = millis() / 1000;
     st["heap"] = ESP.getFreeHeap();
+    st["heap_min"] = ESP.getMinFreeHeap();
+    st["reset"] = healthResetReason();
+    st["boots"] = healthBoots();
     st["queue"] = s_st.queue > n ? s_st.queue - n : 0;  // pendências depois deste lote
     serializeJson(doc, body);
   }
@@ -364,8 +369,11 @@ static void sendBatch() {
 }
 
 static void netTask(void *) {
+  esp_task_wdt_add(nullptr);  // o watchdog também vigia esta tarefa
   for (;;) {
+    esp_task_wdt_reset();
     vTaskDelay(pdMS_TO_TICKS(500));
+    if (healthOtaActive()) continue;  // durante a atualização pelo Wi-Fi, a nuvem espera
     const NetStatus &n = netStatus();
     bool configured, sendDue, reportDue;
     {

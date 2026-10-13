@@ -4,6 +4,7 @@
 #include "config.h"
 #include "console.h"
 #include "display.h"
+#include "health.h"
 #include "i2c_scan.h"
 #include "netmgr.h"
 #include "sensors.h"
@@ -36,6 +37,7 @@ void setup() {
   delay(500);
   pinMode(PIN_LED, OUTPUT);
   log_i("[%s] boot: GRain %s", TAG, FW_VERSION);
+  healthBegin();
 
   settingsBegin();
 
@@ -63,6 +65,8 @@ void setup() {
 }
 
 void loop() {
+  healthLoop();
+  if (healthOtaActive()) return;  // durante a atualização pelo Wi-Fi, só ela roda
   netLoop();
   webapiLoop();
   uplinkLoop();

@@ -120,3 +120,18 @@ create table if not exists rain_reports (
 -- Observação local negativa ("não choveu"): um METAR de chuva com um "não choveu" a até
 -- 30 min dele deixa de contar como chuva (o aeroporto pode registrar poucas gotas ou virga).
 alter table rain_reports add column if not exists raining boolean not null default true;
+
+-- Fase 17: saúde da estação (teste de 72 h). Um registro por envio, guardado por 30 dias.
+create table if not exists status_log (
+  device_id text        not null references devices(id) on delete cascade,
+  ts        timestamptz not null default now(),
+  fw        text,
+  uptime_s  integer,
+  heap      integer,
+  heap_min  integer,
+  rssi      smallint,
+  queue     integer,
+  boots     integer,
+  reset     text,
+  primary key (device_id, ts)
+);
