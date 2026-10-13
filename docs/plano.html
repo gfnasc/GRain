@@ -833,10 +833,11 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
         <div class="body">
           <div class="meta"><h3>Chuva v2: combinado e aprendizado</h3><span class="chip">2 dias + teste de 30 dias</span></div>
           <ul>
-            <li>M4 combinado: pesos fixos no início e, com dados suficientes (cerca de 20 a 30 eventos de chuva), pesos ajustados pelo histórico.</li>
+            <li><b>M2 treinado</b>: só estação + aeroporto (sem o modelo), com os pesos aprendidos no próprio local. Nas primeiras observações, o M2 com pesos fixos já batia com a previsão do Google.</li>
+            <li><b>M4</b> combinado: estação + aeroporto + modelo. Os dois aprendem com os ingredientes guardados em cada previsão e com o que aconteceu (METAR e o botão “Está chovendo aqui”), depois de cerca de 20 a 30 chuvas.</li>
             <li>M5 (radar) como experimento, se houver uma fonte gratuita viável.</li>
           </ul>
-          <p class="accept"><b>Aceite:</b> o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, nos últimos 30 dias.</p>
+          <p class="accept"><b>Aceite:</b> num teste de 30 dias, o M4 tem Brier melhor que M1, M2 e M3 nas três janelas, e o M2 treinado melhor que o M2 de pesos fixos.</p>
         </div>
       </div>
       <div class="phase next">
