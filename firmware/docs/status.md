@@ -86,7 +86,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - A localização que estava no banco foi apagada pela primeira cópia; o usuário digitou de novo na página local.
   - Flash: release 84,5 % da partição de app.
 
-- Fase 13 (em validação, só nuvem): Outdoor.
+- Fase 13 concluída e validada pelo usuário (só nuvem): Outdoor. Aeroporto 24 h a 2 km da estação.
   - `web/server/utils/metar.ts` (aeroporto mais próximo por bbox, METAR em JSON, tradução para português),
     `outdoor.ts` (coleta a cada ingest: METAR a cada 10 min, Open-Meteo a cada 30 min; 72 h de histórico
     ao detectar o aeroporto; inserção em lote), tabela `outdoor_obs`, estado em `devices.outdoor`.
@@ -96,7 +96,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Testado com localização genérica de teste (apagada depois).
 
 ## Em andamento
-- Fase 13: validação; depende de a localização ser preenchida em grain.local.
+- Fase 14: pressão calibrada pelo QNH do aeroporto.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
