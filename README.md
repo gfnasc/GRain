@@ -26,8 +26,8 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 9 | Previsão e WhatsApp | ⏹️ Encerrada na v5 (volta na 19) |
 | 10 | Robustez | ➡️ Movida para a 18 |
 | 11 | GRain: novo nome, flag "sacada" no histórico, remoção do WhatsApp | ✅ Concluída |
-| 12 | Configurações só no ESP32; painel só para visualização | 🔧 Em validação |
-| 13 | Outdoor: dados externos (METAR e Open-Meteo) | Planejada |
+| 12 | Configurações só no ESP32; painel só para visualização | ✅ Concluída |
+| 13 | Outdoor: dados externos (METAR e Open-Meteo) | 🔧 Em andamento |
 | 14 | Pressão calibrada pelo aeroporto | Planejada |
 | 15 | Chuva v1: métodos M1 a M3 e placar de acertos | Planejada |
 | 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |

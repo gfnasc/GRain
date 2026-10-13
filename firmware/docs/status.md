@@ -72,7 +72,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
     hachuradas nos gráficos e fora de extremos/médias (readings, daily, latest); coluna `local` no CSV.
   - Fora do git até a fase 13: `web/server/utils/forecast.ts` e `web/server/api/v1/forecast.get.ts`.
 
-- Fase 12 (em validação): configurações só no ESP32; painel só para visualização.
+- Fase 12 concluída e validada pelo usuário: configurações só no ESP32; painel só para visualização.
   - Firmware 0.9.0: `/config.json` schema 3 com `location` (lat, lon, label; NAN = sem localização);
     `settingsRevision()` muda a cada gravação e `uplinkLoop` monta a cópia (display, calibração, localização);
     a cópia vai em todo `POST /api/v1/ingest` e é enviada na hora quando muda (lote vazio permitido);
@@ -83,12 +83,11 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Nuvem: ingest valida e guarda `devices.station_config`/`station_config_at` e `devices.site`; rotas
     `config` e `device/config` removidas; aba Estação somente leitura com prévia (`GET /api/v1/station`); `/display` → `/estacao`.
   - Teste: `set display.page_s 7` no console → cópia no banco ~2 s depois.
-  - A localização que estava no banco foi apagada pela primeira cópia (a estação ainda não tinha localização):
-    precisa ser digitada na página local.
+  - A localização que estava no banco foi apagada pela primeira cópia; o usuário digitou de novo na página local.
   - Flash: release 84,5 % da partição de app.
 
 ## Em andamento
-- Fase 12: validação do usuário (salvar pela página local, conferir a aba Estação, digitar a localização).
+- Fase 13: Outdoor.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
