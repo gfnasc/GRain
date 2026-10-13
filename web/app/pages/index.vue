@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RainResp } from '~/components/RainNow.vue'
+import type { Indoor } from '~/components/IndoorInsights.vue'
 // Aba Agora: Outdoor (lá fora, dados externos) × Indoor (escritório, sensores da estação),
 // pressão com tendência (barômetro da estação) e previsão de hoje e amanhã.
 useHead({ title: 'GRain' })
@@ -44,6 +45,7 @@ const { data, refresh, error } = await useFetch<Latest>('/api/v1/latest')
 const { data: outdoor, refresh: refreshOut } = await useFetch<Outdoor>('/api/v1/outdoor')
 const { data: forecast, refresh: refreshFc } = await useFetch<Forecast>('/api/v1/forecast')
 const { data: rain, refresh: refreshRain } = await useFetch<RainResp>('/api/v1/rain')
+const { data: indoor, refresh: refreshIndoor } = await useFetch<Indoor>('/api/v1/indoor')
 
 // Atualiza a cada minuto (o relógio é o componente SyncTimers); o ESP32 envia médias de 5 min.
 const now = ref(Date.now())
@@ -52,6 +54,7 @@ function refreshAll() {
   refresh()
   refreshOut()
   refreshRain()
+  refreshIndoor()
 }
 let fcTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => (fcTimer = setInterval(refreshFc, 15 * 60_000)))
@@ -149,6 +152,8 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
           <p v-else class="empty">Aguardando a primeira leitura (a estação envia a cada 5 min).</p>
         </article>
       </section>
+
+      <IndoorInsights :data="indoor ?? null" :place="data.device.place === 'sacada' ? 'ambiente' : 'escritório'" />
 
       <section class="row2">
         <article class="card">

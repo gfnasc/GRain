@@ -209,7 +209,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="fact"><span class="k">Foco</span><span class="v">Chuva em 1–3 h</span></div>
     <div class="fact"><span class="k">Painel</span><span class="v">Nuxt na Vercel · só leitura</span></div>
   </div>
-  <span class="status">Fases 1 a 8 e 11 a 15 concluídas · Próxima: Fase 16, Indoor</span>
+  <span class="status">Fases 1 a 8 e 11 a 15 concluídas · Etapa atual: Fase 16 em validação</span>
 </header>
 
 <nav class="toc" aria-label="Seções">
@@ -809,15 +809,18 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
           </div>
         </div>
       </div>
-      <div class="phase next">
+      <div class="phase now">
         <div class="n">16</div>
         <div class="body">
-          <div class="meta"><h3>Indoor: o escritório</h3><span class="chip">1 dia</span></div>
+          <div class="meta"><h3>Indoor: o escritório</h3><span class="chip now">Em validação</span><span class="chip">1 dia</span></div>
           <ul>
             <li>Conforto, ar seco, risco de mofo, “abra ou feche a janela” e atraso térmico, no painel.</li>
             <li>Resumo do dia com os blocos Indoor e Outdoor na aba Histórico.</li>
           </ul>
           <p class="accept"><b>Aceite:</b> as recomendações aparecem coerentes com o que você sente no escritório ao longo de uma semana.</p>
+          <div class="result">
+            <span><b>Resultado:</b> card “No escritório” na aba Agora com conforto, sugestão de abrir ou fechar a janela (comparando com o Outdoor e com a chuva prevista), ar seco, risco de mofo (horas de umidade alta em 3 dias) e atraso térmico (correlação hora a hora entre dentro e fora, disponível após 24 h de dados). Resumo por dia com Indoor e Outdoor.</span>
+          </div>
         </div>
       </div>
       <div class="phase next">

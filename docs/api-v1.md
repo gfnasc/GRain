@@ -248,7 +248,7 @@ Cada ponto tem também `out_pres` (QNH dos METARs, interpolado entre observaçõ
 `placements` lista onde a estação estava em cada trecho do período (`to: null` é o local atual). Temperatura e umidade medidas na sacada continuam em `points` (o painel desenha hachurado), mas ficam fora dos extremos e das médias do `summary`; `n_sacada` conta essas médias. A pressão entra sempre.
 
 ### `GET /api/v1/daily` 🔐
-Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umidade e pressão, e a quantidade de médias recebidas (`n`, de 144 possíveis). Temperatura e umidade da sacada ficam de fora; `n_sacada` conta quantas médias do dia foram medidas lá.
+Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umidade e pressão, mínima e máxima de fora (`out_min`, `out_max`: METAR ou Open-Meteo), e a quantidade de médias recebidas (`n`, de 144 possíveis). Temperatura e umidade da sacada ficam de fora; `n_sacada` conta quantas médias do dia foram medidas lá.
 
 ### `GET /api/v1/readings.csv` 🔐
 Médias de 10 min do período em CSV (download). Colunas: `inicio_utc`, `inicio_local`, `temperatura_c`, `umidade_pct`, `pressao_nivel_mar_hpa`, `ponto_orvalho_c`, `local` (`sacada`, `escritorio` ou vazio). Com `&excel=1`: separador `;`, vírgula decimal e BOM UTF-8 para abrir direto no Excel em português.
@@ -282,6 +282,9 @@ Previsão de hoje e amanhã (Open-Meteo: máxima, mínima, chance de chuva e con
 | `POST` | `/api/v1/rain/report` | Aviso "Está chovendo aqui" pelo painel (um por intervalo de 10 min) |
 
 `POST /api/v1/device/rain-report` 🔑 recebe o mesmo aviso vindo da página local da estação.
+
+### `GET /api/v1/indoor` 🔐
+O ambiente da estação: `now` (última média fora da sacada), `comfort` (`label`, `level` ok/atenção/alerta, faixas de temperatura e umidade), `dry` (umidade abaixo de 40 %), `mold` (horas com umidade ≥ 70 % nos últimos 3 dias), `window` (`action`: abrir, fechar ou tanto faz, e `reason`) e `lag` (atraso em horas e fração da variação de fora que chega dentro, por correlação hora a hora em 7 dias; `null` com `lag_needed_h` enquanto faltar dado).
 
 ### `GET /api/v1/sync` 🔐
 Horários (epoch ms) para os contadores do painel: `now` do servidor, `interval_s` dos envios (300) e, para `station`, `rain`, `metar`, `model` e `taf`, `last` (última atualização) e `next` (estimativa da próxima).

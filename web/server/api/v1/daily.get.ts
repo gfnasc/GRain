@@ -1,6 +1,7 @@
 // Resumo por dia (no fuso configurado): mínimas, máximas e médias. Exige login.
 // Aceita os mesmos parâmetros de intervalo de /api/v1/readings.
 // Temperatura e umidade da sacada ficam de fora (ver placements); a pressão entra sempre.
+// Traz também a mínima e a máxima de fora (Outdoor) de cada dia.
 
 export default defineEventHandler(async (event) => {
   await requireUserSession(event)
@@ -21,6 +22,15 @@ export default defineEventHandler(async (event) => {
     where device_id = ${deviceId} and ts >= ${range.from.toISOString()} and ts < ${range.to.toISOString()}
     group by 1 order by 1 desc`) as Record<string, any>[]
 
+  // Temperatura de fora por dia: METAR; nos dias sem METAR, Open-Meteo.
+  const outRows = (await sql`
+    select to_char((obs_at at time zone ${tz})::date, 'YYYY-MM-DD') as day,
+      coalesce(min(temp) filter (where source = 'metar'), min(temp) filter (where source = 'open-meteo')) as out_min,
+      coalesce(max(temp) filter (where source = 'metar'), max(temp) filter (where source = 'open-meteo')) as out_max
+    from outdoor_obs
+    where device_id = ${deviceId} and temp is not null and obs_at >= ${range.from.toISOString()} and obs_at < ${range.to.toISOString()}
+    group by 1`) as { day: string; out_min: number | null; out_max: number | null }[]
+  const outByDay = new Map(outRows.map((r) => [r.day, r]))
   const num = (v: unknown) => (v === null || v === undefined ? null : Math.round(Number(v) * 1000) / 1000)
   return {
     days: rows.map((r) => ({
@@ -31,6 +41,8 @@ export default defineEventHandler(async (event) => {
       n: Number(r.n),
       buckets: Number(r.buckets),
       n_sacada: Number(r.n_sacada),
+      out_min: num(outByDay.get(r.day)?.out_min),
+      out_max: num(outByDay.get(r.day)?.out_max),
     })),
   }
 })

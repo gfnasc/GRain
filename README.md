@@ -30,7 +30,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 13 | Outdoor: dados externos (METAR e Open-Meteo) | ✅ Concluída |
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
 | 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | ✅ Concluída |
-| 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |
+| 16 | Indoor: conforto, ar seco, mofo, janela, atraso térmico | 🔧 Em validação |
 | 17 | Robustez: watchdog, OTA, teste de 72 h | Planejada |
 | 18 | Chuva v2: M2 treinado (estação + aeroporto) e M4 combinado, com aprendizado (teste de 30 dias) | Planejada |
 | 19 | WhatsApp, configurado no ESP32 | Planejada |
@@ -208,10 +208,10 @@ nuvem
 O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `desligada`).
 
 O painel serve só para ver os dados; nada é configurado por ele. Quatro seções:
-- **Agora:** card **Chuva nas próximas horas** (chance em 1, 2 e 3 h, nível, motivo e o botão "Está chovendo aqui"); **Outdoor** (lá fora) e **Indoor** (onde a estação está) lado a lado. O Outdoor vem do METAR do aeroporto mais próximo da localização configurada na estação (temperatura, sensação, umidade, orvalho, vento e condição em português), com a condição atual do Open-Meteo como reserva quando o METAR atrasa ou o aeroporto está fechado. O Indoor traz a última média, mínimas e máximas de 24 h e a diferença em relação a fora. Abaixo: pressão do barômetro da estação com tendência de 3 h, interpretação (Zambretti) e QNH do aeroporto para comparar; previsão de hoje e amanhã (Open-Meteo); últimas médias e estado da estação.
+- **Agora:** card **Chuva nas próximas horas** (chance em 1, 2 e 3 h, nível, motivo e o botão "Está chovendo aqui"); **Outdoor** (lá fora) e **Indoor** (onde a estação está) lado a lado. O Outdoor vem do METAR do aeroporto mais próximo da localização configurada na estação (temperatura, sensação, umidade, orvalho, vento e condição em português), com a condição atual do Open-Meteo como reserva quando o METAR atrasa ou o aeroporto está fechado. O Indoor traz a última média, mínimas e máximas de 24 h e a diferença em relação a fora. Logo abaixo, o card **No escritório**: conforto (faixas de 20 a 26 °C e de 40 a 60 %), sugestão de **abrir ou fechar a janela** (comparando com o Outdoor e com a chuva prevista), avisos de **ar seco** e de **risco de mofo** (horas com umidade acima de 70 % nos últimos 3 dias) e o **atraso térmico** (quantas horas o ambiente demora para acompanhar a temperatura de fora e quanto da variação chega dentro; precisa de 24 h de dados). Abaixo: pressão do barômetro da estação com tendência de 3 h, interpretação (Zambretti) e QNH do aeroporto para comparar; previsão de hoje e amanhã (Open-Meteo); últimas médias e estado da estação.
 - **Chuva:** os três métodos lado a lado para cada janela, com o motivo; gráfico das previsões com os trechos em que choveu de fato; placar de 30 dias por método e janela (erro de Brier, habilidade, acertos, alarmes falsos, perdidas); como funciona.
 - **Estação:** a configuração atual, como a estação informou (páginas do OLED com prévia, brilho, modo noturno, calibração e localização), e o estado da estação. A cópia chega a cada envio e logo depois de qualquer mudança feita em `grain.local`.
-- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura Indoor × Outdoor (com o ponto de orvalho), umidade e pressão (estação × QNH do aeroporto) (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
+- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura Indoor × Outdoor (com o ponto de orvalho), umidade e pressão (estação × QNH do aeroporto) (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia com mínimas e máximas Indoor e Outdoor; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
 
 ### Dados de fora (Outdoor)
 

@@ -6,7 +6,7 @@ type Extreme = { v: number; ts: number } | null
 type Stat = { min: Extreme; max: Extreme; avg: number | null }
 type Placement = { place: 'sacada' | 'escritorio'; from: number; to: number | null }
 type Series = { from: string; to: string; step_s: number; points: Point[]; placements: Placement[]; summary: { n: number; buckets: number; n_sacada: number; expected: number; temp: Stat; hum: Stat; pres: Stat } | null }
-type Day = { day: string; temp_min: number | null; temp_max: number | null; temp_avg: number | null; hum_min: number | null; hum_max: number | null; hum_avg: number | null; pres_min: number | null; pres_max: number | null; pres_avg: number | null; n: number; buckets: number; n_sacada: number }
+type Day = { day: string; temp_min: number | null; temp_max: number | null; temp_avg: number | null; hum_min: number | null; hum_max: number | null; hum_avg: number | null; pres_min: number | null; pres_max: number | null; pres_avg: number | null; n: number; buckets: number; n_sacada: number; out_min: number | null; out_max: number | null }
 
 const route = useRoute()
 const router = useRouter()
@@ -203,7 +203,8 @@ const coverage = computed(() => {
             <thead>
               <tr>
                 <th>Dia</th>
-                <th>Temp. mín.</th><th>Temp. máx.</th>
+                <th>Indoor mín.</th><th>Indoor máx.</th>
+                <th>Outdoor mín.</th><th>Outdoor máx.</th>
                 <th>Umid. mín.</th><th>Umid. máx.</th>
                 <th>Pressão média</th>
                 <th>Cobertura</th>
@@ -214,6 +215,8 @@ const coverage = computed(() => {
                 <td>{{ dayLabel(d.day) }}</td>
                 <td>{{ fmt(d.temp_min) }} °C</td>
                 <td>{{ fmt(d.temp_max) }} °C</td>
+                <td>{{ fmt(d.out_min, 0) }} °C</td>
+                <td>{{ fmt(d.out_max, 0) }} °C</td>
                 <td>{{ fmt(d.hum_min, 0) }} %</td>
                 <td>{{ fmt(d.hum_max, 0) }} %</td>
                 <td>{{ fmt(d.pres_avg) }} hPa</td>
