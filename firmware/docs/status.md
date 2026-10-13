@@ -148,8 +148,16 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   `rain_reports.raining` (false = "não choveu") desconta METAR de chuva a até 30 min; registrado e as 27 previsões
   afetadas reconferidas como sem chuva (M2/M3 erraram, M1 acertou).
 
+- Fase 17 (em validação): firmware 0.13.x, módulo `health`: watchdog de 60 s (loop e tarefa da nuvem),
+  ArduinoOTA porta 3232 com a senha da estação (env `ota`, release, GRAIN_OTA_PASS), autocura (30 min sem Wi-Fi,
+  6 h de nuvem falhando), motivo do reinício e contador de boots na NVS, "!" no cabeçalho do OLED.
+  A estação passa a rodar o build de release (dev já em 94 % da partição). Nuvem: `status_log`, `GET /api/v1/health`,
+  seção Saúde na aba Estação (janela desde a gravação do firmware atual). OTA testado 3 vezes (≈ 50 s cada).
+  Depois da reinicialização pela OTA, o mDNS não anuncia o AAAA e o macOS espera 5 s em grain.local; tentativa de
+  reanunciar no GOT_IP6 não resolveu e foi desfeita; o usuário acessa pelo IP. Teste de 72 h começou às 15:11 de 13/10.
+
 ## Em andamento
-- Fase 17: robustez (watchdog, OTA, autocura, diagnóstico, teste de 72 h).
+- Fase 17: teste de 72 h (até ~15:11 de 16/10); sem gravar firmware nesse período, para não reiniciar a contagem.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
@@ -160,6 +168,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 ## Problemas conhecidos
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.
 - Abrir a porta serial no macOS reinicia a placa (DTR/RTS).
+- Após reinício por OTA, grain.local demora ~5 s no macOS (sem AAAA no mDNS); pelo IP é imediato.
 - Se a placa for reconectada (ou passar por hub), o nó /dev/cu.usbserial-0001 pode ficar velho (erro 22 no
   tcsetattr): reconectar o cabo direto no Mac resolve.
 - Durante o portal do WiFiManager a porta 80 é dele; o servidor da API só pode subir com o portal fechado.

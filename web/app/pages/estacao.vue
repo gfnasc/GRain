@@ -21,7 +21,7 @@ const rainPreview = computed(() => ({
   threshold: cfg.value?.rain_alert?.enabled ? cfg.value.rain_alert.threshold : null,
 }))
 type Health = {
-  hours: number; observed_h: number; samples: number; fw: string | null; uptime_s: number | null; last_reset: string | null; boots: number | null
+  hours: number; since: string; observed_h: number; samples: number; fw: string | null; uptime_s: number | null; last_reset: string | null; boots: number | null
   restarts: { ts: string; reason: string | null }[]; gaps: { from: string; to: string; minutes: number }[]; coverage: number | null
   heap_min: { first: number; last: number; lowest: number } | null; heap_now: number | null; rssi: { avg: number; min: number } | null
 }
@@ -196,7 +196,8 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
         </aside>
       </div>
       <section v-if="health" class="block health">
-        <h3>Saúde nas últimas {{ health.hours }} h (teste de robustez)</h3>
+        <h3>Saúde desde a última gravação (teste de {{ health.hours }} h)</h3>
+        <p class="muted small">Contando desde {{ when(health.since) }}, quando o firmware {{ health.fw }} entrou. Gravar outro firmware recomeça a contagem.</p>
         <ul class="checks">
           <li v-for="c in checks" :key="c.label" :class="c.ok ? 'ok' : 'wait'"><span aria-hidden="true">{{ c.ok ? '✓' : '…' }}</span>{{ c.label }}</li>
         </ul>

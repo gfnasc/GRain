@@ -57,8 +57,9 @@ Status: `200`; `503` se ainda não houve nenhuma leitura.
 
 ```json
 {
-  "device": { "id": "grain-a1b2c3", "firmware": "0.5.0", "uptime_s": 24,
-              "heap_free": 226656, "heap_min": 222612, "fs_used": 8192, "fs_total": 1048576 },
+  "device": { "id": "grain-a1b2c3", "firmware": "0.13.2", "uptime_s": 24,
+              "heap_free": 226656, "heap_min": 222612, "reset_reason": "atualização pelo Wi-Fi", "boots": 4, "ota": true,
+              "fs_used": 8192, "fs_total": 1048576 },
   "wifi": { "connected": true, "ssid": "MinhaRede", "ip": "192.168.1.105", "rssi": -45,
             "hostname": "grain.local" },
   "time": { "synced": true, "tz": "<-03>3", "local": "2026-10-12T15:33:51", "epoch": 1791830031 },
@@ -185,7 +186,8 @@ Recebe um lote de médias de 5 min do ESP32 (de 10 min antes do firmware 0.12.0)
   "readings": [
     { "ts": 1791831600, "temp": 27.97, "hum": 65.8, "pres_slp": 1012.84, "pres_raw": 1010.55, "dew": 21.0 }
   ],
-  "status": { "fw": "0.9.0", "rssi": -57, "uptime_s": 563, "heap": 220132, "queue": 0 },
+  "status": { "fw": "0.13.2", "rssi": -57, "uptime_s": 563, "heap": 220132, "heap_min": 127316, "queue": 0,
+              "reset": "atualização pelo Wi-Fi", "boots": 4 },
   "config": { "display": { "...": "..." }, "calibration": { "...": "..." }, "location": { "lat": null, "lon": null, "label": "" } }
 }
 ```
@@ -282,6 +284,9 @@ Previsão de hoje e amanhã (Open-Meteo: máxima, mínima, chance de chuva e con
 | `POST` | `/api/v1/rain/report` | Aviso "Está chovendo aqui" pelo painel (um por intervalo de 10 min) |
 
 `POST /api/v1/device/rain-report` 🔑 recebe o mesmo aviso vindo da página local da estação. No banco, `rain_reports.raining = false` registra um "não choveu", que desconta METAR de chuva a até 30 min.
+
+### `GET /api/v1/health?hours=72` 🔐
+Saúde para o teste de robustez, contada a partir da gravação do firmware atual (até `hours`): `since`, `observed_h`, `fw`, `uptime_s`, `last_reset`, `boots`, `restarts` (horário e motivo), `gaps` (intervalos de mais de 15 min sem média), `coverage` (% das médias de 5 min esperadas), `heap_min` (primeiro, último e menor valor) e `rssi` (média e pior). Vem do `status_log`, gravado a cada envio e guardado por 30 dias.
 
 ### `GET /api/v1/indoor` 🔐
 O ambiente da estação: `now` (última média fora da sacada), `comfort` (`label`, `level` ok/atenção/alerta, faixas de temperatura e umidade), `dry` (umidade abaixo de 40 %), `mold` (horas com umidade ≥ 70 % nos últimos 3 dias), `window` (`action`: abrir, fechar ou tanto faz, e `reason`) e `lag` (atraso em horas e fração da variação de fora que chega dentro, por correlação hora a hora em 7 dias; `null` com `lag_needed_h` enquanto faltar dado).

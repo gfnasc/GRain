@@ -31,7 +31,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
 | 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | ✅ Concluída |
 | 16 | Indoor: conforto, ar seco, mofo, janela, atraso térmico | ✅ Concluída |
-| 17 | Robustez: watchdog, OTA, teste de 72 h | 🔧 Em andamento |
+| 17 | Robustez: watchdog, OTA, teste de 72 h | 🔧 Em validação (teste de 72 h rodando) |
 | 18 | Chuva v2: M2 treinado (estação + aeroporto) e M4 combinado, com aprendizado (teste de 30 dias) | Planejada |
 | 19 | WhatsApp, configurado no ESP32 | Planejada |
 
@@ -145,6 +145,12 @@ As bibliotecas são instaladas automaticamente pelo PlatformIO, com versões fix
 
 Se houver mais de uma porta serial, o PlatformIO pergunta qual usar. Para fixar a porta, descomente `upload_port` e `monitor_port` em `platformio.ini`.
 
+**Depois da primeira gravação pelo cabo, dá para gravar pelo Wi-Fi (OTA)**, com a estação ligada em qualquer tomada da rede de casa. A senha é a da estação, passada por variável de ambiente (nunca no repositório):
+```bash
+GRAIN_OTA_PASS='senha-da-estação' pio run -e ota -t upload
+```
+O display mostra "Atualizando firmware pelo Wi-Fi" com o progresso. O ambiente `ota` usa o build de release e o endereço `grain.local` (troque `upload_port` pelo IP se o mDNS não resolver).
+
 ### Conectar ao Wi-Fi
 
 Na primeira vez, sem Wi-Fi salvo, o display mostra **"Configurar Wi-Fi"** com o nome de uma rede e uma senha:
@@ -240,6 +246,14 @@ Quando a janela termina, a previsão é conferida: choveu se o METAR registrou c
 A pressão ao nível do mar calculada pela estação depende da altitude configurada; um erro de 8 m dá 1 hPa. Com a opção **Calibrar a pressão pelo aeroporto mais próximo** ligada (padrão, na página local), a nuvem compara a pressão **sem calibração** de cada média com o QNH dos METARs no mesmo horário, tira a mediana dos últimos 7 dias (mínimo de 12 pares) e devolve o desvio na resposta de cada envio. A estação aplica o valor (só grava quando muda) e ele substitui o ajuste manual de pressão. Como o cálculo usa a pressão sem calibração, o ajuste não se realimenta. Isso também resolve a altitude quando a estação muda de andar ou de endereço.
 
 No painel, o gráfico de pressão mostra a estação e o QNH do aeroporto juntos, e as abas Agora e Estação mostram o ajuste em uso.
+
+### Robustez
+
+- **Watchdog:** se o loop principal ou a tarefa da nuvem ficarem 60 s sem responder, a estação reinicia sozinha.
+- **Autocura:** reinicia depois de 30 min sem Wi-Fi ou 6 h com a nuvem falhando (com o Wi-Fi funcionando).
+- **Diagnóstico:** a estação guarda o motivo do último reinício (energia, watchdog, travamento, atualização pelo Wi-Fi, sem Wi-Fi...) e conta os reinícios; os dois aparecem na aba Sistema do app local e vão para a nuvem a cada envio, junto com a memória livre e o sinal.
+- **Aviso no display:** um "!" no cabeçalho quando falta leitura de sensor, Wi-Fi ou nuvem.
+- **Saúde no painel:** a aba Estação tem a seção "Saúde desde a última gravação", com a checklist do teste de 72 h (tempo observado, reinícios e motivos, buracos de mais de 15 min no histórico, memória estável) e o sinal Wi-Fi.
 
 ### Tempos de sincronização
 

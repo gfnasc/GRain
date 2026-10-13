@@ -1,4 +1,5 @@
-// Saúde da estação num período (padrão 72 h), para o teste de robustez. Exige login.
+// Saúde da estação para o teste de robustez (72 h), contada a partir da gravação do firmware
+// atual (primeiro registro com a versão em uso), limitada a `hours`. Exige login.
 // Reinícios (pelo contador da estação ou pelo tempo ligado que volta a zero) e seus motivos,
 // buracos no histórico (intervalos de mais de 15 min sem média), memória e sinal Wi-Fi.
 
@@ -8,7 +9,12 @@ export default defineEventHandler(async (event) => {
   const deviceId = await defaultDeviceId()
   if (!deviceId) throw createError({ statusCode: 404, message: 'nenhuma estação cadastrada' })
   const sql = useSql()
-  const since = new Date(Date.now() - hours * 3600_000).toISOString()
+  const limit = new Date(Date.now() - hours * 3600_000)
+  // Começo do teste: primeiro registro com o firmware atual (gravações reiniciam a contagem).
+  const [start] = (await sql`
+    select min(ts) as ts from status_log
+    where device_id = ${deviceId} and fw = (select fw from status_log where device_id = ${deviceId} order by ts desc limit 1)`) as { ts: string | null }[]
+  const since = new Date(Math.max(limit.getTime(), start?.ts ? new Date(start.ts).getTime() : limit.getTime())).toISOString()
 
   const log = (await sql`
     select ts, fw, uptime_s, heap, heap_min, rssi, queue, boots, reset from status_log
@@ -39,6 +45,7 @@ export default defineEventHandler(async (event) => {
   const expected = Math.floor((Date.now() - new Date(cov?.first ?? Date.now()).getTime()) / 300_000)
   return {
     hours,
+    since,
     observed_h: Math.round(spanH * 10) / 10,
     samples: log.length,
     fw: last?.fw ?? null,
