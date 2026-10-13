@@ -31,8 +31,8 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
 | 15 | Chuva v1: métodos M1 a M3, placar, aba Chuva, página e alertas no OLED | ✅ Concluída |
 | 16 | Indoor: conforto, ar seco, mofo, janela, atraso térmico | ✅ Concluída |
-| 17 | Robustez: watchdog, OTA, teste de 72 h | 🔧 Em validação (teste de 72 h rodando) |
-| 18 | Chuva v2: M2 treinado (estação + aeroporto) e M4 combinado, com aprendizado (teste de 30 dias) | Planejada |
+| 17 | Robustez: watchdog, OTA, teste de 72 h | 🔧 Em aberto (teste começa junto com o da 18) |
+| 18 | Chuva v2: M2 treinado (estação + aeroporto) e M4 combinado, com aprendizado (teste de 30 dias) | 🔧 Próxima |
 | 19 | WhatsApp, configurado no ESP32 | Planejada |
 
 Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama interativo de ligações e montagem passo a passo: [docs/plano.html](docs/plano.html) (baixe o arquivo e abra no navegador).

@@ -157,7 +157,10 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   reanunciar no GOT_IP6 não resolveu e foi desfeita; o usuário acessa pelo IP. Teste de 72 h começou às 15:11 de 13/10.
 
 ## Em andamento
-- Fase 17: teste de 72 h (até ~15:11 de 16/10); sem gravar firmware nesse período, para não reiniciar a contagem.
+- Decisão do usuário (13/10): a Fase 17 fica em aberto e a Fase 18 é executada já, para que o teste de 72 h (17) e o
+  teste de 30 dias do M2 treinado e do M4 (18) comecem oficialmente juntos. Se a 18 precisar mudar o firmware, a
+  gravação (OTA) é feita uma vez no fim da 18 e marca o início oficial dos dois testes; depois disso, nenhuma
+  gravação durante as 72 h.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
