@@ -131,6 +131,9 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   (pede a atual), `POST /api/v1/system/password` e console `senha <nova>` / `senha aleatoria`. Senha definida pelo
   usuário. Senha do painel também trocada a pedido (hash na Vercel, texto em web/.panel-password.txt).
 
+- Firmware 0.11.2 + nuvem: a previsão de chuva passou a ser calculada antes da resposta do ingest (antes vinha
+  da rodada anterior, ~10 min atrasada na estação); cor de nível só na barra dos mostradores do app local.
+
 ## Em andamento
 - Fase 16: Indoor (aguardando o usuário iniciar).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).

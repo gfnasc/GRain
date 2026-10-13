@@ -203,7 +203,7 @@ Recebe um lote de médias de 10 min do ESP32, o estado e a cópia da configuraç
 
 Horários já recebidos são ignorados, então o ESP32 pode reenviar com segurança.
 
-Respostas: `200 {"accepted": 1, "duplicates": 0, "pres_offset": 2.29, "rain": {"at": 1791898200, "p": [8, 18, 44], "m": ["M3", "M3", "M3"], "r": "modelo: ..."}}`. `pres_offset`: desvio QNH − pressão sem calibração, mediana de 7 dias (só com 12 pares ou mais). `rain`: última previsão de chuva (1, 2 e 3 h, método em destaque e motivo curto), para a página local e o display · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
+Respostas: `200 {"accepted": 1, "duplicates": 0, "pres_offset": 2.29, "rain": {"at": 1791898200, "p": [8, 18, 44], "m": ["M3", "M3", "M3"], "r": "modelo: ..."}}`. `pres_offset`: desvio QNH − pressão sem calibração, mediana de 7 dias (só com 12 pares ou mais). `rain`: previsão de chuva desta rodada (calculada antes da resposta; 1, 2 e 3 h, método em destaque e motivo curto), para a página local e o display · `400` lista ausente · `401` token ausente ou inválido · `413` lote grande demais · `422` valor fora da faixa (o `message` diz qual leitura).
 
 ### `GET /api/v1/latest` 🔐
 Exige a sessão do painel. Devolve a estação (com `place`: `sacada`, `escritorio` ou `null`), a média mais recente, as 12 últimas médias e mínimas/máximas de 24 h, sem o período na sacada.

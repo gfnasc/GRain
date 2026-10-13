@@ -241,6 +241,28 @@ A pressão ao nível do mar calculada pela estação depende da altitude configu
 
 No painel, o gráfico de pressão mostra a estação e o QNH do aeroporto juntos, e as abas Agora e Estação mostram o ajuste em uso.
 
+### Tempos de sincronização
+
+| O quê | Quando |
+|---|---|
+| Leitura dos sensores (estação) | a cada 5 s |
+| Média enviada para a nuvem | a cada 10 min (intervalos :00, :10, :20...), logo que o intervalo fecha; com falha, tenta de novo em 1, 2, 4... até 30 min, e a fila guarda até 14 dias |
+| Cópia da configuração para a nuvem | em todo envio e na hora (~2 s) quando algo muda na estação, ao ligar e no "Sincronizar agora" |
+| Aviso "Está chovendo aqui" (estação → nuvem) | na hora; se falhar, de novo a cada 1 min |
+| Previsão de chuva | calculada a cada envio (10 min), antes da resposta: estação e painel recebem a mesma rodada |
+| Ajuste da pressão (nuvem → estação) | volta em todo envio; a estação só grava se mudar 0,05 hPa ou mais |
+| METAR do aeroporto | a cada envio (mín. 9 min); o aeroporto publica de hora em hora ou antes, se o tempo mudar |
+| Open-Meteo (condição atual, próximas horas) e TAF | a cada 30 min |
+| Previsão de hoje e amanhã (Open-Meteo) | guardada por 30 min |
+| Conferência das previsões de chuva | a cada envio, para as janelas que terminaram há mais de 20 min |
+| Placar | recalculado a cada 10 min |
+| App local (`grain.local`) | atualiza a cada 5 s |
+| Painel, aba Agora | atualiza a cada 1 min (previsão do dia a cada 15 min) |
+| Painel, aba Chuva | atualiza a cada 2 min |
+| "Online" no painel | último envio há menos de 15 min |
+
+Os valores da estação no app local são instantâneos (5 s); os do painel são médias de 10 min, então podem diferir um pouco.
+
 ### Local da estação (sacada ou escritório)
 
 Na sacada, sol direto e calor do prédio distorcem a temperatura e a umidade; a pressão vale em qualquer lugar. O banco guarda onde a estação estava em cada período (tabela `placements`), e o painel usa isso para marcar o histórico. Para registrar uma mudança, dentro de `web/`:
