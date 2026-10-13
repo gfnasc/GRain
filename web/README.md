@@ -8,6 +8,7 @@ Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pel
 - Login com senha única via `nuxt-auth-utils` (sessão em cookie criptografado, 30 dias)
 - Gráficos com [uPlot](https://github.com/leeoniya/uPlot)
 - Fuso dos horários e dos dias: `NUXT_PUBLIC_TZ` (ex.: `America/Sao_Paulo`; padrão `UTC`)
+- Dados de fora: METAR (aviationweather.gov) e Open-Meteo, sem chave; coleta disparada por `POST /api/v1/ingest` e executada depois da resposta (`waitUntil` de `@vercel/functions`)
 
 ## Rotas
 
@@ -19,6 +20,8 @@ Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pel
 | `GET /api/v1/daily` | Sessão do painel | Resumo por dia |
 | `GET /api/v1/readings.csv` | Sessão do painel | Exportação CSV com a coluna `local` (`&excel=1` para Excel em português) |
 | `GET /api/v1/station` | Sessão do painel | Estado da estação e cópia da configuração (somente leitura) |
+| `GET /api/v1/outdoor` | Sessão do painel | Condições de fora: METAR do aeroporto mais próximo ou Open-Meteo |
+| `GET /api/v1/forecast` | Sessão do painel | Previsão de hoje e amanhã e tendência da pressão |
 | `POST /api/auth/login` | — | Login com a senha do painel |
 
 Contrato completo: [../docs/api-v1.md](../docs/api-v1.md).

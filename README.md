@@ -27,7 +27,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 10 | Robustez | ➡️ Movida para a 18 |
 | 11 | GRain: novo nome, flag "sacada" no histórico, remoção do WhatsApp | ✅ Concluída |
 | 12 | Configurações só no ESP32; painel só para visualização | ✅ Concluída |
-| 13 | Outdoor: dados externos (METAR e Open-Meteo) | 🔧 Em andamento |
+| 13 | Outdoor: dados externos (METAR e Open-Meteo) | 🔧 Em validação |
 | 14 | Pressão calibrada pelo aeroporto | Planejada |
 | 15 | Chuva v1: métodos M1 a M3 e placar de acertos | Planejada |
 | 16 | Indoor: conforto, ar seco, mofo, janela | Planejada |
@@ -202,9 +202,19 @@ nuvem
 O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `desligada`).
 
 O painel serve só para ver os dados; nada é configurado por ele. Três seções:
-- **Agora:** média mais recente, local da estação, mínima e máxima de 24 h, últimas médias e estado da estação.
+- **Agora:** **Outdoor** (lá fora) e **Indoor** (onde a estação está) lado a lado. O Outdoor vem do METAR do aeroporto mais próximo da localização configurada na estação (temperatura, sensação, umidade, orvalho, vento e condição em português), com a condição atual do Open-Meteo como reserva quando o METAR atrasa ou o aeroporto está fechado. O Indoor traz a última média, mínimas e máximas de 24 h e a diferença em relação a fora. Abaixo: pressão do barômetro da estação com tendência de 3 h, interpretação (Zambretti) e QNH do aeroporto para comparar; previsão de hoje e amanhã (Open-Meteo); últimas médias e estado da estação.
 - **Estação:** a configuração atual, como a estação informou (páginas do OLED com prévia, brilho, modo noturno, calibração e localização), e o estado da estação. A cópia chega a cada envio e logo depois de qualquer mudança feita em `grain.local`.
-- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e ponto de orvalho, umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
+- **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura Indoor × Outdoor (com o ponto de orvalho), umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
+
+### Dados de fora (Outdoor)
+
+A nuvem busca os dados de fora a cada envio da estação (a cada 10 min), sem cron:
+
+- **METAR** do aeroporto mais próximo da localização, detectado sozinho ([aviationweather.gov](https://aviationweather.gov/data/api/), sem chave). Os aeroportos publicam de hora em hora, ou antes quando o tempo muda.
+- **Open-Meteo** (sem chave): condição atual a cada 30 min, usada quando o METAR tem mais de 90 min, e previsão diária.
+- Quando a localização muda, o aeroporto é detectado de novo e as últimas 72 h dos dois são buscadas para o histórico já começar preenchido.
+
+Sem localização, o painel mostra só o Indoor. A localização e o aeroporto detectado ficam no banco, nunca no repositório.
 
 ### Local da estação (sacada ou escritório)
 

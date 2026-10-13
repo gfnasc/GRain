@@ -216,6 +216,8 @@ Série agregada para os gráficos. A resolução depende do tamanho do período:
 
 `n` em cada ponto é a quantidade de médias de 10 min agregadas. Os extremos do `summary` são exatos (não médias), com o horário em que ocorreram; `expected` é quantas médias de 10 min cabem no período.
 
+Cada ponto tem também `out_temp`: temperatura de fora no mesmo intervalo (METAR, com o Open-Meteo nos buracos, interpolada entre observações a até 2 h).
+
 `placements` lista onde a estação estava em cada trecho do período (`to: null` é o local atual). Temperatura e umidade medidas na sacada continuam em `points` (o painel desenha hachurado), mas ficam fora dos extremos e das médias do `summary`; `n_sacada` conta essas médias. A pressão entra sempre.
 
 ### `GET /api/v1/daily` 🔐
@@ -223,6 +225,25 @@ Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umid
 
 ### `GET /api/v1/readings.csv` 🔐
 Médias de 10 min do período em CSV (download). Colunas: `inicio_utc`, `inicio_local`, `temperatura_c`, `umidade_pct`, `pressao_nivel_mar_hpa`, `ponto_orvalho_c`, `local` (`sacada`, `escritorio` ou vazio). Com `&excel=1`: separador `;`, vírgula decimal e BOM UTF-8 para abrir direto no Excel em português.
+
+### `GET /api/v1/outdoor` 🔐
+Condições de fora. `now` é a observação a mostrar: METAR se tiver até 90 min, senão a do Open-Meteo. `metar` e `model` trazem a última de cada fonte (até 6 h); `station` é o aeroporto detectado; `located` diz se a estação tem localização.
+
+```json
+{
+  "located": true,
+  "station": { "icao": "XXXX", "name": "...", "lat": -23.5, "lon": -46.6, "dist_km": 12 },
+  "now": { "source": "metar", "obs_at": "2026-10-13T12:00:00.000Z", "temp": 19, "dew": 16, "hum": 83, "feels": 19,
+           "pres": 1017, "wind_dir": 350, "wind_kmh": 7, "gust_kmh": null, "condition": "encoberto", "raw": "METAR XXXX ..." },
+  "metar": { "...": "..." },
+  "model": { "source": "open-meteo", "...": "..." }
+}
+```
+
+`pres` é o QNH no METAR e a pressão ao nível do mar no Open-Meteo. Vento em km/h.
+
+### `GET /api/v1/forecast` 🔐
+Previsão de hoje e amanhã (Open-Meteo: máxima, mínima, chance de chuva e condição) e a pressão da estação com variação em 3 h, tendência e interpretação (Zambretti).
 
 ### `GET /api/v1/station` 🔐
 Estado da estação, local atual e a última cópia da configuração enviada por ela (`config`, ou `null` se ainda não chegou) com a hora em que chegou (`config_at`). Somente leitura: o painel não altera a configuração.
