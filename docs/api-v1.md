@@ -63,7 +63,7 @@ Status: `200`; `503` se ainda não houve nenhuma leitura.
             "hostname": "grain.local" },
   "time": { "synced": true, "tz": "<-03>3", "local": "2026-10-12T15:33:51", "epoch": 1791830031 },
   "cloud": { "configured": true, "url": "https://SEU-PROJETO.vercel.app", "queue": 0, "last_ok": 1791830000,
-             "last_http": 200, "last_error": "", "config_sent": 1791830000, "config_pending": false },
+             "last_http": 200, "last_error": "", "interval_s": 300, "config_sent": 1791830000, "config_pending": false },
   "sensors": { "aht20": true, "bmp280": true }
 }
 ```
@@ -177,7 +177,7 @@ Envia agora a fila de médias e a cópia da configuração. `202`; `409` se a nu
 Base: o domínio do projeto na Vercel. Código em [`web/`](../web).
 
 ### `POST /api/v1/ingest` 🔑
-Recebe um lote de médias de 10 min do ESP32, o estado e a cópia da configuração. Autenticação: `Authorization: Bearer <token da estação>` (o banco guarda só o sha256 do token). O lote pode vir vazio quando a estação só manda a cópia (logo depois de uma mudança de configuração ou de ligar).
+Recebe um lote de médias de 5 min do ESP32 (de 10 min antes do firmware 0.12.0), o estado e a cópia da configuração. Autenticação: `Authorization: Bearer <token da estação>` (o banco guarda só o sha256 do token). O lote pode vir vazio quando a estação só manda a cópia (logo depois de uma mudança de configuração ou de ligar).
 
 ```json
 {
@@ -281,6 +281,9 @@ Previsão de hoje e amanhã (Open-Meteo: máxima, mínima, chance de chuva e con
 | `POST` | `/api/v1/rain/report` | Aviso "Está chovendo aqui" pelo painel (um por intervalo de 10 min) |
 
 `POST /api/v1/device/rain-report` 🔑 recebe o mesmo aviso vindo da página local da estação.
+
+### `GET /api/v1/sync` 🔐
+Horários (epoch ms) para os contadores do painel: `now` do servidor, `interval_s` dos envios (300) e, para `station`, `rain`, `metar`, `model` e `taf`, `last` (última atualização) e `next` (estimativa da próxima).
 
 ### `GET /api/v1/station` 🔐
 Estado da estação, local atual e a última cópia da configuração enviada por ela (`config`, ou `null` se ainda não chegou) com a hora em que chegou (`config_at`). Somente leitura: o painel não altera a configuração.

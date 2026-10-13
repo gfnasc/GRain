@@ -134,6 +134,11 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 - Firmware 0.11.2 + nuvem: a previsão de chuva passou a ser calculada antes da resposta do ingest (antes vinha
   da rodada anterior, ~10 min atrasada na estação); cor de nível só na barra dos mostradores do app local.
 
+- Firmware 0.12.0: médias de 5 min (UPLINK_INTERVAL_S 300, fila 4032); contadores no app local (próximo envio,
+  próxima previsão, quadro na aba Sistema). Nuvem: METAR a cada envio, `GET /api/v1/sync`, faixa SyncTimers nas
+  abas Agora e Chuva (também é o relógio de atualização da página), cobertura por intervalos de 10 min, pares da
+  pressão com as médias dos 10 min anteriores. Previsão de chuva segue a cada 10 min (volume no banco).
+
 ## Em andamento
 - Fase 16: Indoor (aguardando o usuário iniciar).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).

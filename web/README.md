@@ -19,6 +19,7 @@ Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pel
 | `GET /api/v1/readings` | Sessão do painel | Série agregada para os gráficos (`?range=24h\|7d\|30d` ou `?from=&to=`) e períodos de cada local |
 | `GET /api/v1/daily` | Sessão do painel | Resumo por dia |
 | `GET /api/v1/readings.csv` | Sessão do painel | Exportação CSV com a coluna `local` (`&excel=1` para Excel em português) |
+| `GET /api/v1/sync` | Sessão do painel | Horários das últimas e próximas atualizações (contadores) |
 | `GET /api/v1/station` | Sessão do painel | Estado da estação e cópia da configuração (somente leitura) |
 | `GET /api/v1/outdoor` | Sessão do painel | Condições de fora: METAR do aeroporto mais próximo ou Open-Meteo |
 | `GET /api/v1/forecast` | Sessão do painel | Previsão de hoje e amanhã e tendência da pressão |
