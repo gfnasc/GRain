@@ -1,6 +1,6 @@
 import { waitUntil } from '@vercel/functions'
 
-// Recebe um lote de médias de 10 min do ESP32, o estado da estação e a cópia da
+// Recebe um lote de médias de 5 min do ESP32, o estado da estação e a cópia da
 // configuração (display, calibração e localização), que é feita só no ESP32.
 // Autenticação: Authorization: Bearer <token do aparelho>.
 // Horários repetidos são ignorados (o ESP32 pode reenviar após falha). O lote pode vir

@@ -101,7 +101,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
 <body>
 <header class="bezel"><div>
   <div class="brand"><img src="/favicon.svg" alt=""><h1>GRain</h1><span class="badge">APP LOCAL · ESP32</span><span class="where" id="where">grain.local</span></div>
-  <div class="oled" aria-live="polite"><span id="oled">conectando à estação…</span><span id="upd">–</span></div>
+  <div class="oled"><span id="oled" aria-live="polite">conectando à estação…</span><span><span id="osend"></span> · <span id="upd">–</span></span></div>
 </div></header>
 <main>
   <section class="tab" id="t-agora">
@@ -109,7 +109,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
     <h2>Chuva nas próximas horas</h2>
     <div class="box">
       <div class="rt" id="rt"><div><span class="mut">1 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">2 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">3 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div></div>
-      <span class="mut" id="rwhy"></span>
+      <span class="mut"><span id="rwhy"></span><span id="rnext"></span></span>
       <div class="row"><button id="rrep">☂ Está chovendo aqui</button><span class="mut msg" id="rmsg"></span></div>
     </div>
     <h2>Sensores agora</h2>
@@ -202,6 +202,14 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
       </table>
       <div class="row"><button id="sync">Sincronizar agora</button><a id="cloud" href="#" target="_blank" rel="noopener" hidden>Abrir o painel na nuvem ↗</a><span class="mut msg" id="syncmsg"></span></div>
     </div>
+    <h2>Próximas atualizações</h2>
+    <table>
+      <tr><td>Leitura dos sensores</td><td id="n_read">a cada 5 s</td></tr>
+      <tr><td>Esta página</td><td id="n_page">–</td></tr>
+      <tr><td>Envio da média para a nuvem</td><td id="n_send">–</td></tr>
+      <tr><td>Previsão de chuva (vem com o envio)</td><td id="n_rain">–</td></tr>
+      <tr><td>Cópia da configuração</td><td>na hora, quando algo muda</td></tr>
+    </table>
     <h2>Estação</h2>
     <table>
       <tr><td>Wi-Fi</td><td id="wifi">–</td></tr>
@@ -390,12 +398,23 @@ $("pwchg").onclick=async()=>{
     say("pwmsg","Senha trocada. Use a nova a partir de agora.");
   }catch(e){say("pwmsg",e.message,1)}
 };
+// Contadores: relógio da estação (epoch do /status) acertado a cada leitura e contado aqui a cada segundo.
+let devOff=null,ivl=300,rainAt=0,pageAt=Date.now()+5000;
+const mmss=s=>s<=0?"agora":Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
+function timers(){
+  const pg=Math.max(0,Math.ceil((pageAt-Date.now())/1000));$("n_page").textContent="em "+pg+" s";
+  if(devOff==null)return;
+  const e=Date.now()/1000+devOff,ns=Math.ceil(e/ivl)*ivl-e,ttl=mmss(ns);
+  $("n_send").textContent="em "+ttl+" (a cada "+ivl/60+" min)";$("osend").textContent="envio em "+ttl;
+  if(rainAt){const nr=rainAt+600-e;const t=nr>0?"em "+mmss(Math.max(nr,ns)):"no próximo envio ("+mmss(ns)+")";$("n_rain").textContent=t;$("rnext").textContent=" · próxima "+t}
+}
+setInterval(timers,1000);
 const LV=p=>p>=60?["a","alta"]:p>=30?["m","média"]:["","baixa"];
 function renderRain(r){
   const tiles=$("rt").children;
   for(let i=0;i<3;i++){const t=tiles[i],p=r.fresh&&r.p?r.p[i]:null,l=p==null?["",""]:LV(p);
     t.className=l[0];t.children[1].textContent=p==null?"–":p+"%";t.children[2].firstChild.style.width=(p||0)+"%";t.children[3].textContent=p==null?"–":l[1]+(r.m?" · "+r.m[i]:"")}
-  $("rwhy").textContent=r.fresh?(r.reason+" · calculado há "+Math.round(r.age_s/60)+" min"):(r.at?"Previsão antiga (há "+Math.round(r.age_s/60)+" min): aguardando a nuvem.":"Aguardando a primeira previsão da nuvem (chega com o próximo envio).");
+  $("rwhy").textContent=r.fresh?(r.reason+" · calculada há "+Math.round(r.age_s/60)+" min"):(r.at?"Previsão antiga (há "+Math.round(r.age_s/60)+" min): aguardando a nuvem.":"Aguardando a primeira previsão da nuvem (chega com o próximo envio).");
   const al=r.alert;$("ralert").hidden=!al.active;if(al.active)$("ralert").textContent="☂ Alerta: "+al.pct+"% de chance de chuva em até "+al.hours+" h";
   if(!$("rmsg").dataset.busy)$("rmsg").textContent=r.report_pending?"enviando aviso…":(r.last_report?"último aviso às "+hm(r.last_report):"");
 }
@@ -404,9 +423,13 @@ $("rrep").onclick=async()=>{$("rrep").disabled=true;$("rmsg").dataset.busy=1;
   setTimeout(()=>{delete $("rmsg").dataset.busy;$("rrep").disabled=false},8000)};
 $("a_test").onclick=()=>act({alert_test:true});
 async function tick(){
+  pageAt=Date.now()+5000;
   try{
     const [now,st,d,rn]=await Promise.all(["/api/v1/now","/api/v1/status","/api/v1/display","/api/v1/rain"].map(u=>fetch(u).then(r=>r.json())));
     try{renderRain(rn)}catch(e){$("rwhy").textContent="Previsão indisponível nesta versão do firmware."}
+    if(st.time.epoch)devOff=st.time.epoch-Date.now()/1000;
+    if(st.cloud.interval_s)ivl=st.cloud.interval_s;
+    rainAt=rn&&rn.at?rn.at:0;
     $("temp").innerHTML=unit(now.temp,1,"°C");
     $("hum").innerHTML=unit(now.hum,0,"%");
     $("pres").innerHTML=unit(now.pres_slp,0,"hPa");
@@ -430,7 +453,7 @@ async function tick(){
     renderDisplay(d);
     $("where").textContent=st.wifi.hostname+" · "+st.wifi.ip;
     $("oled").textContent=d.on?"display: "+(NAMES[d.pages[d.page]]||d.pages[d.page])+(d.paused?" ‖":""):"display desligado";
-    $("upd").textContent=(st.time.synced?st.time.local.slice(11,16)+" · ":"")+"leitura de "+now.age_s+" s";
+    $("upd").textContent=st.time.synced?st.time.local.slice(11,16):"";
   }catch(e){
     $("oled").textContent="sem resposta da estação";$("upd").textContent="";
   }

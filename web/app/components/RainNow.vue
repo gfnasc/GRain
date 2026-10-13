@@ -59,7 +59,7 @@ const lastReport = computed(() => props.data?.reports?.[0] ?? null)
       </div>
     </div>
     <p v-else class="empty">
-      {{ data && !data.located ? 'Defina a localização da estação em grain.local para calcular a chance de chuva.' : 'A primeira previsão sai no próximo envio da estação (a cada 10 min).' }}
+      {{ data && !data.located ? 'Defina a localização da estação em grain.local para calcular a chance de chuva.' : 'A primeira previsão sai no próximo envio da estação (a cada 5 min).' }}
     </p>
 
     <p v-if="top" class="why">{{ top.reason }}</p>

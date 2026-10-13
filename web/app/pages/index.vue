@@ -45,18 +45,14 @@ const { data: outdoor, refresh: refreshOut } = await useFetch<Outdoor>('/api/v1/
 const { data: forecast, refresh: refreshFc } = await useFetch<Forecast>('/api/v1/forecast')
 const { data: rain, refresh: refreshRain } = await useFetch<RainResp>('/api/v1/rain')
 
-// Atualiza a cada minuto; o ESP32 envia médias de 10 min e a coleta de fora acompanha.
-let timer: ReturnType<typeof setInterval> | undefined
+// Atualiza a cada minuto (o relógio é o componente SyncTimers); o ESP32 envia médias de 5 min.
 const now = ref(Date.now())
-onMounted(() => {
-  timer = setInterval(() => {
-    now.value = Date.now()
-    refresh()
-    refreshOut()
-    refreshRain()
-  }, 60_000)
-})
-onBeforeUnmount(() => clearInterval(timer))
+function refreshAll() {
+  now.value = Date.now()
+  refresh()
+  refreshOut()
+  refreshRain()
+}
 let fcTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => (fcTimer = setInterval(refreshFc, 15 * 60_000)))
 onBeforeUnmount(() => clearInterval(fcTimer))
@@ -113,6 +109,7 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
     </section>
 
     <template v-else>
+      <SyncTimers @refresh="refreshAll" />
       <RainNow :data="rain ?? null" @reported="refreshRain" />
 
       <section class="modes">
@@ -147,9 +144,9 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
               <dt v-if="out?.temp != null && data.latest.temp != null">Diferença</dt>
               <dd v-if="out?.temp != null && data.latest.temp != null">{{ data.latest.temp - out.temp >= 0 ? '+' : '' }}{{ fmt(data.latest.temp - out.temp) }} °C em relação a fora</dd>
             </dl>
-            <span class="src">Média de 10 min iniciada às {{ hhmm(data.latest.ts) }}</span>
+            <span class="src">Média de 5 min iniciada às {{ hhmm(data.latest.ts) }}</span>
           </template>
-          <p v-else class="empty">Aguardando a primeira leitura (a estação envia a cada 10 min).</p>
+          <p v-else class="empty">Aguardando a primeira leitura (a estação envia a cada 5 min).</p>
         </article>
       </section>
 

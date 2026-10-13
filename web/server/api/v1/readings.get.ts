@@ -50,7 +50,8 @@ export default defineEventHandler(async (event) => {
       (select avg(hum) from r where not sacada) as hum_avg,
       (select count(*)::int from r where sacada) as n_sacada,
       (select avg(pres_slp) from r) as pres_avg,
-      (select count(*)::int from r) as n`) as Record<string, any>[]
+      (select count(*)::int from r) as n,
+      (select count(distinct date_bin('10 minutes', ts, timestamp '2000-01-01'))::int from r) as buckets`) as Record<string, any>[]
 
   const placements = await placementsIn(deviceId, range.from, range.to)
 
@@ -86,8 +87,9 @@ export default defineEventHandler(async (event) => {
     placements,
     summary: {
       n: ext?.n ?? 0,
+      buckets: ext?.buckets ?? 0,
       n_sacada: ext?.n_sacada ?? 0,
-      expected: Math.floor((range.to.getTime() - range.from.getTime()) / 600_000),
+      expected: Math.floor((range.to.getTime() - range.from.getTime()) / 600_000), // intervalos de 10 min
       temp: { min: extreme(ext?.temp_min), max: extreme(ext?.temp_max), avg: num(ext?.temp_avg) },
       hum: { min: extreme(ext?.hum_min), max: extreme(ext?.hum_max), avg: num(ext?.hum_avg) },
       pres: { min: extreme(ext?.pres_min), max: extreme(ext?.pres_max), avg: num(ext?.pres_avg) },

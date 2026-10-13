@@ -2,7 +2,7 @@
 
 // Pinos e constantes. Mantenha docs/hardware.md sincronizado.
 
-#define FW_VERSION "0.11.2"
+#define FW_VERSION "0.12.0"
 
 // Barramento I2C (AHT20, BMP280 e OLED compartilham)
 #define PIN_I2C_SDA 21
@@ -49,9 +49,9 @@
 #define API_USER "admin"                  // usuário das rotas que alteram algo
 
 // Nuvem
-#define UPLINK_INTERVAL_S 600              // médias de 10 min
-#define UPLINK_BATCH_MAX 48                // médias por envio (8 h)
-#define UPLINK_QUEUE_MAX 2016              // reserva offline: 14 dias
+#define UPLINK_INTERVAL_S 300              // médias de 5 min
+#define UPLINK_BATCH_MAX 48                // médias por envio (4 h)
+#define UPLINK_QUEUE_MAX 4032              // reserva offline: 14 dias
 #define UPLINK_RETRY_MS 600000
 #define UPLINK_BACKOFF_MAX_MS 1800000      // espera máxima entre tentativas com falha
 

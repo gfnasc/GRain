@@ -15,7 +15,8 @@ export default defineEventHandler(async (event) => {
            min(temp) filter (where not sacada) as temp_min, max(temp) filter (where not sacada) as temp_max, avg(temp) filter (where not sacada) as temp_avg,
            min(hum) filter (where not sacada) as hum_min, max(hum) filter (where not sacada) as hum_max, avg(hum) filter (where not sacada) as hum_avg,
            min(pres_slp) as pres_min, max(pres_slp) as pres_max, avg(pres_slp) as pres_avg,
-           count(*)::int as n, count(*) filter (where sacada)::int as n_sacada
+           count(*)::int as n, count(*) filter (where sacada)::int as n_sacada,
+           count(distinct date_bin('10 minutes', ts, timestamp '2000-01-01'))::int as buckets
     from (select *, exists (select 1 from placements p where p.device_id = readings.device_id and p.place = 'sacada' and readings.ts >= p.started_at and (p.ended_at is null or readings.ts < p.ended_at)) as sacada from readings) readings
     where device_id = ${deviceId} and ts >= ${range.from.toISOString()} and ts < ${range.to.toISOString()}
     group by 1 order by 1 desc`) as Record<string, any>[]
@@ -28,6 +29,7 @@ export default defineEventHandler(async (event) => {
       hum_min: num(r.hum_min), hum_max: num(r.hum_max), hum_avg: num(r.hum_avg),
       pres_min: num(r.pres_min), pres_max: num(r.pres_max), pres_avg: num(r.pres_avg),
       n: Number(r.n),
+      buckets: Number(r.buckets),
       n_sacada: Number(r.n_sacada),
     })),
   }

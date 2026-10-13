@@ -5,8 +5,8 @@ type Point = { ts: number; temp: number | null; temp_min: number | null; temp_ma
 type Extreme = { v: number; ts: number } | null
 type Stat = { min: Extreme; max: Extreme; avg: number | null }
 type Placement = { place: 'sacada' | 'escritorio'; from: number; to: number | null }
-type Series = { from: string; to: string; step_s: number; points: Point[]; placements: Placement[]; summary: { n: number; n_sacada: number; expected: number; temp: Stat; hum: Stat; pres: Stat } | null }
-type Day = { day: string; temp_min: number | null; temp_max: number | null; temp_avg: number | null; hum_min: number | null; hum_max: number | null; hum_avg: number | null; pres_min: number | null; pres_max: number | null; pres_avg: number | null; n: number; n_sacada: number }
+type Series = { from: string; to: string; step_s: number; points: Point[]; placements: Placement[]; summary: { n: number; buckets: number; n_sacada: number; expected: number; temp: Stat; hum: Stat; pres: Stat } | null }
+type Day = { day: string; temp_min: number | null; temp_max: number | null; temp_avg: number | null; hum_min: number | null; hum_max: number | null; hum_avg: number | null; pres_min: number | null; pres_max: number | null; pres_avg: number | null; n: number; buckets: number; n_sacada: number }
 
 const route = useRoute()
 const router = useRouter()
@@ -69,7 +69,7 @@ const sacada = computed(() =>
 const coverage = computed(() => {
   const s = series.value?.summary
   if (!s || !s.expected) return null
-  return Math.min(100, Math.round((s.n / s.expected) * 100))
+  return Math.min(100, Math.round((s.buckets / s.expected) * 100))
 })
 </script>
 
@@ -109,7 +109,7 @@ const coverage = computed(() => {
     <template v-else-if="series?.summary">
       <p class="muted meta">
         <span>{{ stepLabel }}</span>
-        <span v-if="coverage !== null"> · {{ series.summary.n }} médias recebidas ({{ coverage }}% do período)</span>
+        <span v-if="coverage !== null"> · {{ series.summary.n }} médias recebidas, dados em {{ coverage }}% do período</span>
         <span v-if="pending"> · atualizando…</span>
       </p>
 
@@ -206,7 +206,7 @@ const coverage = computed(() => {
                 <th>Temp. mín.</th><th>Temp. máx.</th>
                 <th>Umid. mín.</th><th>Umid. máx.</th>
                 <th>Pressão média</th>
-                <th>Médias</th>
+                <th>Cobertura</th>
               </tr>
             </thead>
             <tbody>
@@ -217,7 +217,7 @@ const coverage = computed(() => {
                 <td>{{ fmt(d.hum_min, 0) }} %</td>
                 <td>{{ fmt(d.hum_max, 0) }} %</td>
                 <td>{{ fmt(d.pres_avg) }} hPa</td>
-                <td class="muted">{{ d.n }}/144<span v-if="d.n_sacada" class="tag">{{ d.n_sacada === d.n ? 'sacada' : `${d.n_sacada} na sacada` }}</span></td>
+                <td class="muted">{{ Math.min(100, Math.round((d.buckets / 144) * 100)) }}%<span v-if="d.n_sacada" class="tag">{{ d.n_sacada === d.n ? 'sacada' : `${d.n_sacada} na sacada` }}</span></td>
               </tr>
             </tbody>
           </table>

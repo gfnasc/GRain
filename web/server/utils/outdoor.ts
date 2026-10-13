@@ -1,5 +1,5 @@
 // Outdoor: coleta e leitura das observações de fora.
-// A coleta roda a cada envio da estação (a cada 10 min): METAR a cada 10 min (o aeroporto
+// A coleta roda a cada envio da estação (a cada 5 min): METAR a cada envio (o aeroporto
 // publica de hora em hora, ou antes quando o tempo muda) e Open-Meteo a cada 30 min.
 // Ao detectar o aeroporto (localização nova), busca as últimas 72 h (METAR e Open-Meteo)
 // para o histórico.
@@ -13,7 +13,7 @@ type OutdoorState = {
   taf?: { at: number; groups: TafGroup[]; raw: string } | null
 }
 
-const METAR_EVERY = 9 * 60_000
+const METAR_EVERY = 4 * 60_000  // a cada envio (5 min): pega o boletim novo logo que sai
 const OM_EVERY = 29 * 60_000
 
 export async function collectOutdoor(deviceId: string): Promise<void> {

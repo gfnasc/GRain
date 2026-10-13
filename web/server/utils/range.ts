@@ -42,7 +42,7 @@ export async function resolveRange(event: H3Event): Promise<ResolvedRange> {
 // Resolução dos gráficos conforme o tamanho do intervalo.
 export function stepFor(range: ResolvedRange): number {
   const span = (range.to.getTime() - range.from.getTime()) / 1000
-  if (span <= 2 * 86400) return 600 // médias de 10 min, como chegam
+  if (span <= 2 * 86400) return 600 // 10 min (a estação envia médias de 5 min; antes, de 10)
   if (span <= 10 * 86400) return 3600
   if (span <= 45 * 86400) return 3 * 3600
   return 86400

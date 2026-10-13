@@ -16,9 +16,7 @@ const { data: score } = await useFetch<ScoreResp>('/api/v1/rain/score')
 const { data: hist, refresh: refreshHist } = await useFetch<History>('/api/v1/rain/history', { query: computed(() => ({ range: range.value, h: horizon.value })) })
 const { data: latest } = await useFetch<{ device: { last_seen_at: string | null } | null }>('/api/v1/latest')
 
-let timer: ReturnType<typeof setInterval> | undefined
-onMounted(() => (timer = setInterval(() => { refreshRain(); refreshHist() }, 120_000)))
-onBeforeUnmount(() => clearInterval(timer))
+
 
 const METHODS = [
   { key: 'm1', name: 'M1 · Barômetro', color: '--series-m1', about: 'Queda da pressão da estação em 1 h e 3 h (descontada a variação diária normal) e nível da pressão.' },
@@ -51,6 +49,7 @@ const fmt = (v: number | null | undefined, d = 2) =>
   <main class="wrap">
     <AppHeader :last-seen-at="latest?.device?.last_seen_at ?? null" />
 
+    <SyncTimers :every="60" @refresh="refreshRain(); refreshHist()" />
     <RainNow :data="rain ?? null" @reported="refreshRain(); refreshHist()" />
 
     <section class="block">

@@ -1,4 +1,4 @@
-// Exporta as médias de 10 min em CSV. Exige login.
+// Exporta as médias da estação (5 min; antes, 10 min) em CSV. Exige login.
 // Mesmos parâmetros de intervalo de /api/v1/readings.
 //   ?excel=1  separador ";" e vírgula decimal (Excel em português)
 

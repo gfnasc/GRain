@@ -1,5 +1,5 @@
 // Chuva nas próximas 1 h, 2 h e 3 h: três métodos, do menos ao mais preciso, calculados a
-// cada 10 min (a cada envio da estação), guardados e verificados depois contra o que
+// cada 10 min (a cada dois envios da estação), guardados e verificados depois contra o que
 // aconteceu (METAR do aeroporto, botão "Está chovendo aqui" e, sem METAR, o modelo).
 //   M1  barômetro da estação: queda da pressão em 1 h e 3 h (descontada a maré diária) e nível
 //   M2  M1 + aeroporto: chuva/trovoada observada ou nas proximidades, nuvens CB/TCU,

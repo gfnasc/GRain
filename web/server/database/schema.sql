@@ -11,10 +11,10 @@ create table if not exists devices (
   last_status  jsonb                              -- firmware, rssi, uptime, heap, fila...
 );
 
--- Médias de 10 minutos enviadas pelo ESP32.
+-- Médias enviadas pelo ESP32: de 5 min (desde o firmware 0.12.0); antes, de 10 min.
 create table if not exists readings (
   device_id text        not null references devices(id) on delete cascade,
-  ts        timestamptz not null,                 -- início do intervalo de 10 min (UTC)
+  ts        timestamptz not null,                 -- início do intervalo da média (UTC)
   temp      real,                                 -- °C (AHT20)
   hum       real,                                 -- %  (AHT20)
   pres_slp  real,                                 -- hPa ao nível do mar (BMP280)
@@ -60,7 +60,7 @@ create unique index if not exists placements_current_idx on placements (device_i
 
 -- Fase 13: Outdoor. Observações de fora: METAR do aeroporto mais próximo (de hora em
 -- hora, ou antes quando o tempo muda) e condição atual do Open-Meteo (reserva).
--- Coletadas a cada envio da estação (a cada 10 min), sem cron.
+-- Coletadas a cada envio da estação (a cada 5 min), sem cron.
 create table if not exists outdoor_obs (
   device_id  text        not null references devices(id) on delete cascade,
   source     text        not null check (source in ('metar', 'open-meteo')),
