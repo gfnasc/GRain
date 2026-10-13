@@ -95,7 +95,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Histórico: `out_temp` (METAR com Open-Meteo nos buracos, p. ex. aeroporto fechado à noite).
   - Testado com localização genérica de teste (apagada depois).
 
-- Fase 14 (em validação): pressão calibrada pelo QNH do aeroporto.
+- Fase 14 concluída e validada pelo usuário: pressão calibrada pelo QNH do aeroporto (diferença média 0,04 hPa).
   - Desvio medido antes: estação 2,3 hPa abaixo do QNH (desvio-padrão 0,23 em 16 pares).
   - Firmware 0.10.0: `Reading.seaLevelRawHpa` (sem calibração) vai como `pres_raw`; `calibration.pres_auto`
     (padrão true) e `pres_auto_offset`; com auto ligado, o ajuste manual de pressão é ignorado e o desvio é
@@ -106,7 +106,7 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   - Aplicado na placa às 10:02 de 13/10: 1014,4 → 1016,7 hPa.
 
 ## Em andamento
-- Fase 14: validação (diferença média para o QNH < 0,5 hPa).
+- Fase 15: desenho em discussão com o usuário (aba Chuva, dados no ESP32, alertas no OLED).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
