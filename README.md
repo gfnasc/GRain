@@ -26,7 +26,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 9 | Previsão e WhatsApp | ⏹️ Encerrada na v5 (volta na 19) |
 | 10 | Robustez | ➡️ Movida para a 18 |
 | 11 | GRain: novo nome, flag "sacada" no histórico, remoção do WhatsApp | ✅ Concluída |
-| 12 | Configurações só no ESP32; painel só para visualização | 🔧 Em andamento |
+| 12 | Configurações só no ESP32; painel só para visualização | 🔧 Em validação |
 | 13 | Outdoor: dados externos (METAR e Open-Meteo) | Planejada |
 | 14 | Pressão calibrada pelo aeroporto | Planejada |
 | 15 | Chuva v1: métodos M1 a M3 e placar de acertos | Planejada |
@@ -158,12 +158,13 @@ O Wi-Fi fica salvo na placa. Para trocar de rede, use o comando `wifi esquecer` 
 
 ### Página local e API
 
-Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. A página funciona sem internet e atualiza a cada 5 s:
+Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. É aqui que ficam **todas as configurações** da estação; o painel na nuvem só mostra os dados e uma cópia da configuração. A página funciona sem internet e atualiza a cada 5 s:
 
 - **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
-- **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar (a configuração permanente fica no painel na nuvem).
-- **Nuvem:** último envio, médias na fila, versão da configuração e o botão **Sincronizar agora** (envia a fila e busca a configuração na hora).
-- **Manutenção:** reiniciar a estação (pede a senha da estação).
+- **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar.
+- **Configurações** (pedem a senha da estação para salvar): páginas do display (até 8, em qualquer ordem, com os campos da página Resumo), tempo por página, brilho, modo noturno, calibração dos sensores e localização (latitude, longitude e nome, usados pelos dados de fora). Não há prévia na página: os botões de página da seção Display mostram cada página direto no OLED.
+- **Nuvem:** último envio, médias na fila, quando a cópia da configuração chegou ao painel e o botão **Sincronizar agora** (envia a fila e a cópia na hora).
+- **Manutenção:** reiniciar a estação (usa a mesma senha).
 
 A mesma porta serve a API `/api/v1`:
 
@@ -176,14 +177,14 @@ A mesma porta serve a API `/api/v1`:
 | `POST /api/v1/system/reboot` 🔒 | Reinicia |
 | `GET /api/v1/display` | Estado do display: ligado, pausado, página atual, lista de páginas |
 | `POST /api/v1/display` | `{"page":"next"\|"prev"\|n}`, `{"paused":true}`, `{"power":false}` |
-| `POST /api/v1/cloud/sync` | Envia a fila e busca a configuração da nuvem agora |
+| `POST /api/v1/cloud/sync` | Envia agora a fila e a cópia da configuração |
 
 🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
 
 ```bash
 curl http://grain.local/api/v1/now
 curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
-  -d '{"display":{"page_s":8}}' http://grain.local/api/v1/config
+  -d '{"display":{"page_s":8},"location":{"label":"Casa"}}' http://grain.local/api/v1/config
 ```
 
 ### Painel na nuvem (Nuxt na Vercel)
@@ -200,9 +201,9 @@ nuvem
 
 O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `desligada`).
 
-O painel tem três seções:
+O painel serve só para ver os dados; nada é configurado por ele. Três seções:
 - **Agora:** média mais recente, local da estação, mínima e máxima de 24 h, últimas médias e estado da estação.
-- **Display:** escolha das páginas do OLED (até 8, em qualquer ordem), tempo por página, brilho, modo noturno (apagar ou escurecer num horário) e calibração dos sensores, com prévia do OLED. Ao salvar, a estação aplica sozinha em até 1 minuto e o painel mostra quando a versão foi confirmada.
+- **Estação:** a configuração atual, como a estação informou (páginas do OLED com prévia, brilho, modo noturno, calibração e localização), e o estado da estação. A cópia chega a cada envio e logo depois de qualquer mudança feita em `grain.local`.
 - **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura e ponto de orvalho, umidade e pressão (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
 
 ### Local da estação (sacada ou escritório)
@@ -222,11 +223,11 @@ Com `pio device monitor` aberto, digite `ajuda`:
 |---|---|
 | `status` | Rede, IP, hora, altitude, sensores, memória e senha da estação |
 | `config` | Mostra a configuração gravada (`/config.json`) |
-| `set <chave> <valor>` | Altera e salva, ex.: `set site.floor 10`, `set display.page_s 8`, `set time.tz <-03>3` |
+| `set <chave> <valor>` | Altera e salva, ex.: `set site.floor 10`, `set display.page_s 8`, `set location.label Casa`, `set time.tz <-03>3` |
 | `config padrao` | Volta aos valores iniciais de `site.h` |
 | `nuvem` | Estado do envio: endereço, fila, último envio e último erro |
 | `nuvem url <https://...>` / `nuvem token <token>` | Configura o envio para a nuvem (guardado na NVS) |
-| `nuvem enviar` / `nuvem limpar` / `nuvem desligar` | Envia a fila agora / descarta a fila / apaga endereço e token |
+| `nuvem enviar` / `nuvem limpar` / `nuvem desligar` | Envia a fila e a cópia da configuração agora / descarta a fila / apaga endereço e token |
 | `tela ligar` / `tela desligar` | Liga ou desliga o display (até reiniciar) |
 | `carrossel pausar` / `carrossel retomar` | Pausa ou retoma a troca de páginas |
 | `pagina proxima` / `pagina anterior` / `pagina <n>` | Navega entre as páginas do display |
@@ -280,7 +281,7 @@ Digite "ajuda" para ver os comandos.
 Uma linha por leitura, a cada 5 s. O LED azul da placa pisca a cada leitura.
 
 ### Display
-No boot aparece a tela de abertura com o nome GRain e um spinner animado por 2,5 s. Depois, as páginas alternam no tempo configurado. As páginas, a ordem e o tempo de cada uma são escolhidos no painel (seção **Display**). Tipos disponíveis:
+No boot aparece a tela de abertura com o nome GRain e um spinner animado por 2,5 s. Depois, as páginas alternam no tempo configurado. As páginas, a ordem e o tempo de cada uma são escolhidos na página local (`grain.local`, seção **Configurações**). Tipos disponíveis:
 
 | Página | Conteúdo |
 |---|---|

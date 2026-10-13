@@ -72,16 +72,29 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
     hachuradas nos gráficos e fora de extremos/médias (readings, daily, latest); coluna `local` no CSV.
   - Fora do git até a fase 13: `web/server/utils/forecast.ts` e `web/server/api/v1/forecast.get.ts`.
 
+- Fase 12 (em validação): configurações só no ESP32; painel só para visualização.
+  - Firmware 0.9.0: `/config.json` schema 3 com `location` (lat, lon, label; NAN = sem localização);
+    `settingsRevision()` muda a cada gravação e `uplinkLoop` monta a cópia (display, calibração, localização);
+    a cópia vai em todo `POST /api/v1/ingest` e é enviada na hora quando muda (lote vazio permitido);
+    saiu a consulta `GET /api/v1/device/config` e `settingsApplyCloud`. Status: `cloud.config_sent`/`config_pending`.
+  - Página local (~18 KB): seção Configurações com editor das páginas (tipo, campos do Resumo, ordem),
+    tempo, brilho, modo noturno, calibração e localização (colar "lat, lon" do Google Maps na latitude separa sozinho);
+    salva com `PUT /api/v1/config` e a senha da estação. Sem prévia do OLED (os botões de página mostram no display).
+  - Nuvem: ingest valida e guarda `devices.station_config`/`station_config_at` e `devices.site`; rotas
+    `config` e `device/config` removidas; aba Estação somente leitura com prévia (`GET /api/v1/station`); `/display` → `/estacao`.
+  - Teste: `set display.page_s 7` no console → cópia no banco ~2 s depois.
+  - A localização que estava no banco foi apagada pela primeira cópia (a estação ainda não tinha localização):
+    precisa ser digitada na página local.
+  - Flash: release 84,5 % da partição de app.
+
 ## Em andamento
-- Fase 12: configurações só no ESP32 e painel somente leitura.
+- Fase 12: validação do usuário (salvar pela página local, conferir a aba Estação, digitar a localização).
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fase 12: configurações só no ESP32 (editor do display, calibração e localização na página local),
-   ESP32 para de consultar a configuração na nuvem e envia uma cópia; painel somente leitura.
+1. Fase 13: Outdoor (METAR do aeroporto mais próximo e Open-Meteo), cards Outdoor × Indoor e previsão na aba Agora.
 
 ## Problemas conhecidos
-- O envio HTTPS bloqueia o loop por ~1–3 s a cada 10 min (display pausa um instante).
 - Log `[W][Wire.cpp] Bus already started in Master Mode` no boot: as bibliotecas chamam `Wire.begin()` de novo. Inofensivo.
 - Abrir a porta serial no macOS reinicia a placa (DTR/RTS).
 - Durante o portal do WiFiManager a porta 80 é dele; o servidor da API só pode subir com o portal fechado.

@@ -62,21 +62,29 @@ Status: `200`; `503` se ainda não houve nenhuma leitura.
   "wifi": { "connected": true, "ssid": "MinhaRede", "ip": "192.168.1.105", "rssi": -45,
             "hostname": "grain.local" },
   "time": { "synced": true, "tz": "<-03>3", "local": "2026-10-12T15:33:51", "epoch": 1791830031 },
+  "cloud": { "configured": true, "url": "https://SEU-PROJETO.vercel.app", "queue": 0, "last_ok": 1791830000,
+             "last_http": 200, "last_error": "", "config_sent": 1791830000, "config_pending": false },
   "sensors": { "aht20": true, "bmp280": true }
 }
 ```
 
 ### `GET /api/v1/config`
-Configuração gravada em `/config.json`.
+Configuração gravada em `/config.json`. É a única fonte da configuração: a nuvem só recebe uma cópia (display, calibração e localização).
 
 ```json
 {
-  "schema": 1,
+  "schema": 3,
   "device_id": "grain-a1b2c3",
   "hostname": "grain",
   "time": { "tz": "<-03>3", "ntp1": "pool.ntp.org", "ntp2": "time.google.com" },
   "site": { "ground_alt_m": 600, "floor": 10, "floor_height_m": 2.9, "sensor_height_m": 1 },
-  "display": { "page_s": 5, "contrast": 128 }
+  "display": {
+    "page_s": 5, "contrast": 128,
+    "night": { "enabled": false, "from": "23:00", "to": "06:00", "mode": "dim" },
+    "pages": [ { "type": "clock" }, { "type": "temp" }, { "type": "fields", "fields": ["temp", "hum", "pres", "dew"] } ]
+  },
+  "calibration": { "temp": 0, "hum": 0, "pres": 0 },
+  "location": { "lat": null, "lon": null, "label": "" }
 }
 ```
 
@@ -100,6 +108,11 @@ curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
 | `site.sensor_height_m` | 0 a 50 |
 | `display.page_s` | 2 a 60 |
 | `display.contrast` | 0 a 255 |
+| `display.night` | `enabled` booleano; `from`/`to` em `HH:MM` (podem cruzar a meia-noite); `mode` `off` (apagar) ou `dim` (escurecer) |
+| `display.pages` | Lista completa, 1 a 8; `type`: `temp`, `hum`, `pres`, `clock`, `today`, `fields`, `details`, `network`. Na página `fields`, `fields` com 1 a 4 de `temp`, `hum`, `pres`, `dew`, `heat_index`, `temp_bmp`, `pres_station` |
+| `calibration.temp` / `.hum` / `.pres` | Somado às leituras: −5 a 5 °C, −15 a 15 %, −15 a 15 hPa |
+| `location.lat` / `.lon` | −90 a 90 / −180 a 180, ou `null` para apagar |
+| `location.label` | Até 40 caracteres |
 
 `schema` e `device_id` são somente leitura e ignorados.
 
@@ -127,7 +140,7 @@ Controles temporários (valem até reiniciar), sem senha. Corpo JSON com um ou m
 Responde o estado atualizado (mesmo formato do `GET`). `422` para página fora da lista.
 
 ### `POST /api/v1/cloud/sync`
-Envia a fila de médias e consulta a configuração da nuvem imediatamente. `202`; `409` se a nuvem não estiver configurada.
+Envia agora a fila de médias e a cópia da configuração. `202`; `409` se a nuvem não estiver configurada.
 
 ### `GET /favicon.svg`
 Ícone da estação (o mesmo do painel).
@@ -139,14 +152,15 @@ Envia a fila de médias e consulta a configuração da nuvem imediatamente. `202
 Base: o domínio do projeto na Vercel. Código em [`web/`](../web).
 
 ### `POST /api/v1/ingest` 🔑
-Recebe um lote de médias de 10 min do ESP32. Autenticação: `Authorization: Bearer <token da estação>` (o banco guarda só o sha256 do token).
+Recebe um lote de médias de 10 min do ESP32, o estado e a cópia da configuração. Autenticação: `Authorization: Bearer <token da estação>` (o banco guarda só o sha256 do token). O lote pode vir vazio quando a estação só manda a cópia (logo depois de uma mudança de configuração ou de ligar).
 
 ```json
 {
   "readings": [
     { "ts": 1791831600, "temp": 27.97, "hum": 65.8, "pres_slp": 1010.55, "dew": 21.0 }
   ],
-  "status": { "fw": "0.6.0", "rssi": -57, "uptime_s": 563, "heap": 220132, "queue": 0 }
+  "status": { "fw": "0.9.0", "rssi": -57, "uptime_s": 563, "heap": 220132, "queue": 0 },
+  "config": { "display": { "...": "..." }, "calibration": { "...": "..." }, "location": { "lat": null, "lon": null, "label": "" } }
 }
 ```
 
@@ -159,6 +173,7 @@ Recebe um lote de médias de 10 min do ESP32. Autenticação: `Authorization: Be
 | `dew` | −60 a 60, ou ausente/`null` |
 | `readings` | Até 500 por lote |
 | `status` | Opcional; guardado como o último estado da estação |
+| `config` | Opcional; cópia validada com as regras de [Configuração](#configuração-da-estação-cópia) e guardada para a aba Estação. A localização vira a usada pelos dados externos. Cópia inválida é ignorada sem recusar as médias |
 
 Horários já recebidos são ignorados, então o ESP32 pode reenviar com segurança.
 
@@ -209,9 +224,12 @@ Resumo por dia no fuso do painel: mínima, máxima e média de temperatura, umid
 ### `GET /api/v1/readings.csv` 🔐
 Médias de 10 min do período em CSV (download). Colunas: `inicio_utc`, `inicio_local`, `temperatura_c`, `umidade_pct`, `pressao_nivel_mar_hpa`, `ponto_orvalho_c`, `local` (`sacada`, `escritorio` ou vazio). Com `&excel=1`: separador `;`, vírgula decimal e BOM UTF-8 para abrir direto no Excel em português.
 
-### Configuração do display e da calibração
+### `GET /api/v1/station` 🔐
+Estado da estação, local atual e a última cópia da configuração enviada por ela (`config`, ou `null` se ainda não chegou) com a hora em que chegou (`config_at`). Somente leitura: o painel não altera a configuração.
 
-Formato (validado no painel, na nuvem e no ESP32; referência em `web/shared/utils/station-config.ts`):
+### Configuração da estação (cópia)
+
+A configuração é feita só no ESP32 (página local, `PUT /api/v1/config` ou console). A nuvem recebe esta cópia e valida com as mesmas regras (referência em `web/shared/utils/station-config.ts`):
 
 ```json
 {
@@ -224,24 +242,7 @@ Formato (validado no painel, na nuvem e no ESP32; referência em `web/shared/uti
       { "type": "fields", "fields": ["temp", "hum", "pres", "dew"] }
     ]
   },
-  "calibration": { "temp": 0, "hum": 0, "pres": 0 }
+  "calibration": { "temp": 0, "hum": 0, "pres": 0 },
+  "location": { "lat": null, "lon": null, "label": "" }
 }
 ```
-
-| Campo | Regra |
-|---|---|
-| `pages` | 1 a 8; `type`: `temp`, `hum`, `pres`, `clock`, `today`, `fields`, `details`, `network` |
-| `fields` | Só na página `fields`: 1 a 4 de `temp`, `hum`, `pres`, `dew`, `heat_index`, `temp_bmp`, `pres_station` |
-| `page_s` | 2 a 60 (inteiro) |
-| `contrast` | 0 a 255 (inteiro) |
-| `night` | `enabled` booleano; `from`/`to` em `HH:MM` (podem cruzar a meia-noite); `mode` `off` (apagar) ou `dim` (escurecer) |
-| `calibration` | Somado às leituras: `temp` −5 a 5 °C, `hum` −15 a 15 %, `pres` −15 a 15 hPa |
-
-#### `GET /api/v1/config` 🔐
-Configuração atual (ou a padrão, com `is_default: true`), `version`, `applied_version` (informada pela estação) e `last_poll_at`.
-
-#### `PUT /api/v1/config` 🔐
-Salva a configuração completa e gera a próxima `version`. `422` com a regra violada em `message`.
-
-#### `GET /api/v1/device/config?v=<versão aplicada>` 🔑
-Consultado pelo ESP32 a cada minuto com o token da estação. `204` se a estação já está na versão atual; senão `200 {"version": 3, "config": {...}}`. Cada consulta registra `applied_version` e `last_poll_at`, que o painel usa para confirmar a aplicação e o estado Online. Na fase 12 esta consulta deixa de existir: a configuração passa a ficar só no ESP32.

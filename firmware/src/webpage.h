@@ -52,6 +52,7 @@ select{font:inherit;padding:7px 8px;border:1px solid var(--line);border-radius:8
 .pl .tools button{padding:4px 9px}
 .fs{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.85rem}
 .f2,.f3{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.f4{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}
 .f2 label,.f3 label{display:grid;gap:3px;font-size:.8rem;color:var(--mut)}
 .f2 label.ck{display:flex;align-items:center;gap:8px;font-size:.95rem;color:var(--fg)}
 .f2 input,.f3 input,.f2 select{width:100%}
@@ -114,7 +115,7 @@ input{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8
       <label>Brilho <span id="ctv"></span><input id="contrast" type="range" min="0" max="255" step="5"></label>
     </div>
     <h3>Modo noturno</h3>
-    <div class="f2">
+    <div class="f2 f4">
       <label class="ck"><input id="n_on" type="checkbox">Ligado</label>
       <label>Durante a noite<select id="n_mode"><option value="dim">escurecer</option><option value="off">apagar</option></select></label>
       <label>Das<input id="n_from" type="time"></label>
