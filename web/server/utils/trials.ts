@@ -4,7 +4,7 @@
 //     histórico e com a memória estável.
 //   chuva (fase 18, 30 dias): começa na primeira mensagem do firmware 0.14.0 (ou mais novo), ou
 //     no início oficial marcado (pnpm trial:start), e não recomeça com gravações. Passa com 30 dias de previsões do M2T e do M4 em pelo menos 90 %
-//     das rodadas; o placar diz qual método ganhou (com pelo menos 5 chuvas conferidas).
+//     das rodadas (falha só quando as perdidas passam de 10 % do total do teste); o placar diz qual método ganhou (com pelo menos 5 chuvas conferidas).
 
 export const HEALTH_TRIAL_H = 72
 export const RAIN_TRIAL_DAYS = 30
@@ -115,14 +115,18 @@ export async function rainTrial(deviceId: string) {
     from rain_predictions where device_id = ${deviceId} and issued_at >= ${start.toISOString()} and issued_at < ${until.toISOString()}`) as {
     m2t: number; m4: number; rain_rounds: number; rain_hours: number
   }[]
+  // Cobertura: o teste tem 30 × 144 rodadas e pode perder até 10 % delas (≈ 72 h fora do ar, somando
+  // tudo). Só falha quando as perdidas passam dessa folga; antes disso, uma queda ainda se recupera.
+  // A rodada em curso pode ainda não ter sido calculada: não conta como perdida.
+  const total = RAIN_TRIAL_DAYS * 144
+  const budget = Math.floor((total * (100 - RAIN_MIN_COVERAGE)) / 100)
   const expected = Math.max(1, Math.floor((until.getTime() - start.getTime()) / 600_000))
   const pctOf = (n: number) => Math.min(100, Math.round((n / expected) * 100))
   const coverage = { m2t: pctOf(c?.m2t ?? 0), m4: pctOf(c?.m4 ?? 0) }
-  // Cobertura só conta depois de 6 h (no começo poucas rodadas distorcem a porcentagem).
-  const settled = until.getTime() - start.getTime() >= 6 * 3600_000
-  const low = settled && Math.min(coverage.m2t, coverage.m4) < RAIN_MIN_COVERAGE
+  const missed = Math.max(0, expected - 1 - Math.min(c?.m2t ?? 0, c?.m4 ?? 0))
+  const failed = missed > budget
   const done = Date.now() >= endsAt.getTime()
-  const state: TrialState = done ? (low ? 'falhou' : 'sucesso') : low ? 'falhou' : 'andamento'
+  const state: TrialState = failed ? 'falhou' : done ? 'sucesso' : 'andamento'
   return {
     started_at: start.toISOString(),
     ends_at: endsAt.toISOString(),
@@ -131,6 +135,8 @@ export async function rainTrial(deviceId: string) {
     days: RAIN_TRIAL_DAYS,
     min_coverage: RAIN_MIN_COVERAGE,
     coverage,
+    missed,
+    budget,
     rain_hours: c?.rain_hours ?? 0,
     min_events: MIN_SCORE_EVENTS,
   }

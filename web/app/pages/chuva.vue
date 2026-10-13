@@ -8,7 +8,7 @@ useHead({ title: 'Chuva · GRain' })
 
 type Score = { method: RainMethod; horizon: number; n: number; events: number; brier: number | null; skill: number | null; hits: number; false_alarms: number; misses: number; reliability: { bin: number; n: number; freq: number }[] }
 type Learned = { method: 'm2t' | 'm4'; horizons: { h: number; n: number; events: number; trained_at: string | null; weights: { key: string; prior: number; value: number }[] }[] }
-type Trial = { started_at: string | null; ends_at: string | null; fw?: string; fw_needed?: string; state: TrialState; days: number; min_coverage?: number; coverage?: { m2t: number; m4: number }; rain_hours?: number; min_events?: number; scores: Score[] }
+type Trial = { started_at: string | null; ends_at: string | null; fw?: string; fw_needed?: string; state: TrialState; days: number; min_coverage?: number; coverage?: { m2t: number; m4: number }; missed?: number; budget?: number; rain_hours?: number; min_events?: number; scores: Score[] }
 type ScoreResp = { days: number; min_n: number; min_events: number; pending: number; scores: Score[]; trial: Trial; learned: Learned[] }
 type History = { from: string; to: string; h: number; points: Record<string, number | null>[]; rain: { from: number; to: number; sources: string[] }[] }
 
@@ -74,7 +74,10 @@ const trialChecks = computed(() => {
   const ev = t.rain_hours ?? 0, minEv = t.min_events ?? 5
   return [
     { ok: t.state === 'sucesso' ? true : null, label: `${t.days} dias de previsões` },
-    { ok: Math.min(cov.m2t, cov.m4) >= minCov ? true : t.state === 'falhou' ? false : null, label: `M2T e M4 em pelo menos ${minCov} % das rodadas (agora: M2T ${cov.m2t} %, M4 ${cov.m4} %)` },
+    {
+      ok: t.state === 'falhou' ? false : t.state === 'sucesso' ? true : null,
+      label: `M2T e M4 em pelo menos ${minCov} % das rodadas: ${t.missed ?? 0} perdidas de ${t.budget ?? 432} permitidas (folga de ~${Math.max(0, Math.round(((t.budget ?? 432) - (t.missed ?? 0)) / 6))} h fora do ar; agora M2T ${cov.m2t} %, M4 ${cov.m4} %)`,
+    },
     { ok: ev >= minEv ? true : null, label: `Pelo menos ${minEv} horas com chuva conferidas para o placar comparar (até agora: ${ev})` },
     beats('m4', ['m1', 'm2', 'm3'], ev >= minEv, 'M4 com erro menor que M1, M2 e M3 nas três janelas'),
     beats('m2t', ['m2'], ev >= minEv, 'M2T com erro menor que o M2 de pesos fixos nas três janelas'),
