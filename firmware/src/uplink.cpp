@@ -341,6 +341,12 @@ static void sendBatch() {
           strlcpy(s_rain.method[i], rain["m"][i] | "", sizeof s_rain.method[i]);
         }
         s_rain.reason = rain["r"] | "";
+        static const char *KEYS[3] = {"m1", "m2", "m3"};
+        for (int m = 0; m < 3; m++) {
+          JsonArray a = rain["all"][KEYS[m]];
+          s_rain.allOk[m] = a.size() == 3;
+          for (int i = 0; i < 3; i++) s_rain.all[m][i] = s_rain.allOk[m] ? constrain((int)(a[i] | 0), 0, 100) : 0;
+        }
       }
     }
     if (s_st.queue) s_forceSend = true;  // ainda há pendências: continua

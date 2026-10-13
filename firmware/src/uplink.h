@@ -32,8 +32,11 @@ struct RainForecast {
   bool valid = false;
   uint32_t at = 0;       // epoch UTC do cálculo
   uint8_t p[3] = {0};    // %
-  char method[3][3] = {{0}};  // "M1", "M2", "M3"
+  char method[3][3] = {{0}};  // método em destaque em cada janela: "M1", "M2", "M3"
   String reason;
+  // Os três métodos (M1, M2, M3) em cada janela, em %; ok = o método teve dados nesta rodada.
+  uint8_t all[3][3] = {{0}};
+  bool allOk[3] = {false, false, false};
   // Recente o bastante para mostrar (até 35 min; depois a estação some com ela).
   bool fresh() const { return valid && at && (uint32_t)time(nullptr) - at <= 35 * 60; }
 };

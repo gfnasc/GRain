@@ -85,6 +85,13 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
 .rt i{display:block;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
 .rt i span{display:block;height:100%;background:var(--mut)}
 .rt .m i span{background:var(--warn)}.rt .a i span{background:var(--bad)}.rt .a{border-color:var(--bad)}
+.mt{width:100%;border-collapse:collapse;font-size:.85rem;background:transparent;border:0}
+.mt th,.mt td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+.mt th{font:600 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.mt td:first-child,.mt th:first-child{text-align:left;color:var(--fg)}
+.mt td small{display:block;color:var(--mut);font-size:.72rem}
+.mt tr:last-child td{border-bottom:0}
+.mt td.best{font-weight:700;box-shadow:inset 0 -2px 0 var(--acc)}
 .alert{background:var(--bad);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700}
 .save{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px;box-shadow:0 6px 20px rgba(0,0,0,.12)}
 .save.dirty{border-color:var(--warn)}
@@ -110,6 +117,15 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
     <div class="box">
       <div class="rt" id="rt"><div><span class="mut">1 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">2 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div><div><span class="mut">3 h</span><b>–</b><i><span></span></i><span class="mut">–</span></div></div>
       <span class="mut"><span id="rwhy"></span><span id="rnext"></span></span>
+      <table class="mt" id="mt" hidden>
+        <thead><tr><th>Os três métodos</th><th>1 h</th><th>2 h</th><th>3 h</th></tr></thead>
+        <tbody>
+          <tr><td>M1<small>só o barômetro da estação</small></td><td></td><td></td><td></td></tr>
+          <tr><td>M2<small>barômetro + aeroporto (METAR e TAF)</small></td><td></td><td></td><td></td></tr>
+          <tr><td>M3<small>modelo numérico (Open-Meteo)</small></td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+      <span class="mut" id="mthelp" hidden>Os mostradores acima usam o método em destaque (sublinhado): o modelo, até o placar ter dados; depois, o que mais acertou em cada janela. Detalhes e placar no painel, aba Chuva.</span>
       <div class="row"><button id="rrep">☂ Está chovendo aqui</button><span class="mut msg" id="rmsg"></span></div>
     </div>
     <h2>Sensores agora</h2>
@@ -415,6 +431,8 @@ function renderRain(r){
   for(let i=0;i<3;i++){const t=tiles[i],p=r.fresh&&r.p?r.p[i]:null,l=p==null?["",""]:LV(p);
     t.className=l[0];t.children[1].textContent=p==null?"–":p+"%";t.children[2].firstChild.style.width=(p||0)+"%";t.children[3].textContent=p==null?"–":l[1]+(r.m?" · "+r.m[i]:"")}
   $("rwhy").textContent=r.fresh?(r.reason+" · calculada há "+Math.round(r.age_s/60)+" min"):(r.at?"Previsão antiga (há "+Math.round(r.age_s/60)+" min): aguardando a nuvem.":"Aguardando a primeira previsão da nuvem (chega com o próximo envio).");
+  const ms=r.fresh&&r.methods,rows=$("mt").tBodies[0].rows;$("mt").hidden=!ms;$("mthelp").hidden=!ms;
+  if(ms)["m1","m2","m3"].forEach((k,j)=>{const v=ms[k];for(let i=0;i<3;i++){const c=rows[j].cells[i+1];c.textContent=v?v[i]+"%":"–";c.className=r.m&&r.m[i]===k.toUpperCase()?"best":""}});
   const al=r.alert;$("ralert").hidden=!al.active;if(al.active)$("ralert").textContent="☂ Alerta: "+al.pct+"% de chance de chuva em até "+al.hours+" h";
   if(!$("rmsg").dataset.busy)$("rmsg").textContent=r.report_pending?"enviando aviso…":(r.last_report?"último aviso às "+hm(r.last_report):"");
 }

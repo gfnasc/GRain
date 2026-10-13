@@ -254,6 +254,16 @@ static void handleRain() {
       m.add(r.method[i]);
     }
     doc["reason"] = r.reason;
+    JsonObject all = doc["methods"].to<JsonObject>();
+    static const char *KEYS[3] = {"m1", "m2", "m3"};
+    for (int m = 0; m < 3; m++) {
+      if (!r.allOk[m]) {
+        all[KEYS[m]] = nullptr;
+        continue;
+      }
+      JsonArray a = all[KEYS[m]].to<JsonArray>();
+      for (int i = 0; i < 3; i++) a.add(r.all[m][i]);
+    }
   }
   int h = 0, pct = 0;
   JsonObject al = doc["alert"].to<JsonObject>();

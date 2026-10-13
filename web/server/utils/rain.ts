@@ -347,7 +347,8 @@ export async function latestRain(deviceId: string): Promise<RainNow | null> {
   return { issued_at: new Date(rows[0]!.issued_at).toISOString(), methods, best, chosen_by: byScore ? 'placar' : 'padrão' }
 }
 
-// Versão compacta para a estação (resposta do envio): porcentagens, método e motivo curto.
+// Versão compacta para a estação (resposta do envio): porcentagens do destaque, método e motivo
+// curto, mais as porcentagens dos três métodos (null quando o método não teve dados).
 export function rainForDevice(r: RainNow | null) {
   if (!r) return undefined
   const top = r.best.reduce((a, b) => (b.prob > a.prob ? b : a))
@@ -356,6 +357,7 @@ export function rainForDevice(r: RainNow | null) {
     p: r.best.map((b) => Math.round(b.prob * 100)),
     m: r.best.map((b) => b.method.toUpperCase()),
     r: top.reason.length > 90 ? top.reason.slice(0, 89) + '…' : top.reason,
+    all: Object.fromEntries(METHODS.map((m) => [m, r.methods[m]?.length === 3 ? r.methods[m]!.map((v) => Math.round(v.prob * 100)) : null])),
   }
 }
 
