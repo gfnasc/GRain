@@ -219,9 +219,9 @@ export async function computeRain(deviceId: string): Promise<void> {
     on conflict do nothing`
 }
 
-// Choveu na janela [emissão, emissão + h)? Sim: METAR com chuva (fora "nas proximidades") ou
-// botão "Está chovendo aqui". Não: METARs suficientes sem chuva. Sem METAR: o modelo decide
-// (≥ 0,1 mm). Sem nada: fica sem verificação.
+// Choveu na janela [emissão, emissão + h)? Sim: METAR com chuva (fora "nas proximidades"),
+// salvo se houver um "não choveu" local a até 30 min dele, ou o botão "Está chovendo aqui".
+// Não: METARs suficientes sem chuva. Sem METAR: o modelo decide (≥ 0,1 mm). Sem nada: fica sem verificação.
 export async function verifyRain(deviceId: string): Promise<number> {
   const sql = useSql()
   const rows = (await sql`
@@ -229,9 +229,10 @@ export async function verifyRain(deviceId: string): Promise<number> {
     from (
       select k.issued_at, k.horizon_h,
         case
-          when exists (select 1 from rain_reports r where r.device_id = ${deviceId} and r.ts >= k.issued_at and r.ts < k.win_end)
+          when exists (select 1 from rain_reports r where r.device_id = ${deviceId} and r.raining and r.ts >= k.issued_at and r.ts < k.win_end)
             or exists (select 1 from outdoor_obs o where o.device_id = ${deviceId} and o.source = 'metar'
-                       and o.obs_at >= k.issued_at and o.obs_at < k.win_end and o.wx ~ ${METAR_RAIN_SQL})
+                       and o.obs_at >= k.issued_at and o.obs_at < k.win_end and o.wx ~ ${METAR_RAIN_SQL}
+                       and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and abs(extract(epoch from n.ts - o.obs_at)) <= 1800))
             then true
           when (select count(*) from outdoor_obs o where o.device_id = ${deviceId} and o.source = 'metar'
                 and o.obs_at >= k.issued_at and o.obs_at < k.win_end) >= k.horizon_h
@@ -361,10 +362,11 @@ export function rainForDevice(r: RainNow | null) {
   }
 }
 
-export async function reportRain(deviceId: string, via: 'painel' | 'estacao'): Promise<string> {
+export async function reportRain(deviceId: string, via: 'painel' | 'estacao', raining = true, at = new Date()): Promise<string> {
   const sql = useSql()
-  const nowS = Math.floor(Date.now() / 1000)
-  const ts = new Date((nowS - (nowS % 600)) * 1000).toISOString()
-  await sql`insert into rain_reports (device_id, ts, via) values (${deviceId}, ${ts}, ${via}) on conflict do nothing`
+  const s = Math.floor(at.getTime() / 1000)
+  const ts = new Date((s - (s % 600)) * 1000).toISOString()
+  await sql`insert into rain_reports (device_id, ts, via, raining) values (${deviceId}, ${ts}, ${via}, ${raining})
+    on conflict (device_id, ts) do update set raining = excluded.raining, via = excluded.via`
   return ts
 }

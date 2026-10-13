@@ -21,10 +21,11 @@ export default defineEventHandler(async (event) => {
   // Trechos de chuva: METAR com chuva (±30 min da observação), avisos (10 min) e modelo (hora anterior).
   const marks = (await sql`
     select extract(epoch from obs_at)::bigint - 1800 as a, extract(epoch from obs_at)::bigint + 1800 as b, 'aeroporto' as src
-      from outdoor_obs where device_id = ${deviceId} and source = 'metar' and obs_at >= ${from} and obs_at < ${to} and wx ~ ${METAR_RAIN_SQL}
+      from outdoor_obs o where device_id = ${deviceId} and source = 'metar' and obs_at >= ${from} and obs_at < ${to} and wx ~ ${METAR_RAIN_SQL}
+        and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and abs(extract(epoch from n.ts - o.obs_at)) <= 1800)
     union all
     select extract(epoch from ts)::bigint, extract(epoch from ts)::bigint + 600, 'aviso'
-      from rain_reports where device_id = ${deviceId} and ts >= ${from} and ts < ${to}
+      from rain_reports where device_id = ${deviceId} and raining and ts >= ${from} and ts < ${to}
     union all
     select extract(epoch from obs_at)::bigint - 3600, extract(epoch from obs_at)::bigint, 'modelo'
       from outdoor_obs o where device_id = ${deviceId} and source = 'open-meteo' and obs_at >= ${from} and obs_at < ${to} and precip >= 0.1

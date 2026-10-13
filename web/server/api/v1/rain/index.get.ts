@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!deviceId) throw createError({ statusCode: 404, message: 'nenhuma estação cadastrada' })
   const sql = useSql()
   const reports = (await sql`
-    select ts, via from rain_reports where device_id = ${deviceId} and ts > now() - interval '24 hours' order by ts desc`) as { ts: string; via: string }[]
+    select ts, via from rain_reports where device_id = ${deviceId} and raining and ts > now() - interval '24 hours' order by ts desc`) as { ts: string; via: string }[]
   return {
     located: site.lat != null,
     now: await latestRain(deviceId),

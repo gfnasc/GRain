@@ -116,3 +116,7 @@ create table if not exists rain_reports (
   via       text        not null check (via in ('painel', 'estacao')),
   primary key (device_id, ts)
 );
+
+-- Observação local negativa ("não choveu"): um METAR de chuva com um "não choveu" a até
+-- 30 min dele deixa de contar como chuva (o aeroporto pode registrar poucas gotas ou virga).
+alter table rain_reports add column if not exists raining boolean not null default true;
