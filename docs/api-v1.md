@@ -57,7 +57,7 @@ Status: `200`; `503` se ainda não houve nenhuma leitura.
 
 ```json
 {
-  "device": { "id": "grain-a1b2c3", "firmware": "0.14.0", "uptime_s": 24,
+  "device": { "id": "grain-a1b2c3", "firmware": "0.14.1", "uptime_s": 24,
               "heap_free": 226656, "heap_min": 222612, "reset_reason": "atualização pelo Wi-Fi", "boots": 4, "ota": true,
               "fs_used": 8192, "fs_total": 1048576 },
   "wifi": { "connected": true, "ssid": "MinhaRede", "ip": "192.168.1.105", "rssi": -45,

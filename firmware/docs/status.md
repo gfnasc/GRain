@@ -164,14 +164,21 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   Teste geral antes do início: estação no 0.14.0 sem erros, cinco métodos na estação e no painel, treino rodando,
   "Não choveu hoje" de ponta a ponta (estação → nuvem → painel → desfazer), todos os endpoints do painel 200.
 
+- Firmware 0.14.1 (14/10): o 0.14.0 reiniciava a cada poucas horas com "nuvem sem resposta por 6 h" sem a nuvem ter
+  falhado (3 vezes em 24 h). A autocura lia a hora antes do estado da nuvem; se a tarefa da rede gravava lastOkEpoch
+  1 s à frente nesse meio-tempo, `now - since` (sem sinal) dava ~4 bilhões. Agora lê a hora depois, confere a cada
+  10 s e exige `now > since`. Nenhuma média nem rodada se perdeu nos reinícios (fila).
+- Nuvem (14/10): a cobertura do teste de 30 dias não conta rodadas sem METAR (o aeroporto fica horas sem publicar
+  de madrugada) nem sem modelo; perdida = rodada sem previsão nenhuma ou com o treinado faltando com os dados.
+
 ## Em andamento
-- Testes longos começaram oficialmente juntos em 13/10 às 16:25:22 (hora local), no reinício depois do teste geral
-  (`pnpm trial:start`): robustez (Fase 17) até 16/10 16:25; chuva (Fase 18) até 12/11 16:25. Não gravar firmware
-  nem reiniciar a estação durante as 72 h (reinício conta como falha; gravação recomeça o de 72 h).
+- Teste de chuva (Fase 18): de 13/10 16:25:22 a 12/11 16:25 (hora local); não recomeça com gravações.
+- Teste de robustez (Fase 17): o primeiro (desde 13/10 16:25) falhou pelos 3 reinícios do bug acima; recomeçou com
+  a gravação do 0.14.1 em 14/10 17:50 e termina em 17/10 17:50. Não gravar firmware nem reiniciar até lá.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fechar a Fase 17 em 16/10 se o teste de 72 h passar (aba Estação).
+1. Fechar a Fase 17 em 17/10 (17:50) se o teste de 72 h passar (aba Estação).
 2. Fechar a Fase 18 em 12/11: placar do teste (M2T e M4 contra M1–M3), cobertura ≥ 90 %, pelo menos 5 horas de chuva.
 3. Fase 19: WhatsApp (configurado na página local).
 

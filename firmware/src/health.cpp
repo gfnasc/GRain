@@ -122,12 +122,17 @@ void healthLoop() {
   else if ((uint32_t)(ms - s_offlineSince) > NET_RESTART_AFTER_MS) healthRestart("sem Wi-Fi por 30 min");
 
   // Autocura: nuvem falhando há muito tempo com o Wi-Fi funcionando (ex.: TLS travado).
-  if (n.timeSynced) {
+  // Confere a cada 10 s. A hora é lida DEPOIS do estado da nuvem: a tarefa da rede pode gravar
+  // lastOkEpoch enquanto esperamos o lock, e um lastOkEpoch 1 s à frente de `now` fazia a
+  // subtração sem sinal dar ~4 bilhões e reiniciar a estação sem motivo (bug do 0.14.0).
+  static uint32_t lastCheck = 0;
+  if (n.timeSynced && (uint32_t)(ms - lastCheck) >= 10000) {
+    lastCheck = ms;
+    const UplinkStatus u = uplinkStatus();
     uint32_t now = (uint32_t)time(nullptr);
     if (!s_bootEpoch) s_bootEpoch = now;
-    const UplinkStatus &u = uplinkStatus();
     uint32_t since = u.lastOkEpoch > s_bootEpoch ? u.lastOkEpoch : s_bootEpoch;
-    if (u.configured && n.connected && now - since > CLOUD_RESTART_AFTER_MS / 1000)
+    if (u.configured && n.connected && now > since && now - since > CLOUD_RESTART_AFTER_MS / 1000)
       healthRestart("nuvem sem resposta por 6 h");
   }
 }
