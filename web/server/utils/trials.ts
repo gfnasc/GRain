@@ -107,23 +107,30 @@ export async function rainTrial(deviceId: string) {
   const start = new Date(t.started_at)
   const endsAt = new Date(start.getTime() + RAIN_TRIAL_DAYS * 86400_000)
   const until = new Date(Math.min(Date.now(), endsAt.getTime()))
+  // Por rodada: quais métodos saíram. O M2T depende do METAR (como o M2) e o M4 do modelo (como
+  // o M3): rodada sem METAR ou sem modelo não conta contra eles (o aeroporto às vezes passa horas
+  // sem publicar, de madrugada). Perdida = rodada sem previsão nenhuma (estação ou nuvem fora) ou
+  // rodada em que o treinado faltou com os dados disponíveis.
   const [c] = (await sql`
-    select count(distinct issued_at) filter (where method = 'm2t')::int as m2t,
-           count(distinct issued_at) filter (where method = 'm4')::int as m4,
-           count(distinct issued_at) filter (where horizon_h = 1 and outcome)::int as rain_rounds,
-           count(distinct date_trunc('hour', issued_at)) filter (where horizon_h = 1 and outcome)::int as rain_hours
-    from rain_predictions where device_id = ${deviceId} and issued_at >= ${start.toISOString()} and issued_at < ${until.toISOString()}`) as {
-    m2t: number; m4: number; rain_rounds: number; rain_hours: number
-  }[]
-  // Cobertura: o teste tem 30 × 144 rodadas e pode perder até 10 % delas (≈ 72 h fora do ar, somando
-  // tudo). Só falha quando as perdidas passam dessa folga; antes disso, uma queda ainda se recupera.
-  // A rodada em curso pode ainda não ter sido calculada: não conta como perdida.
+    with r as (
+      select issued_at, bool_or(method = 'm2') as m2, bool_or(method = 'm2t') as m2t, bool_or(method = 'm3') as m3, bool_or(method = 'm4') as m4,
+        bool_or(horizon_h = 1 and outcome) as rained
+      from rain_predictions where device_id = ${deviceId} and issued_at >= ${start.toISOString()} and issued_at < ${until.toISOString()}
+      group by issued_at)
+    select count(*)::int as rounds,
+      count(*) filter (where m2)::int as with_metar, count(*) filter (where m2 and m2t)::int as m2t,
+      count(*) filter (where m3)::int as with_model, count(*) filter (where m3 and m4)::int as m4,
+      count(*) filter (where (m2 and not m2t) or (m3 and not m4))::int as learned_missing,
+      count(distinct date_trunc('hour', issued_at)) filter (where rained)::int as rain_hours
+    from r`) as { rounds: number; with_metar: number; m2t: number; with_model: number; m4: number; learned_missing: number; rain_hours: number }[]
+  // O teste tem 30 × 144 rodadas e pode perder até 10 % delas (≈ 72 h fora do ar, somando tudo).
+  // Só falha quando as perdidas passam dessa folga. A rodada em curso pode ainda não ter saído.
   const total = RAIN_TRIAL_DAYS * 144
   const budget = Math.floor((total * (100 - RAIN_MIN_COVERAGE)) / 100)
   const expected = Math.max(1, Math.floor((until.getTime() - start.getTime()) / 600_000))
-  const pctOf = (n: number) => Math.min(100, Math.round((n / expected) * 100))
-  const coverage = { m2t: pctOf(c?.m2t ?? 0), m4: pctOf(c?.m4 ?? 0) }
-  const missed = Math.max(0, expected - 1 - Math.min(c?.m2t ?? 0, c?.m4 ?? 0))
+  const pct = (n: number, of: number) => (of ? Math.min(100, Math.round((n / of) * 100)) : 100)
+  const coverage = { m2t: pct(c?.m2t ?? 0, c?.with_metar ?? 0), m4: pct(c?.m4 ?? 0, c?.with_model ?? 0), metar: pct(c?.with_metar ?? 0, c?.rounds ?? 0) }
+  const missed = Math.max(0, expected - 1 - (c?.rounds ?? 0)) + (c?.learned_missing ?? 0)
   const failed = missed > budget
   const done = Date.now() >= endsAt.getTime()
   const state: TrialState = failed ? 'falhou' : done ? 'sucesso' : 'andamento'
