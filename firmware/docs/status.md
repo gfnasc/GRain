@@ -171,6 +171,13 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 - Nuvem (14/10): a cobertura do teste de 30 dias não conta rodadas sem METAR (o aeroporto fica horas sem publicar
   de madrugada) nem sem modelo; perdida = rodada sem previsão nenhuma ou com o treinado faltando com os dados.
 
+- Nuvem (15/10): (1) memória estável do teste de 72 h passa a ser medida pela memória livre (o heap_min só desce a
+  cada pico passageiro e marcou falha sem vazamento); (2) conferência da chuva: sem METAR na janela, valem os boletins
+  vizinhos (anterior e seguinte sem chuva nem RE*, sem buraco > 3 h → não choveu); o modelo só decide com o aeroporto
+  calado > 3 h. A regra antiga marcou 42 janelas de chuva falsa na madrugada de 15/10 (céu limpo no aeroporto e
+  0,1–0,2 mm estimados pelo Open-Meteo). Últimos 3 dias reconferidos e treino refeito; aprovado pelo usuário, apesar
+  de mexer na conferência durante o teste (vale igual para todos os métodos).
+
 ## Em andamento
 - Teste de chuva (Fase 18): de 13/10 16:25:22 a 12/11 16:25 (hora local); não recomeça com gravações.
 - Teste de robustez (Fase 17): o primeiro (desde 13/10 16:25) falhou pelos 3 reinícios do bug acima; recomeçou com

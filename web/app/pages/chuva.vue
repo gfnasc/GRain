@@ -205,7 +205,7 @@ function refreshAll() {
         <p v-else-if="!chartSeries.length" class="notice">Escolha pelo menos um método acima.</p>
         <p v-else class="notice">As previsões começam a aparecer aqui depois dos primeiros envios da estação.</p>
       </ClientOnly>
-      <p class="muted small">Trecho hachurado: choveu (METAR do aeroporto, aviso “Está chovendo aqui” ou, sem METAR, o modelo). Um “Não choveu hoje” apaga a chuva do aeroporto do dia.</p>
+      <p class="muted small">Trecho hachurado: choveu (METAR do aeroporto, aviso “Está chovendo aqui” ou, com o aeroporto calado por mais de 3 h, o modelo). Um “Não choveu hoje” apaga a chuva do aeroporto do dia.</p>
     </section>
 
     <section class="block">
@@ -273,7 +273,7 @@ function refreshAll() {
       <h2>Como funciona</h2>
       <ul class="about">
         <li v-for="m in METHODS" :key="m.key"><b>{{ m.name }}</b>: {{ m.about }}</li>
-        <li><b>Conferência</b>: choveu na janela se alguém tocou em “Está chovendo aqui” ou se o METAR do aeroporto registrou chuva (fora “nas proximidades”); sem METAR, vale a chuva medida pelo modelo. O aviso local vale mais que o aeroporto, que fica a alguns quilômetros: “Não choveu hoje” tira do placar a chuva que o aeroporto registrou no dia.</li>
+        <li><b>Conferência</b>: choveu na janela se alguém tocou em “Está chovendo aqui” ou se o METAR do aeroporto registrou chuva (fora “nas proximidades”). Se faltar METAR na janela, valem os boletins vizinhos: sem chuva no anterior nem no seguinte (que registra a chuva caída desde o último, o RERA) e sem buraco de mais de 3 h, não choveu; o modelo só decide quando o aeroporto fica mais de 3 h calado. O aviso local vale mais que o aeroporto, que fica a alguns quilômetros: “Não choveu hoje” tira do placar a chuva que o aeroporto registrou no dia.</li>
         <li><b>Treino</b>: regressão logística com os sinais de cada rodada conferida (últimos 60 dias), puxada para os pesos de partida. Usa uma rodada a cada 20 min, valendo 1/3, porque as previsões de 10 em 10 min se sobrepõem.</li>
       </ul>
     </section>

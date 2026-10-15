@@ -247,16 +247,46 @@ export async function computeRain(deviceId: string): Promise<void> {
     on conflict do nothing`
 }
 
-// Choveu na janela [emissão, emissão + h)? Sim: botão "Está chovendo aqui" na janela (vale mais
-// que tudo). Não: um "Não choveu hoje" que cobre a janela inteira. Sim: METAR com chuva (fora "nas
-// proximidades"), salvo se houver um "não choveu" local a até 30 min dele ou um "Não choveu hoje"
-// que o cubra. Não: METARs suficientes sem chuva. Sem METAR: o modelo decide (≥ 0,1 mm).
-// Sem nada: fica sem verificação.
+// Choveu na janela [emissão, emissão + h)?
+//   Sim: botão "Está chovendo aqui" na janela (vale mais que tudo).
+//   Não: um "Não choveu hoje" que cobre a janela inteira.
+//   Sim: METAR com chuva na janela (fora "nas proximidades"), salvo se houver um "não choveu" local
+//        a até 30 min dele ou um "Não choveu hoje" que o cubra.
+//   Não: METARs suficientes na janela (um por hora), todos sem chuva.
+//   Não: o aeroporto seguiu publicando (nenhum intervalo de mais de 3 h entre o boletim anterior e o
+//        seguinte à janela) e nenhum deles tem chuva nem chuva recente (RERA, RETSRA...: o METAR
+//        registra a chuva que caiu desde o boletim anterior).
+//   Espera: se o boletim seguinte ainda não chegou e o aeroporto não está calado há 3 h.
+//   Só então o modelo decide (≥ 0,1 mm estimados): é cálculo, não observação, e de madrugada dava
+//   chuva com o aeroporto de céu limpo (14–15/10).
+//   Sem nada: fica sem verificação.
+const METAR_RECENT_RAIN_SQL = String.raw`(^|\s)RE(TS|SH)?(RA|DZ|GR|GS|UP|TS)`
+
 export async function verifyRain(deviceId: string): Promise<number> {
   const sql = useSql()
   const rows = (await sql`
     update rain_predictions p set outcome = v.rained, verified_at = now()
     from (
+      with m as (
+        select o.obs_at,
+          (o.wx ~ ${METAR_RAIN_SQL} or coalesce(o.raw, '') ~ ${METAR_RECENT_RAIN_SQL})
+          and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and (case when n.covers_from is null then abs(extract(epoch from n.ts - o.obs_at)) <= 1800 else o.obs_at >= n.covers_from and o.obs_at < n.ts + interval '10 minutes' end)) as rainy,
+          o.wx ~ ${METAR_RAIN_SQL}
+          and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and (case when n.covers_from is null then abs(extract(epoch from n.ts - o.obs_at)) <= 1800 else o.obs_at >= n.covers_from and o.obs_at < n.ts + interval '10 minutes' end)) as raining_now
+        from outdoor_obs o
+        where o.device_id = ${deviceId} and o.source = 'metar' and o.obs_at > now() - interval '4 days'
+      ),
+      k as (
+        select x.*,
+          (select max(obs_at) from m where m.obs_at <= x.issued_at and m.obs_at > x.issued_at - interval '3 hours') as prev_at,
+          (select min(obs_at) from m where m.obs_at >= x.win_end and m.obs_at < x.win_end + interval '3 hours') as next_at
+        from (
+          select distinct issued_at, horizon_h, issued_at + make_interval(hours => horizon_h::int) as win_end
+          from rain_predictions
+          where device_id = ${deviceId} and outcome is null and issued_at > now() - interval '3 days'
+            and issued_at + make_interval(hours => horizon_h::int) < now() - interval '20 minutes'
+        ) x
+      )
       select k.issued_at, k.horizon_h,
         case
           when exists (select 1 from rain_reports r where r.device_id = ${deviceId} and r.raining and r.ts >= k.issued_at and r.ts < k.win_end)
@@ -264,25 +294,25 @@ export async function verifyRain(deviceId: string): Promise<number> {
           when exists (select 1 from rain_reports n where n.device_id = ${deviceId} and not n.raining and n.covers_from is not null
                        and n.covers_from <= k.issued_at and k.win_end <= n.ts + interval '10 minutes')
             then false
-          when exists (select 1 from outdoor_obs o where o.device_id = ${deviceId} and o.source = 'metar'
-                       and o.obs_at >= k.issued_at and o.obs_at < k.win_end and o.wx ~ ${METAR_RAIN_SQL}
-                       and not exists (select 1 from rain_reports n where n.device_id = o.device_id and not n.raining and (case when n.covers_from is null then abs(extract(epoch from n.ts - o.obs_at)) <= 1800 else o.obs_at >= n.covers_from and o.obs_at < n.ts + interval '10 minutes' end)))
+          when exists (select 1 from m where m.obs_at >= k.issued_at and m.obs_at < k.win_end and m.raining_now)
             then true
-          when (select count(*) from outdoor_obs o where o.device_id = ${deviceId} and o.source = 'metar'
-                and o.obs_at >= k.issued_at and o.obs_at < k.win_end) >= k.horizon_h
+          when (select count(*) from m where m.obs_at >= k.issued_at and m.obs_at < k.win_end) >= k.horizon_h
             then false
+          when k.prev_at is not null and k.next_at is not null
+               and not exists (select 1 from m where m.obs_at >= k.prev_at and m.obs_at <= k.next_at and m.rainy)
+               and (select max(g) from (select m.obs_at - lag(m.obs_at) over (order by m.obs_at) as g from m
+                                         where m.obs_at >= k.prev_at and m.obs_at <= k.next_at) gaps) <= interval '3 hours'
+            then false
+          when k.next_at is null and k.win_end > now() - interval '3 hours'
+               and exists (select 1 from m where m.obs_at > k.issued_at - interval '3 hours')
+            then null
           when exists (select 1 from outdoor_obs o where o.device_id = ${deviceId} and o.source = 'open-meteo'
                        and o.obs_at > k.issued_at and o.obs_at <= k.win_end and o.precip is not null)
             then exists (select 1 from outdoor_obs o where o.device_id = ${deviceId} and o.source = 'open-meteo'
                          and o.obs_at > k.issued_at and o.obs_at <= k.win_end and o.precip >= 0.1)
           else null
         end as rained
-      from (
-        select distinct issued_at, horizon_h, issued_at + make_interval(hours => horizon_h::int) as win_end
-        from rain_predictions
-        where device_id = ${deviceId} and outcome is null and issued_at > now() - interval '3 days'
-          and issued_at + make_interval(hours => horizon_h::int) < now() - interval '20 minutes'
-      ) k
+      from k
     ) v
     where p.device_id = ${deviceId} and p.issued_at = v.issued_at and p.horizon_h = v.horizon_h and v.rained is not null
     returning 1`) as unknown[]
