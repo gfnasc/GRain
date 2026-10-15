@@ -69,10 +69,14 @@ export async function healthReport(deviceId: string, hours = HEALTH_TRIAL_H) {
   const first = log[0] ?? null
   const spanH = first ? (untilMs - new Date(first.ts).getTime()) / 3600_000 : 0
   const expected = Math.floor((untilMs - new Date(cov?.first ?? untilMs).getTime()) / 300_000)
-  // Memória: a menor livre cai logo depois de ligar (conexões seguras com a nuvem); a referência
-  // é a medida 30 min depois do começo. Estável = não caiu mais de 10 % e nunca abaixo de 40 KB.
-  const ref = log.find((l) => l.heap_min != null && new Date(l.ts).getTime() >= startMs + 30 * 60_000)?.heap_min as number | undefined
-  const heapMin = heaps.length ? { first: ref ?? null, last: heaps[heaps.length - 1]!, lowest: Math.min(...heaps) } : null
+  // Memória estável = sem vazamento: a memória livre agora não caiu mais de 10 % em relação à de
+  // 30 min depois do começo (depois das conexões seguras com a nuvem se acomodarem), e a menor
+  // já registrada (heap_min, o pior momento desde o boot) nunca passou abaixo de 40 KB. O heap_min
+  // sozinho não mede vazamento: ele só desce, a cada pico passageiro de uso.
+  const refRow = log.find((l) => l.heap != null && new Date(l.ts).getTime() >= startMs + 30 * 60_000)
+  const heapMin = heaps.length
+    ? { first: (refRow?.heap as number | undefined) ?? null, last: (last?.heap as number | null) ?? heaps[heaps.length - 1]!, lowest: Math.min(...heaps) }
+    : null
   const memOk = !heapMin || (heapMin.lowest > 40_000 && (heapMin.first == null || heapMin.last >= heapMin.first * 0.9))
   const endsAt = start?.ts ? startMs + hours * 3600_000 : null
   const failed = restarts.length > 0 || gaps.length > 0 || !memOk

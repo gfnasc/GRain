@@ -37,7 +37,7 @@ const checks = computed(() => {
     { ok: h.observed_h >= h.hours ? true : null, label: `${h.hours} h de observação (${h.observed_h.toLocaleString('pt-BR')} h até agora)` },
     { ok: h.restarts.length ? false : done ? true : null, label: h.restarts.length ? `${h.restarts.length} reinício(s) no período` : 'Sem reinícios até agora' },
     { ok: h.gaps.length ? false : done ? true : null, label: h.gaps.length ? `${h.gaps.length} buraco(s) de mais de 15 min no histórico` : 'Sem buracos no histórico até agora' },
-    { ok: !h.mem_ok ? false : done ? true : null, label: h.heap_min?.first ? `Memória estável (menor livre: ${kb(h.heap_min.first)} 30 min depois do início, ${kb(h.heap_min.last)} agora)` : 'Memória: referência sai 30 min depois do início' },
+    { ok: !h.mem_ok ? false : done ? true : null, label: h.heap_min?.first ? `Memória estável (livre: ${kb(h.heap_min.first)} 30 min depois do início, ${kb(h.heap_min.last)} agora; menor já registrada ${kb(h.heap_min.lowest)}, mínimo aceito 40 KB)` : 'Memória: referência sai 30 min depois do início' },
   ]
 })
 const ALERT_MODE = { both: 'ícone no cabeçalho e tela no carrossel', icon: 'só o ícone no cabeçalho', screen: 'só a tela no carrossel' } as const
