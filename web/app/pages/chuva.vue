@@ -8,7 +8,8 @@ useHead({ title: 'Chuva · GRain' })
 
 type Score = { method: RainMethod; horizon: number; n: number; events: number; brier: number | null; skill: number | null; hits: number; false_alarms: number; misses: number; reliability: { bin: number; n: number; freq: number }[] }
 type Learned = { method: 'm2t' | 'm4'; horizons: { h: number; n: number; events: number; trained_at: string | null; weights: { key: string; prior: number; value: number }[] }[] }
-type Trial = { started_at: string | null; ends_at: string | null; fw?: string; fw_needed?: string; state: TrialState; days: number; min_coverage?: number; coverage?: { m2t: number; m4: number; metar?: number }; missed?: number; budget?: number; rain_hours?: number; min_events?: number; scores: Score[] }
+type Trial = { started_at: string | null; ends_at: string | null; fw?: string; fw_needed?: string; state: TrialState; days: number; min_coverage?: number; coverage?: { m2t: number; m4: number; metar?: number }; missed?: number; budget?: number; rain_hours?: number; min_events?: number; scores: Score[]; pairs?: Pair[] }
+type Pair = { a: string; b: string; h: number; n: number; events: number; brier_a: number; brier_b: number }
 type ScoreResp = { days: number; min_n: number; min_events: number; pending: number; scores: Score[]; trial: Trial; learned: Learned[] }
 type History = { from: string; to: string; h: number; points: Record<string, number | null>[]; rain: { from: number; to: number; sources: string[] }[] }
 
@@ -61,11 +62,7 @@ const fmt = (v: number | null | undefined, d = 2) =>
 
 // Teste de 30 dias.
 const trial = computed(() => score.value?.trial ?? null)
-const trialLeader = computed(() => {
-  const s = (trial.value?.scores ?? []).filter((x) => x.horizon === 1 && x.brier != null && x.n > 0)
-  if (!s.length || !s.some((x) => x.events > 0)) return null
-  return s.sort((a, b) => a.brier! - b.brier!)[0]!
-})
+const pairOf = (a: string, b: string, h: number) => trial.value?.pairs?.find((p) => p.a === a && p.b === b && p.h === h) ?? null
 const trialChecks = computed(() => {
   const t = trial.value
   if (!t || !t.started_at) return [{ ok: null, label: 'Começa quando a estação mandar a primeira mensagem do firmware ' + (t?.fw_needed ?? '0.14.0') }]
@@ -83,25 +80,28 @@ const trialChecks = computed(() => {
     beats('m2t', ['m2'], ev >= minEv, 'M2T com erro menor que o M2 de pesos fixos nas três janelas'),
   ]
 })
-// Aceite da fase: o método vence os outros (menor Brier desde o começo do teste) em 1, 2 e 3 h.
-// Só decide com chuva suficiente; antes disso fica "…".
+// Aceite da fase: o método vence cada um dos outros em 1, 2 e 3 h, comparando só as rodadas em
+// que os dois saíram (duelos). Cada duelo só decide com chuva suficiente; antes disso fica "…".
 function beats(m: string, others: string[], ready: boolean, label: string) {
-  const list = trial.value?.scores ?? []
+  const minEv = trial.value?.min_events ?? 5
   const wins = [1, 2, 3].map((h) => {
-    const a = scoreOf(m, h, list)?.brier
-    const rest = others.map((o) => scoreOf(o, h, list)?.brier).filter((v): v is number => v != null)
-    return a != null && rest.length === others.length ? rest.every((v) => a < v) : null
+    const duels = others.map((o) => pairOf(m, o, h))
+    if (duels.some((d) => !d || d.events < minEv)) return null
+    return duels.every((d) => d!.brier_a < d!.brier_b)
   })
   const now = wins.filter((w) => w === true).length
   const done = trial.value?.state === 'sucesso' || trial.value?.state === 'falhou'
   const ok = !ready || wins.includes(null) ? null : now === 3 ? true : done ? false : null
   return { ok, label: `${label}${ready ? ` (por enquanto vence em ${now} de 3)` : ''}` }
 }
-const trialNote = computed(() => {
-  const l = trialLeader.value
-  if (!l) return 'Placar do teste: aparece quando houver chuva conferida desde o começo.'
-  return `Liderando na janela de 1 h desde o começo do teste: ${l.method.toUpperCase()} (erro ${fmt(l.brier, 3)}, ${l.n} conferidas, ${l.events} com chuva).`
-})
+const trialNote = 'As comparações usam só as rodadas em que os dois métodos saíram (o M2 e o M2T faltam quando o aeroporto não publica). Detalhes na tabela “Frente a frente”.'
+// Tabela "Frente a frente": um duelo por linha, as três janelas nas colunas.
+const duelRows = computed(() =>
+  [...new Set((trial.value?.pairs ?? []).map((p) => `${p.a}|${p.b}`))].map((k) => {
+    const [a, b] = k.split('|') as [string, string]
+    return { a, b, cells: [1, 2, 3].map((h) => pairOf(a, b, h)) }
+  }),
+)
 
 // O que os treinados aprenderam (na janela escolhida).
 const learnH = ref(1)
@@ -150,6 +150,30 @@ function refreshAll() {
       waiting="O teste começa junto com o de robustez, na gravação do firmware 0.14.0."
       :note="trialNote"
     />
+
+    <section v-if="duelRows.length" class="block">
+      <h2>Frente a frente no teste</h2>
+      <p class="muted small">Erro (Brier) de cada método nas mesmas previsões, desde o começo do teste. Em negrito, o vencedor de cada janela; com menos de {{ trial?.min_events ?? 5 }} conferências com chuva, o duelo ainda não decide.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Duelo</th><th>1 h</th><th>2 h</th><th>3 h</th></tr></thead>
+          <tbody>
+            <tr v-for="r in duelRows" :key="r.a + r.b">
+              <td><span class="mname">{{ r.a.toUpperCase() }} × {{ r.b.toUpperCase() }}</span></td>
+              <td v-for="(c, i) in r.cells" :key="i" class="num duel" :class="{ dim: !c || c.events < (trial?.min_events ?? 5) }">
+                <template v-if="c">
+                  <b v-if="c.brier_a < c.brier_b">{{ fmt(c.brier_a, 3) }}</b><span v-else>{{ fmt(c.brier_a, 3) }}</span>
+                  ×
+                  <b v-if="c.brier_b < c.brier_a">{{ fmt(c.brier_b, 3) }}</b><span v-else>{{ fmt(c.brier_b, 3) }}</span>
+                  <small>{{ c.n }} rodadas, {{ c.events }} com chuva</small>
+                </template>
+                <template v-else>–</template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <section class="block">
       <h2>Os cinco métodos agora</h2>
@@ -303,6 +327,8 @@ tr:last-child td { border-bottom: none; }
 td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 td.best { font-weight: 760; box-shadow: inset 0 -2px 0 var(--accent); }
 td.moved { font-weight: 700; }
+td.duel small { display: block; color: var(--muted); font-size: 0.75rem; }
+td.duel.dim { color: var(--muted); }
 tr.dim td { color: var(--muted); }
 .mname { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; white-space: nowrap; }
 .mname i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }

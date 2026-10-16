@@ -153,6 +153,23 @@ export async function rainTrial(deviceId: string) {
   }
 }
 
+// Duelos do teste: cada par de métodos comparado só nas rodadas e janelas em que os dois saíram
+// e foram conferidos (o M2 e o M2T faltam quando o aeroporto não publica, muitas vezes de
+// madrugada; comparar conjuntos diferentes favoreceria um lado). Brier dos dois nas mesmas previsões.
+export const TRIAL_PAIRS: [string, string][] = [['m4', 'm1'], ['m4', 'm2'], ['m4', 'm3'], ['m4', 'm2t'], ['m2t', 'm1'], ['m2t', 'm2'], ['m2t', 'm3']]
+
+export async function rainTrialPairs(deviceId: string, from: string, to: string) {
+  const rows = (await useSql()`
+    select x.a, x.b, p.horizon_h as h, count(*)::int as n, sum(p.outcome::int)::int as events,
+      avg(power(p.prob - p.outcome::int, 2)) as brier_a, avg(power(q.prob - q.outcome::int, 2)) as brier_b
+    from unnest(${TRIAL_PAIRS.map((x) => x[0])}::text[], ${TRIAL_PAIRS.map((x) => x[1])}::text[]) as x(a, b)
+    join rain_predictions p on p.device_id = ${deviceId} and p.method = x.a and p.outcome is not null and p.issued_at >= ${from} and p.issued_at < ${to}
+    join rain_predictions q on q.device_id = p.device_id and q.issued_at = p.issued_at and q.horizon_h = p.horizon_h and q.method = x.b and q.outcome is not null
+    group by 1, 2, 3 order by 1, 2, 3`) as { a: string; b: string; h: number; n: number; events: number; brier_a: number; brier_b: number }[]
+  const r3 = (v: number) => Math.round(Number(v) * 1000) / 1000
+  return rows.map((r) => ({ ...r, brier_a: r3(r.brier_a), brier_b: r3(r.brier_b) }))
+}
+
 // Versão compacta para a estação (resposta do envio): fim previsto (epoch UTC) e situação.
 export async function trialsForDevice(deviceId: string) {
   const [h, r] = await Promise.all([healthReport(deviceId), rainTrial(deviceId)])
