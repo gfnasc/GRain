@@ -77,6 +77,7 @@ static void beginOta() {
   });
   ArduinoOTA.onProgress([](unsigned int done, unsigned int total) {
     esp_task_wdt_reset();  // a gravação roda dentro do handle(): avisa o watchdog
+    digitalWrite(PIN_LED, (millis() / 80) % 2);  // LED azul pisca rápido durante a gravação
     static int last = -1;
     int pct = total ? done * 100 / total : 0;
     if (pct != last) {
@@ -93,6 +94,7 @@ static void beginOta() {
   });
   ArduinoOTA.onError([](ota_error_t e) {
     s_otaActive = false;
+    digitalWrite(PIN_LED, LOW);
     log_e("[%s] atualização falhou (%u)", TAG, (unsigned)e);
     displayOta(-1, e == OTA_AUTH_ERROR ? "senha incorreta" : "falhou");
   });

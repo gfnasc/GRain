@@ -127,6 +127,21 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
           </section>
 
           <section class="block">
+            <h3>Botão, buzzer e LED</h3>
+            <dl class="kv">
+              <dt>Troca de página</dt><dd>{{ PAGE_MODE_LABELS[cfg.display.page_mode ?? 'auto'] }}</dd>
+              <dt v-if="cfg.display.page_mode === 'button'">Escurecer sem toque</dt>
+              <dd v-if="cfg.display.page_mode === 'button'">{{ cfg.display.idle_dim_min ? `após ${cfg.display.idle_dim_min} min` : 'nunca' }}</dd>
+              <dt>Buzzer</dt>
+              <dd>{{ cfg.buzzer ? (cfg.buzzer.enabled ? (cfg.buzzer.clicks ? 'ligado, com clique nos toques' : 'ligado, sem clique') : 'desligado') : '–' }}</dd>
+              <dt>Horário silencioso</dt>
+              <dd>{{ cfg.quiet ? (cfg.quiet.enabled ? `das ${cfg.quiet.from} às ${cfg.quiet.to}` : 'desligado') : '–' }}</dd>
+              <dt>LED azul</dt>
+              <dd>{{ cfg.led ? `${LED_MODE_LABELS[cfg.led.mode]}; no silencioso, ${LED_MODE_LABELS[cfg.led.quiet]}` : '–' }}</dd>
+            </dl>
+          </section>
+
+          <section class="block">
             <h3>Alerta de chuva</h3>
             <dl class="kv">
               <template v-if="cfg.rain_alert?.enabled">

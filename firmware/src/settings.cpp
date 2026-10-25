@@ -14,6 +14,8 @@ static uint32_t s_revision = 1;
 
 static const char *PAGE_NAMES[PG_COUNT] = {"temp", "hum", "pres", "clock", "today", "fields", "details", "network", "rain"};
 static const char *ALERT_MODES[4] = {"", "icon", "screen", "both"};
+static const char *PAGE_MODES[3] = {"auto", "button", "both"};
+static const char *LED_MODES[3] = {"normal", "warnings", "off"};
 static const char *FIELD_NAMES[FD_COUNT] = {"temp", "hum", "pres", "dew", "heat_index", "temp_bmp", "pres_station"};
 
 const char *pageTypeName(uint8_t t) { return t < PG_COUNT ? PAGE_NAMES[t] : "?"; }
@@ -131,6 +133,8 @@ static void toJson(const Settings &c, JsonDocument &doc) {
   night["from"] = hhmm(c.nightFrom);
   night["to"] = hhmm(c.nightTo);
   night["mode"] = c.nightMode == 0 ? "off" : "dim";
+  disp["page_mode"] = PAGE_MODES[c.pageMode % 3];
+  disp["idle_dim_min"] = c.idleDimMin;
   JsonArray pages = disp["pages"].to<JsonArray>();
   for (int i = 0; i < c.pageCount; i++) {
     JsonObject p = pages.add<JsonObject>();
@@ -151,6 +155,17 @@ static void toJson(const Settings &c, JsonDocument &doc) {
   ra["threshold"] = c.rainAlertPct;
   ra["hours"] = c.rainAlertHours;
   ra["mode"] = ALERT_MODES[c.rainAlertMode & 3];
+  JsonObject bz = doc["buzzer"].to<JsonObject>();
+  bz["enabled"] = c.buzzerEnabled;
+  bz["clicks"] = c.buzzerClicks;
+  bz["level"] = c.buzzerActiveLow ? "low" : "high";
+  JsonObject led = doc["led"].to<JsonObject>();
+  led["mode"] = LED_MODES[c.ledMode % 3];
+  led["quiet"] = LED_MODES[c.ledQuietMode % 3];
+  JsonObject quiet = doc["quiet"].to<JsonObject>();
+  quiet["enabled"] = c.quietEnabled;
+  quiet["from"] = hhmm(c.quietFrom);
+  quiet["to"] = hhmm(c.quietTo);
   JsonObject loc = doc["location"].to<JsonObject>();
   if (isnan(c.lat) || isnan(c.lon)) {
     loc["lat"] = nullptr;
@@ -183,6 +198,19 @@ static void fromJson(JsonDocument &doc, Settings &c) {
     parseHHMM(night["to"] | "", c.nightTo);
     c.nightMode = strcmp(night["mode"] | "dim", "off") == 0 ? 0 : 1;
   }
+  int pm = indexOf(PAGE_MODES, 3, doc["display"]["page_mode"] | "");
+  if (pm >= 0) c.pageMode = pm;
+  c.idleDimMin = doc["display"]["idle_dim_min"] | (int)c.idleDimMin;
+  c.buzzerEnabled = doc["buzzer"]["enabled"] | c.buzzerEnabled;
+  c.buzzerClicks = doc["buzzer"]["clicks"] | c.buzzerClicks;
+  c.buzzerActiveLow = strcmp(doc["buzzer"]["level"] | (c.buzzerActiveLow ? "low" : "high"), "low") == 0;
+  int lm = indexOf(LED_MODES, 3, doc["led"]["mode"] | "");
+  if (lm >= 0) c.ledMode = lm;
+  lm = indexOf(LED_MODES, 3, doc["led"]["quiet"] | "");
+  if (lm >= 0) c.ledQuietMode = lm;
+  c.quietEnabled = doc["quiet"]["enabled"] | c.quietEnabled;
+  parseHHMM(doc["quiet"]["from"] | "", c.quietFrom);
+  parseHHMM(doc["quiet"]["to"] | "", c.quietTo);
   JsonArrayConst pages = doc["display"]["pages"];
   String err;
   if (!pages.isNull() && !parsePages(c, pages, err)) log_w("[%s] páginas inválidas (%s); usando padrão", TAG, err.c_str());
@@ -296,6 +324,26 @@ static bool setField(Settings &c, const String &key, const String &value, String
   } else if (key == "display.night.mode") {
     if (value != "off" && value != "dim") { err = "off ou dim"; return false; }
     c.nightMode = value == "off" ? 0 : 1;
+  } else if (key == "display.page_mode") {
+    int pm = indexOf(PAGE_MODES, 3, value.c_str());
+    if (pm < 0) { err = "auto, button ou both"; return false; }
+    c.pageMode = pm;
+  } else if (key == "display.idle_dim_min") {
+    if (!parseFloat(value, 0, 120, f)) { err = "entre 0 e 120"; return false; }
+    c.idleDimMin = (uint8_t)f;
+  } else if (key == "buzzer.enabled" || key == "buzzer.clicks" || key == "quiet.enabled") {
+    if (value != "true" && value != "false") { err = "true ou false"; return false; }
+    (key == "buzzer.enabled" ? c.buzzerEnabled : key == "buzzer.clicks" ? c.buzzerClicks : c.quietEnabled) = value == "true";
+  } else if (key == "buzzer.level") {
+    if (value != "high" && value != "low") { err = "high ou low"; return false; }
+    c.buzzerActiveLow = value == "low";
+  } else if (key == "quiet.from" || key == "quiet.to") {
+    if (!parseHHMM(value, m)) { err = "formato HH:MM"; return false; }
+    (key.endsWith("from") ? c.quietFrom : c.quietTo) = m;
+  } else if (key == "led.mode" || key == "led.quiet") {
+    int lm = indexOf(LED_MODES, 3, value.c_str());
+    if (lm < 0) { err = "normal, warnings ou off"; return false; }
+    (key == "led.mode" ? c.ledMode : c.ledQuietMode) = lm;
   } else if (key == "calibration.temp") {
     if (!parseFloat(value, -5, 5, f)) { err = "entre -5 e 5"; return false; }
     c.calTemp = f;
@@ -402,6 +450,9 @@ void settingsCloudCopy(JsonDocument &doc) {
   doc["calibration"] = all["calibration"];
   doc["location"] = all["location"];
   doc["rain_alert"] = all["rain_alert"];
+  doc["buzzer"] = all["buzzer"];
+  doc["led"] = all["led"];
+  doc["quiet"] = all["quiet"];
 }
 
 void settingsToJson(JsonDocument &doc) { toJson(s_cfg, doc); }

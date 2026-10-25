@@ -2,7 +2,7 @@
 
 // Pinos e constantes. Mantenha docs/hardware.md sincronizado.
 
-#define FW_VERSION "0.14.1"
+#define FW_VERSION "0.15.1"
 
 // Barramento I2C (AHT20, BMP280 e OLED compartilham)
 #define PIN_I2C_SDA 21
@@ -15,8 +15,21 @@
 #define ADDR_BMP280_ALT 0x77
 #define ADDR_OLED 0x3C
 
-// LED onboard (usado como sinal de vida)
+// LED azul onboard: retorno visual (botão, avisos, falhas, gravação pelo Wi-Fi, sinal de vida)
 #define PIN_LED 2
+
+// Interface física (Fase 19). Nunca no barramento I2C (D21/D22).
+#define PIN_BUTTON 19   // botão para o GND, pull-up interno
+#define PIN_BUZZER 18   // buzzer ativo (o nível que liga é configurável: buzzer.level)
+
+// Botão: limites dos gestos (ms)
+#define BTN_DEBOUNCE_MS 25
+#define BTN_TAP_MAX_MS 1000      // soltar antes disso = toque
+#define BTN_RAIN_MS 2000         // segurar 2 s = "Está chovendo aqui"
+#define BTN_SCREEN_MS 5000       // segurar 5 s = liga/desliga a tela
+#define BTN_CANCEL_MS 10000      // segurou demais (ou travou): não faz nada
+#define DISPLAY_WAKE_MS 15000    // toque com a tela apagada: acende por 15 s
+#define DISPLAY_TAP_HOLD_MS 30000  // modo "as duas": o toque segura a página por 30 s
 
 // Leitura
 #define SENSOR_INTERVAL_MS 5000

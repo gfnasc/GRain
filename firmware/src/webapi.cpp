@@ -6,6 +6,8 @@
 #include <WebServer.h>
 #include <time.h>
 
+#include "button.h"
+#include "buzzer.h"
 #include "config.h"
 #include "display.h"
 #include "health.h"
@@ -103,6 +105,15 @@ static void handleStatus() {
   dev["reset_reason"] = healthResetReason();
   dev["boots"] = healthBoots();
   dev["ota"] = true;
+  JsonObject btn = dev["button"].to<JsonObject>();
+  if (buttonLastName()) {
+    btn["last"] = buttonLastName();
+    btn["at"] = buttonLastEpoch();
+  } else {
+    btn["last"] = nullptr;
+    btn["at"] = nullptr;
+  }
+  dev["quiet_now"] = quietNow();
   dev["fs_used"] = LittleFS.usedBytes();
   dev["fs_total"] = LittleFS.totalBytes();
   JsonObject wifi = doc["wifi"].to<JsonObject>();
@@ -222,6 +233,7 @@ static void handleGetDisplay() { sendDisplayState(200); }
 
 // Controles do display. Sem senha: só afetam a tela até reiniciar.
 //   {"power": true|false} {"paused": true|false} {"page": "next"|"prev"|<índice>}
+//   {"alert_test": true} (alerta de exemplo, com bipe) {"buzzer_test": true} (3 bipes, mesmo no silencioso)
 static void handlePostDisplay() {
   if (s_srv.header("Content-Type").indexOf("application/json") < 0)
     return sendError(415, "tipo_invalido", "use o cabeçalho Content-Type: application/json");
@@ -230,6 +242,7 @@ static void handlePostDisplay() {
   if (in["power"].is<bool>()) displaySetPower(in["power"]);
   if (in["paused"].is<bool>()) displaySetPaused(in["paused"]);
   if (in["alert_test"] == true) displayAlertTest();
+  if (in["buzzer_test"] == true) buzzerPlay(BZ_ALERT, true);
   JsonVariant page = in["page"];
   if (page.is<const char *>()) {
     String p = page.as<const char *>();

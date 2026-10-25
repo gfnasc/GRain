@@ -35,13 +35,23 @@ export type PageConfig = { type: PageType; fields?: FieldType[] }
 export type Location = { lat: number | null; lon: number | null; label: string }
 export type RainAlert = { enabled: boolean; threshold: number; hours: 1 | 2 | 3; mode: 'icon' | 'screen' | 'both' }
 
+export type PageMode = 'auto' | 'button' | 'both'
+export type LedMode = 'normal' | 'warnings' | 'off'
+export const PAGE_MODE_LABELS: Record<PageMode, string> = { auto: 'automática', button: 'pelo botão', both: 'automática e pelo botão' }
+export const LED_MODE_LABELS: Record<LedMode, string> = { normal: 'normal', warnings: 'só avisos', off: 'desligado' }
+
 export type StationConfig = {
   display: {
     page_s: number
     contrast: number
     night: { enabled: boolean; from: string; to: string; mode: 'off' | 'dim' }
     pages: PageConfig[]
+    page_mode: PageMode
+    idle_dim_min: number
   }
+  buzzer: { enabled: boolean; clicks: boolean; level: 'high' | 'low' }
+  led: { mode: LedMode; quiet: LedMode }
+  quiet: { enabled: boolean; from: string; to: string }
   calibration: { temp: number; hum: number; pres: number; pres_auto: boolean; pres_auto_offset: number }
   location: Location
   rain_alert: RainAlert
@@ -66,6 +76,10 @@ export function validateStationConfig(input: any): StationConfig {
   const c = input?.calibration ?? {}
   const l = input?.location ?? {}
   const ra = input?.rain_alert ?? {}
+  const bz = input?.buzzer ?? {}
+  const lg = input?.led ?? {}
+  const q = input?.quiet ?? {}
+  const ledMode = (v: unknown, def: LedMode): LedMode => (v === 'normal' || v === 'warnings' || v === 'off' ? v : def)
 
   if (!Array.isArray(d.pages) || d.pages.length < 1 || d.pages.length > MAX_PAGES) {
     throw new Error(`páginas: escolha de 1 a ${MAX_PAGES}`)
@@ -93,6 +107,15 @@ export function validateStationConfig(input: any): StationConfig {
       contrast: numberIn(d.contrast, 0, 255, 'brilho', true),
       night: { enabled: n.enabled, from: n.from, to: n.to, mode: n.mode },
       pages,
+      page_mode: d.page_mode === 'button' || d.page_mode === 'both' ? d.page_mode : 'auto',
+      idle_dim_min: numberIn(d.idle_dim_min ?? 10, 0, 120, 'escurecer sem toque', true),
+    },
+    buzzer: { enabled: bz.enabled !== false, clicks: bz.clicks !== false, level: bz.level === 'low' ? 'low' : 'high' },
+    led: { mode: ledMode(lg.mode, 'normal'), quiet: ledMode(lg.quiet, 'warnings') },
+    quiet: {
+      enabled: q.enabled !== false,
+      from: HHMM.test(q.from) ? q.from : '22:00',
+      to: HHMM.test(q.to) ? q.to : '07:00',
     },
     calibration: {
       temp: numberIn(c.temp, -5, 5, 'ajuste de temperatura'),

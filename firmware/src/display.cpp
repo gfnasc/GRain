@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 
+#include "button.h"
+#include "buzzer.h"
 #include "config.h"
 #include "netmgr.h"
 #include "settings.h"
@@ -23,6 +25,14 @@ static bool s_manualOff = false;  // tela desligada pela página local / console
 static bool s_paused = false;     // carrossel pausado
 static uint32_t s_holdUntil = 0;  // navegação manual segura a página até este millis()
 static const uint32_t HOLD_MS = 60000;
+// Botão e proteção do OLED (Fase 19).
+static uint32_t s_wakeUntil = 0;     // toque com a tela apagada/escura: acesa até este millis()
+static bool s_idleDim = false;       // modo pelo botão: escurecida por falta de toque
+static uint32_t s_lastTouch = 0;
+static int s_contrastSent = -1;      // o que já foi enviado ao SSD1306
+static int s_powerSaveSent = -1;
+static uint32_t s_confirmUntil = 0;  // tela "Chuva registrada"
+static bool s_confirmCloud = true;
 
 static int pageCount() { return settings().pageCount ? settings().pageCount : 1; }
 
@@ -41,6 +51,9 @@ static bool s_inverted = false;
 static uint32_t s_testUntil = 0;
 static int s_dropFrame = -1;
 static const uint32_t DROP_FRAME_MS = 140;
+static bool s_alertAck = false;        // calado pelo botão
+static int s_alertBeepP = 0;           // chance do último bipe (volta a tocar com +15 pontos)
+static const int ALERT_RELEVEL = 15;
 
 // Formata com uma casa decimal e vírgula (padrão brasileiro).
 static void fmt1(char *out, size_t n, float v) {
@@ -81,8 +94,7 @@ static void drawHeader(const char *title) {
   }
   // Guarda-chuva do alerta e aviso de erro (têm prioridade sobre o relógio), antes das bolinhas.
   int right = 128 - (n > 1 ? n * step : 0) - 3;
-  bool problem = !s_last.ahtOk || !s_last.bmpOk || !netStatus().connected || uplinkStatus().lastError.length();
-  if (problem && s_hasReading) {
+  if (displayProblem()) {
     s_oled.drawBox(right - 6, 0, 6, 9);
     s_oled.setDrawColor(0);
     s_oled.setFont(u8g2_font_5x8_tf);
@@ -404,6 +416,62 @@ static void drawAlertScreen() {
   s_oled.drawUTF8(54, 64, line);
 }
 
+// Tela de confirmação do "Está chovendo aqui" pelo botão.
+static void drawRainConfirm() {
+  drawAlertArt(0);
+  s_oled.setFont(u8g2_font_7x13B_tf);
+  s_oled.drawUTF8(54, 22, "Chuva");
+  s_oled.drawUTF8(54, 36, "registrada");
+  s_oled.setFont(u8g2_font_6x10_tf);
+  s_oled.drawUTF8(54, 54, s_confirmCloud ? "enviando..." : "sem nuvem");
+}
+
+// Faixa de baixo enquanto o botão está apertado: o que acontece ao soltar e o progresso.
+static void drawHoldOverlay(uint32_t held) {
+  const char *msg;
+  int fill;
+  if (held < BTN_RAIN_MS) {
+    msg = "segure: chovendo";
+    fill = (held - 500) * 116 / (BTN_RAIN_MS - 500);
+  } else if (held < BTN_SCREEN_MS) {
+    msg = "solte: chovendo";
+    fill = (held - BTN_RAIN_MS) * 116 / (BTN_SCREEN_MS - BTN_RAIN_MS);
+  } else if (held < BTN_CANCEL_MS) {
+    msg = "solte: desligar tela";
+    fill = 116;
+  } else {
+    msg = "solte: cancelar";
+    fill = 0;
+  }
+  s_oled.setDrawColor(0);
+  s_oled.drawBox(0, 41, 128, 23);
+  s_oled.setDrawColor(1);
+  s_oled.drawFrame(0, 41, 128, 23);
+  s_oled.setFont(u8g2_font_6x10_tf);
+  s_oled.drawUTF8((128 - s_oled.getUTF8Width(msg)) / 2, 52, msg);
+  s_oled.drawFrame(4, 55, 120, 6);
+  if (fill > 0) s_oled.drawBox(6, 57, fill > 116 ? 116 : fill, 2);
+}
+
+// Proteção do OLED no modo pelo botão: desloca a imagem 1 px para os lados a cada 2 min
+// (0, +1, 0, −1), para os mesmos pixels não ficarem acesos o tempo todo.
+static void shiftBuffer() {
+  static const int8_t OFF[4] = {0, 1, 0, -1};
+  int dx = OFF[(millis() / 120000) % 4];
+  if (!dx) return;
+  uint8_t *buf = s_oled.getBufferPtr();
+  for (int page = 0; page < 8; page++) {
+    uint8_t *row = buf + page * 128;
+    if (dx > 0) {
+      memmove(row + dx, row, 128 - dx);
+      memset(row, 0, dx);
+    } else {
+      memmove(row, row - dx, 128 + dx);
+      memset(row + 128 + dx, 0, -dx);
+    }
+  }
+}
+
 // Tela fixa enquanto a rede de configuração do Wi-Fi estiver aberta.
 static void drawPortal() {
   const NetStatus &n = netStatus();
@@ -467,6 +535,8 @@ static void render() {
     s_oled.setFont(u8g2_font_7x13_tf);
     const char *msg = "Iniciando...";
     s_oled.drawUTF8((128 - s_oled.getUTF8Width(msg)) / 2, 38, msg);
+  } else if (s_confirmUntil && (int32_t)(millis() - s_confirmUntil) < 0) {
+    drawRainConfirm();
   } else if (s_alertScreen) {
     drawAlertScreen();
   } else {
@@ -483,8 +553,36 @@ static void render() {
       case PG_NETWORK: drawNetwork(); break;
       case PG_RAIN: drawRain(); break;
     }
+    uint32_t held = buttonHeldMs();
+    if (held >= 500) drawHoldOverlay(held);
+    if (settings().pageMode == 1) shiftBuffer();
   }
   s_oled.sendBuffer();
+}
+
+// Liga/desliga e brilho conforme tela desligada, modo noturno, escurecer sem toque e o
+// "acender por 15 s" do botão. Só envia ao SSD1306 o que mudou.
+static void updateScreen() {
+  const Settings &c = settings();
+  uint32_t now = millis();
+  bool waking = s_wakeUntil && (int32_t)(now - s_wakeUntil) < 0;
+  if (s_wakeUntil && !waking) s_wakeUntil = 0;
+  bool off = !waking && (s_manualOff || (s_night == 1 && c.nightMode == 0));
+  int want = c.displayContrast;
+  if (!waking && ((s_night == 1 && c.nightMode == 1) || s_idleDim)) want = 0;
+  if (want != s_contrastSent) {
+    s_oled.setContrast(want);
+    s_contrastSent = want;
+  }
+  if ((int)off != s_powerSaveSent) {
+    s_oled.setPowerSave(off);
+    s_powerSaveSent = off;
+    if (!off) render();
+  }
+}
+
+bool displayProblem() {
+  return s_hasReading && (!s_last.ahtOk || !s_last.bmpOk || !netStatus().connected || uplinkStatus().lastError.length());
 }
 
 bool displayBegin() {
@@ -497,6 +595,9 @@ bool displayBegin() {
     return false;
   }
   s_oled.setContrast(settings().displayContrast);
+  s_contrastSent = settings().displayContrast;
+  s_powerSaveSent = 0;
+  s_lastTouch = millis();
   s_oled.enableUTF8Print();
   s_splashUntil = millis() + DISPLAY_SPLASH_MS;
   if (s_splashUntil == 0) s_splashUntil = 1;
@@ -529,14 +630,7 @@ static void applyNight() {
   }
   if (night == s_night) return;
   s_night = night;
-  if (s_manualOff) return;  // tela desligada manualmente: o modo noturno só vale ao religar
-  if (night && c.nightMode == 0) {
-    s_oled.setPowerSave(1);
-  } else {
-    s_oled.setPowerSave(0);
-    s_oled.setContrast(night ? 0 : c.displayContrast);
-    render();
-  }
+  updateScreen();
   log_i("[%s] modo %s", TAG, night ? (c.nightMode == 0 ? "noturno (apagado)" : "noturno (escuro)") : "diurno");
 }
 
@@ -560,9 +654,15 @@ static void evalAlert(uint32_t now) {
   }
   bool active = h > 0;
   bool night = s_night == 1;
-  if (active && !s_alert) {
-    log_i("[%s] alerta de chuva: %d%% em até %d h", TAG, p, h);
-    if (!night) {
+  bool test = s_testUntil != 0;
+  bool relevel = active && s_alert && p >= s_alertBeepP + ALERT_RELEVEL;
+  if (active && (!s_alert || relevel)) {
+    log_i("[%s] alerta de chuva: %d%% em até %d h%s", TAG, p, h, relevel ? " (subiu)" : "");
+    s_alertAck = false;
+    s_alertBeepP = p;
+    s_lastTouch = now;  // tira do "escurecido por falta de toque"
+    buzzerPlay(BZ_ALERT, test);
+    if (!night && s_powerSaveSent != 1) {
       s_flashLeft = 6;
       s_flashNext = now;
       if ((c.rainAlertMode & 2) && !s_paused) {
@@ -574,7 +674,10 @@ static void evalAlert(uint32_t now) {
     }
   }
   bool changed = active != s_alert || h != s_alertH || p != s_alertP;
-  if (!active) s_alertScreen = false;
+  if (!active) {
+    s_alertScreen = false;
+    s_alertAck = false;
+  }
   s_alert = active;
   s_alertH = h;
   s_alertP = p;
@@ -615,9 +718,28 @@ void displayLoop() {
   if (portal) return;  // tela fixa enquanto a configuração estiver aberta
 
   applyNight();
-  if (s_manualOff) return;
-  if (s_night == 1 && settings().nightMode == 0) return;  // tela apagada: não precisa redesenhar
-  evalAlert(now);
+  const Settings &cfg = settings();
+  s_idleDim = cfg.pageMode == 1 && cfg.idleDimMin && (uint32_t)(now - s_lastTouch) >= cfg.idleDimMin * 60000UL;
+  updateScreen();
+  evalAlert(now);  // o alerta (e o bipe) vale mesmo com a tela apagada
+  if (s_powerSaveSent == 1) return;  // tela apagada: não precisa redesenhar
+  // Botão apertado ou tela "Chuva registrada": redesenha a cada 100 ms e volta ao normal no fim.
+  static uint32_t lastOverlay = 0;
+  static bool wasOverlay = false;
+  bool overlay = buttonHeldMs() >= 500 || (s_confirmUntil && (int32_t)(now - s_confirmUntil) < 0);
+  if (overlay) {
+    if ((uint32_t)(now - lastOverlay) >= 100) {
+      lastOverlay = now;
+      render();
+    }
+    wasOverlay = true;
+    return;
+  }
+  if (wasOverlay) {
+    wasOverlay = false;
+    s_confirmUntil = 0;
+    render();
+  }
   if (s_flashLeft > 0 && (int32_t)(now - s_flashNext) >= 0) {
     s_inverted = !s_inverted;
     s_oled.sendF("c", s_inverted ? 0xA7 : 0xA6);  // inverso / normal no próprio SSD1306
@@ -634,12 +756,12 @@ void displayLoop() {
     if ((uint32_t)(now - s_pageSince) >= settings().displayPageMs) {
       s_alertScreen = false;
       s_pageSince = now;
-      if (!s_paused) s_page = (s_page + 1) % pageCount();
+      if (!s_paused && cfg.pageMode != 1) s_page = (s_page + 1) % pageCount();
       render();
     }
     return;
   }
-  if (s_paused) return;
+  if (s_paused || cfg.pageMode == 1) return;  // pelo botão: a página só muda com toque
   if (s_holdUntil && (int32_t)(now - s_holdUntil) < 0) return;  // segurando após navegação manual
   if (s_holdUntil) {
     s_holdUntil = 0;
@@ -650,7 +772,7 @@ void displayLoop() {
     s_pageSince = now;
     // Com alerta ativo, a tela de alerta entra a cada duas páginas.
     bool night = s_night == 1;
-    if (s_alert && (settings().rainAlertMode & 2) && !night && (++s_pagesSinceAlert >= 2 || pageCount() <= 2)) {
+    if (s_alert && !s_alertAck && (settings().rainAlertMode & 2) && !night && (++s_pagesSinceAlert >= 2 || pageCount() <= 2)) {
       s_pagesSinceAlert = 0;
       s_alertScreen = true;
       s_dropFrame = -1;
@@ -665,8 +787,10 @@ void displayApplySettings() {
   if (!s_ok) return;
   if (s_page >= pageCount()) s_page = 0;
   s_night = -1;  // reavalia o modo noturno com a nova configuração
-  s_oled.setContrast(settings().displayContrast);
+  s_contrastSent = -1;
+  s_lastTouch = millis();
   applyNight();
+  updateScreen();
   render();
 }
 
@@ -685,15 +809,12 @@ DisplayState displayState() {
 void displaySetPower(bool on) {
   if (!s_ok) return;
   s_manualOff = !on;
-  if (!on) {
-    s_oled.setPowerSave(1);
-  } else {
-    s_night = -1;  // reaplica o modo noturno (pode estar no horário)
-    s_oled.setPowerSave(0);
-    s_oled.setContrast(settings().displayContrast);
-    applyNight();
-    render();
-  }
+  s_wakeUntil = 0;
+  s_lastTouch = millis();
+  s_night = -1;  // reaplica o modo noturno (pode estar no horário)
+  applyNight();
+  updateScreen();
+  if (on) render();
   log_i("[%s] tela %s manualmente", TAG, on ? "ligada" : "desligada");
 }
 
@@ -708,8 +829,8 @@ static void showPage(int index) {
   s_alertScreen = false;
   s_page = index;
   s_pageSince = millis();
-  if (!s_paused) {
-    s_holdUntil = millis() + HOLD_MS;
+  if (!s_paused && settings().pageMode != 1) {
+    s_holdUntil = millis() + (settings().pageMode == 2 ? DISPLAY_TAP_HOLD_MS : HOLD_MS);
     if (s_holdUntil == 0) s_holdUntil = 1;
   }
   render();
@@ -725,6 +846,67 @@ bool displayGoto(int index) {
   showPage(index);
   return true;
 }
+
+DisplayTap displayTap() {
+  uint32_t now = millis();
+  s_lastTouch = now;
+  bool waking = s_wakeUntil && (int32_t)(now - s_wakeUntil) < 0;
+  bool dark = s_powerSaveSent == 1 || (s_night == 1 && settings().nightMode == 1 && !waking);
+  if (dark) {
+    s_wakeUntil = now + DISPLAY_WAKE_MS;
+    if (!s_wakeUntil) s_wakeUntil = 1;
+    updateScreen();
+    render();
+    return TAP_WAKE;
+  }
+  if (s_idleDim) {
+    s_idleDim = false;
+    updateScreen();
+    return TAP_WAKE;
+  }
+  if (waking) s_wakeUntil = now + DISPLAY_WAKE_MS;  // navegando com a tela acesa à noite
+  if (s_alert && !s_alertAck) {
+    s_alertAck = true;
+    s_alertScreen = false;
+    buzzerStop();
+    render();
+    log_i("[%s] alerta calado pelo botão", TAG);
+    return TAP_ACK;
+  }
+  displayStep(1);
+  return TAP_NEXT;
+}
+
+void displayRainReported(bool cloud) {
+  uint32_t now = millis();
+  s_lastTouch = now;
+  s_confirmCloud = cloud;
+  s_confirmUntil = now + 2500;
+  if (!s_confirmUntil) s_confirmUntil = 1;
+  if (s_powerSaveSent == 1) {
+    s_wakeUntil = now + DISPLAY_WAKE_MS;
+    if (!s_wakeUntil) s_wakeUntil = 1;
+  }
+  updateScreen();
+  render();
+}
+
+void displayToggleScreen() {
+  uint32_t now = millis();
+  s_lastTouch = now;
+  if (s_powerSaveSent == 1) {
+    s_manualOff = false;
+    s_wakeUntil = now + DISPLAY_WAKE_MS;  // à noite (apagar), acende por 15 s
+    if (!s_wakeUntil) s_wakeUntil = 1;
+    updateScreen();
+    render();
+    log_i("[%s] tela ligada pelo botão", TAG);
+  } else {
+    displaySetPower(false);
+  }
+}
+
+bool displayAlertAcked() { return s_alertAck; }
 
 bool displayRainAlert(int *h, int *p) {
   if (h) *h = s_alertH;

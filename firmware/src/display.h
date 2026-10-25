@@ -35,8 +35,21 @@ bool displayGoto(int index);
 // Tela de atualização pelo Wi-Fi: progresso (0..100) ou erro (pct < 0) com a mensagem.
 void displayOta(int pct, const char *msg);
 
+// --- Botão (Fase 19) ---
+enum DisplayTap : uint8_t { TAP_WAKE, TAP_ACK, TAP_NEXT };
+// Toque: acende a tela apagada/escurecida (15 s), cala o alerta ou vai para a próxima página.
+DisplayTap displayTap();
+// Segurou 2 s: tela "Chuva registrada" por 2,5 s (cloud = a nuvem está configurada).
+void displayRainReported(bool cloud);
+// Segurou 5 s: desliga a tela; com ela apagada, acende (à noite, por 15 s).
+void displayToggleScreen();
+// Algum problema (sensor, Wi-Fi ou nuvem): o mesmo "!" do cabeçalho.
+bool displayProblem();
+
 // --- Alerta de chuva (previsão da nuvem + limite configurado) ---
 // Ativo agora? h = janela (1..3 h) e p = chance (%) que dispararam.
 bool displayRainAlert(int *h, int *p);
+// O alerta atual foi calado pelo botão (volta se a chance subir 15 pontos).
+bool displayAlertAcked();
 // Mostra o alerta por 12 s com valores de exemplo (botão "Testar alerta").
 void displayAlertTest();

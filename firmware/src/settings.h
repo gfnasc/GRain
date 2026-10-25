@@ -23,7 +23,7 @@ struct PageCfg {
 // (página local, API e console); a nuvem só recebe uma cópia.
 // Segredos não ficam aqui (ficam na NVS).
 struct Settings {
-  int schema = 3;
+  int schema = 4;
   String deviceId;
   String hostname;     // nome mDNS: <hostname>.local
   String tz;           // fuso no formato POSIX, ex.: "<-03>3"
@@ -41,6 +41,17 @@ struct Settings {
   uint16_t nightFrom = 23 * 60;  // minutos desde 00:00
   uint16_t nightTo = 6 * 60;
   uint8_t nightMode = 1;         // 0 = apagar, 1 = escurecer
+  uint8_t pageMode = 1;          // troca de página: 0 = automática, 1 = pelo botão, 2 = as duas
+  uint8_t idleDimMin = 10;       // modo pelo botão: escurece após N min sem toque (0 = nunca)
+  // buzzer e LED (Fase 19)
+  bool buzzerEnabled = true;
+  bool buzzerClicks = true;      // clique curto a cada toque no botão
+  bool buzzerActiveLow = false;  // o módulo liga com nível baixo
+  bool quietEnabled = true;      // horário silencioso: buzzer calado e LED em led.quiet
+  uint16_t quietFrom = 22 * 60;
+  uint16_t quietTo = 7 * 60;
+  uint8_t ledMode = 0;           // 0 = normal, 1 = só avisos, 2 = desligado
+  uint8_t ledQuietMode = 1;      // o mesmo, no horário silencioso
   // calibração (somada às leituras)
   float calTemp = 0, calHum = 0, calPres = 0;
   // pressão calibrada pelo QNH do aeroporto: o desvio vem da nuvem e substitui calPres
@@ -79,7 +90,7 @@ bool settingsApplyJson(JsonObjectConst obj, String &err);
 // Muda a cada gravação: quem precisa reagir a mudanças compara com o valor anterior.
 uint32_t settingsRevision();
 
-// Cópia enviada para a nuvem: display, calibração e localização.
+// Cópia enviada para a nuvem: display, calibração, localização, alerta, buzzer, LED e horário silencioso.
 void settingsCloudCopy(JsonDocument &doc);
 
 // Serializa a configuração atual (formato de /config.json).

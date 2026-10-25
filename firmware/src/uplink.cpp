@@ -37,8 +37,9 @@ static uint32_t s_reportRetryAt = 0;  // espera entre tentativas do aviso de chu
 static int https(const char *method, const String &url, const String &token, const String &body, String &resp);
 
 struct Lock {
-  Lock() { xSemaphoreTake(s_lock, portMAX_DELAY); }
-  ~Lock() { xSemaphoreGive(s_lock); }
+  // Antes de uplinkBegin() não há mutex nem tarefa de rede: não precisa travar.
+  Lock() { if (s_lock) xSemaphoreTake(s_lock, portMAX_DELAY); }
+  ~Lock() { if (s_lock) xSemaphoreGive(s_lock); }
 };
 
 // Acumulador do intervalo atual de 10 min (só no loop principal).

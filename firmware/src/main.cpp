@@ -1,11 +1,14 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "button.h"
+#include "buzzer.h"
 #include "config.h"
 #include "console.h"
 #include "display.h"
 #include "health.h"
 #include "i2c_scan.h"
+#include "led.h"
 #include "netmgr.h"
 #include "sensors.h"
 #include "settings.h"
@@ -32,14 +35,39 @@ static void printReading(const Reading &r) {
   Serial.println();
 }
 
+// Gestos do botão (Fase 19).
+static void handleButton() {
+  switch (buttonPoll()) {
+    case BTN_TAP:
+      displayTap();
+      buzzerPlay(BZ_CLICK);
+      break;
+    case BTN_RAIN: {
+      bool cloud = uplinkStatus().configured;
+      if (cloud) uplinkReportRain(false);
+      displayRainReported(cloud);
+      buzzerPlay(BZ_CONFIRM);
+      break;
+    }
+    case BTN_SCREEN:
+      displayToggleScreen();
+      buzzerPlay(BZ_CLICK);
+      break;
+    default:
+      break;
+  }
+}
+
 void setup() {
+  // Configuração primeiro: o buzzer precisa saber em que nível fica calado.
+  settingsBegin();
+  buzzerBegin();
   Serial.begin(115200);
   delay(500);
-  pinMode(PIN_LED, OUTPUT);
+  ledBegin();
+  buttonBegin();
   log_i("[%s] boot: GRain %s", TAG, FW_VERSION);
   healthBegin();
-
-  settingsBegin();
 
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, I2C_FREQ_HZ);
   // Display primeiro, para a tela de abertura aparecer durante a inicialização.
@@ -62,6 +90,7 @@ void setup() {
   netBegin();
   uplinkBegin();
   Serial.println("Digite \"ajuda\" para ver os comandos.\n");
+  buzzerPlay(BZ_BOOT);  // bipe curtíssimo: terminou de ligar
 }
 
 void loop() {
@@ -71,17 +100,19 @@ void loop() {
   webapiLoop();
   uplinkLoop();
   consoleLoop();
+  handleButton();
+  buzzerLoop();
+  ledLoop();
 
   static uint32_t last = 0;
   uint32_t now = millis();
   if (last == 0 || (uint32_t)(now - last) >= SENSOR_INTERVAL_MS) {
     last = now ? now : 1;
-    digitalWrite(PIN_LED, HIGH);
     Reading r = sensorsRead();
     printReading(r);
     uplinkAddReading(r);
     displayUpdate(r);
-    digitalWrite(PIN_LED, LOW);
+    ledPulse();
   }
   displayLoop();
 }

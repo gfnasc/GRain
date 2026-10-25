@@ -176,14 +176,33 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
     </div>
     <h2>Alerta de chuva</h2>
     <div class="box">
-      <span class="mut">Quando a chance passa do limite, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta entra no carrossel a cada duas páginas.</span>
+      <span class="mut">Quando a chance passa do limite, o buzzer dá 3 bipes curtos, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta, e o LED azul pisca duplo. Um toque no botão cala; volta se a chance subir 15 pontos.</span>
       <div class="f2 f4">
         <label class="ck"><input id="a_on" type="checkbox">Ligado</label>
         <label>A partir de (%)<input id="a_pct" type="number" min="10" max="100" step="5"></label>
         <label>Nas próximas<select id="a_h"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option></select></label>
         <label>Mostrar<select id="a_mode"><option value="both">ícone e tela</option><option value="icon">só o ícone</option><option value="screen">só a tela</option></select></label>
       </div>
-      <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta por 12 s com valores de exemplo</span></div>
+      <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta por 12 s com valores de exemplo (com bipe)</span></div>
+    </div>
+    <h2>Botão, buzzer e LED</h2>
+    <div class="box">
+      <span class="mut">Botão: toque troca de página (com a tela apagada, acende por 15 s; com alerta, cala); segure 2 s para “Está chovendo aqui”; segure 5 s para desligar ou ligar a tela.</span>
+      <div class="f2 f4">
+        <label>Troca de página<select id="b_mode"><option value="button">pelo botão</option><option value="auto">automática</option><option value="both">as duas</option></select></label>
+        <label>Escurecer sem toque (min)<input id="b_dim" type="number" min="0" max="120" step="1" title="só no modo pelo botão; 0 = nunca"></label>
+        <label>LED azul<select id="d_led"><option value="normal">normal</option><option value="warnings">só avisos</option><option value="off">desligado</option></select></label>
+        <label>LED no silencioso<select id="d_ledq"><option value="warnings">só avisos</option><option value="normal">normal</option><option value="off">desligado</option></select></label>
+        <label class="ck"><input id="z_on" type="checkbox">Buzzer ligado</label>
+        <label class="ck"><input id="z_click" type="checkbox">Clique nos toques</label>
+        <label>O buzzer liga com<select id="z_lvl"><option value="high">nível alto</option><option value="low">nível baixo</option></select></label>
+        <span></span>
+        <label class="ck"><input id="q_on" type="checkbox">Horário silencioso</label>
+        <span class="mut">buzzer calado e LED como acima</span>
+        <label>Das<input id="q_from" type="time"></label>
+        <label>Às<input id="q_to" type="time"></label>
+      </div>
+      <div class="row"><button id="z_test">Testar buzzer</button><span class="mut">3 bipes, mesmo no silencioso. Se o buzzer apitar sem parar ao ligar, troque “O buzzer liga com” e salve.</span></div>
     </div>
   </section>
 
@@ -242,6 +261,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
       <tr><td>Sensores</td><td id="sens">–</td></tr>
       <tr><td>Firmware</td><td id="fw">–</td></tr>
       <tr><td>Último reinício</td><td id="rst">–</td></tr>
+      <tr><td>Botão</td><td id="btn">–</td></tr>
       <tr><td>Reinícios registrados</td><td id="boots">–</td></tr>
       <tr><td>Menor memória livre</td><td id="memmin">–</td></tr>
       <tr><td>Atualização pelo Wi-Fi</td><td id="ota">–</td></tr>
@@ -328,6 +348,11 @@ async function loadCfg(){
   $("n_on").checked=d.night.enabled;$("n_mode").value=d.night.mode;$("n_from").value=d.night.from;$("n_to").value=d.night.to;
   $("c_t").value=r1(k.temp,10);$("c_h").value=r1(k.hum,10);$("c_p").value=r1(k.pres,10);
   $("c_auto").checked=k.pres_auto!==false;autoTxt(k.pres_auto_offset);
+  pmode=d.page_mode||"auto";$("b_mode").value=pmode;$("b_dim").value=d.idle_dim_min??10;
+  const z=c.buzzer||{},q=c.quiet||{},lg=c.led||{};
+  $("z_on").checked=z.enabled!==false;$("z_click").checked=z.clicks!==false;$("z_lvl").value=z.level||"high";
+  $("q_on").checked=q.enabled!==false;$("q_from").value=q.from||"22:00";$("q_to").value=q.to||"07:00";
+  $("d_led").value=lg.mode||"normal";$("d_ledq").value=lg.quiet||"warnings";
   const a=c.rain_alert||{};$("a_on").checked=a.enabled!==false;$("a_pct").value=a.threshold||60;$("a_h").value=String(a.hours||2);$("a_mode").value=a.mode||"both";
   $("l_lat").value=r1(l.lat,1e5);$("l_lon").value=r1(l.lon,1e5);$("l_lab").value=l.label||"";
   drawPages();
@@ -356,10 +381,14 @@ $("save").onclick=async()=>{
   const body={
     display:{page_s:+$("page_s").value,contrast:+$("contrast").value,
       night:{enabled:$("n_on").checked,from:$("n_from").value,to:$("n_to").value,mode:$("n_mode").value},
+      page_mode:$("b_mode").value,idle_dim_min:+$("b_dim").value||0,
       pages:P.map(p=>p.type==="fields"?{type:"fields",fields:p.fields}:{type:p.type})},
     calibration:{temp:num($("c_t").value)||0,hum:num($("c_h").value)||0,pres:num($("c_p").value)||0,pres_auto:$("c_auto").checked},
     location:{lat:lat,lon:lon,label:$("l_lab").value.trim()},
-    rain_alert:{enabled:$("a_on").checked,threshold:+$("a_pct").value,hours:+$("a_h").value,mode:$("a_mode").value}};
+    rain_alert:{enabled:$("a_on").checked,threshold:+$("a_pct").value,hours:+$("a_h").value,mode:$("a_mode").value},
+    buzzer:{enabled:$("z_on").checked,clicks:$("z_click").checked,level:$("z_lvl").value},
+    led:{mode:$("d_led").value,quiet:$("d_ledq").value},
+    quiet:{enabled:$("q_on").checked,from:$("q_from").value,to:$("q_to").value}};
   $("save").disabled=true;
   try{
     const r=await fetch("/api/v1/config",{method:"PUT",headers:{"Content-Type":"application/json",Authorization:auth(pw)},body:JSON.stringify(body)});
@@ -391,7 +420,8 @@ function renderDisplay(d){
   let st=[];
   if(!d.on)st.push("tela desligada até religar ou reiniciar");
   else if(d.night)st.push("modo noturno ativo");
-  if(d.paused)st.push("carrossel pausado");
+  if(pmode==="button")st.push("troca pelo botão");
+  else if(d.paused)st.push("carrossel pausado");
   else if(d.hold_s)st.push("volta a girar em "+d.hold_s+" s");
   else st.push("trocando a cada "+d.page_s+" s");
   $("dst").textContent=st.join(" · ");
@@ -426,7 +456,7 @@ $("pwchg").onclick=async()=>{
   }catch(e){say("pwmsg",e.message,1)}
 };
 // Contadores: relógio da estação (epoch do /status) acertado a cada leitura e contado aqui a cada segundo.
-let devOff=null,ivl=300,rainAt=0,pageAt=Date.now()+5000,tests=null;
+let devOff=null,ivl=300,rainAt=0,pageAt=Date.now()+5000,tests=null,pmode="auto";
 const mmss=s=>s<=0?"agora":Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
 function timers(){
   const pg=Math.max(0,Math.ceil((pageAt-Date.now())/1000));$("n_page").textContent="em "+pg+" s";
@@ -457,6 +487,7 @@ $("rnone").onclick=async()=>{if(!confirm("Marcar que não choveu aqui hoje? As c
   try{await post("/api/v1/rain/report",{kind:"nao_choveu_hoje"});say("rmsg","Registrado: hoje não choveu aqui. A nuvem confere o dia de novo.")}catch(e){say("rmsg",e.message,1)}
   setTimeout(()=>{delete $("rmsg").dataset.busy;$("rnone").disabled=false},8000)};
 $("a_test").onclick=()=>act({alert_test:true});
+$("z_test").onclick=()=>act({buzzer_test:true});
 async function tick(){
   pageAt=Date.now()+5000;
   try{
@@ -481,6 +512,7 @@ async function tick(){
     $("sens").innerHTML="AHT20 "+(s.aht20?"ok":'<span class="err">erro</span>')+" · BMP280 "+(s.bmp280?"ok":'<span class="err">erro</span>');
     $("fw").textContent=st.device.firmware+" · "+st.device.id;
     $("rst").textContent=st.device.reset_reason||"–";
+    const bt=st.device.button;$("btn").textContent=bt&&bt.last?bt.last+(bt.at>1e9?" às "+hm(bt.at):""):"nenhum toque desde que ligou";
     $("boots").textContent=st.device.boots??"–";
     $("memmin").textContent=st.device.heap_min?Math.round(st.device.heap_min/1024)+" KB":"–";
     $("ota").textContent=st.device.ota?"ativa (porta 3232, senha da estação)":"indisponível";
