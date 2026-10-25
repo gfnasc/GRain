@@ -178,16 +178,17 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
   0,1–0,2 mm estimados pelo Open-Meteo). Últimos 3 dias reconferidos e treino refeito; aprovado pelo usuário, apesar
   de mexer na conferência durante o teste (vale igual para todos os métodos).
 
+- Fase 17 concluída: teste de 72 h (14/10 17:50 a 17/10 17:50, firmware 0.14.1) passou em 17/10 às 17:50: 72 h sem reinícios, sem buracos no histórico (100 % das médias) e memória livre estável (195,7 KB no início, 198,9 KB no fim; pior momento 102 KB).
+  Depois do teste, 4 reinícios por falta de energia ("energia ligada"): 18/10 13:26, 22/10 08:40 e 09:21, 25/10 15:36
+  (este durante chuva forte); nenhum por watchdog ou autocura. Só 1 buraco de 10 min (25/10 15:25).
+
 ## Em andamento
 - Teste de chuva (Fase 18): de 13/10 16:25:22 a 12/11 16:25 (hora local); não recomeça com gravações.
-- Teste de robustez (Fase 17): o primeiro (desde 13/10 16:25) falhou pelos 3 reinícios do bug acima; recomeçou com
-  a gravação do 0.14.1 em 14/10 17:50 e termina em 17/10 17:50. Não gravar firmware nem reiniciar até lá.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).
 
 ## Próximos passos
-1. Fechar a Fase 17 em 17/10 (17:50) se o teste de 72 h passar (aba Estação).
-2. Fechar a Fase 18 em 12/11: placar do teste (M2T e M4 contra M1–M3), cobertura ≥ 90 %, pelo menos 5 horas de chuva.
-3. Fase 19: WhatsApp (configurado na página local).
+1. Fechar a Fase 18 em 12/11: placar do teste (M2T e M4 contra M1–M3), cobertura ≥ 90 %, pelo menos 5 horas de chuva.
+2. Fase 19: WhatsApp (configurado na página local).
 
 ## Problemas conhecidos
 - M2T e M4 treinam uma regressão por janela (1, 2 e 3 h) separadamente; às vezes a chance de 2 h sai 1 ponto abaixo
