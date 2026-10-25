@@ -853,13 +853,14 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
       <div class="phase next">
         <div class="n">19</div>
         <div class="body">
-          <div class="meta"><h3>Interface física: botão e buzzer</h3><span class="chip">1 dia</span></div>
+          <div class="meta"><h3>Interface física: botão, buzzer e LED</h3><span class="chip">1–2 dias</span></div>
           <ul>
             <li><b>Botão</b> (D19): toque troca de página (com a tela apagada, acende por 15 s; com alerta ativo, cala o alerta); segurar 2 s registra “Está chovendo aqui”, com tela de confirmação; segurar 5 s liga ou desliga a tela. Troca de página pelo botão, automática ou as duas, com proteção contra marcas no OLED.</li>
-            <li><b>Buzzer</b> (D18, ativo): 3 bipes quando o alerta dispara (de novo só se a chance subir de nível), clique nos toques do botão e 2 bipes ao registrar chuva; horário silencioso (padrão 22h–7h); o botão cala.</li>
+            <li><b>Buzzer</b> (D18, ativo, só bipes curtinhos): bipe ao terminar de ligar, 3 bipes quando o alerta dispara (de novo só se a chance subir de nível), clique nos toques do botão e 2 bipes ao registrar chuva; horário silencioso (padrão 22h–7h); o botão cala.</li>
+            <li><b>LED azul embutido</b>: acompanha o botão (aceso, pisca rápido nos 2 s, fixo nos 5 s), confirma o aviso de chuva aceito pela nuvem, pisca duplo com alerta ativo, triplo quando algo falha, rápido na gravação pelo Wi-Fi; sinal de vida a cada leitura; à noite, só avisos.</li>
             <li>Tudo configurado na aba Display do app local; “Testar buzzer” e “Testar alerta” no app.</li>
           </ul>
-          <p class="accept"><b>Aceite:</b> os três gestos funcionam sem falso disparo; o alerta toca uma vez por subida e respeita o horário silencioso; nenhum bipe no boot.</p>
+          <p class="accept"><b>Aceite:</b> os três gestos funcionam sem falso disparo; o alerta toca uma vez por subida e respeita o horário silencioso; só o bipe curto programado no boot; o LED segue a prioridade dos avisos.</p>
         </div>
       </div>
       <div class="phase next">

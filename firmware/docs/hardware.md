@@ -13,7 +13,7 @@ Diagrama visual: `../../docs/plano.html` (seção Ligações).
 |---|---|---|---|
 | I2C SDA | 21 | bidirecional | fio azul; compartilhado por AHT20, BMP280, OLED |
 | I2C SCL | 22 | saída | fio roxo; compartilhado por AHT20, BMP280, OLED |
-| LED | 2 | saída | LED onboard, pisca a cada leitura |
+| LED | 2 | saída | LED azul onboard; hoje pisca a cada leitura; na Fase 19 vira retorno visual (botão, alerta, falhas, OTA) |
 | 3V3 | – | alimentação | trilho +, fio vermelho |
 | GND | – | alimentação | trilho −, fio preto (GND do lado direito) |
 | Botão (Fase 19, ligado) | 19 | entrada | para o GND, pull-up interno |
