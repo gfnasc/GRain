@@ -366,7 +366,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <h2>O que vamos construir e as decisões já tomadas</h2>
   </div>
   <div class="stack-lg">
-    <div class="note warn"><strong>Visão da v4 (fases 1 a 10)</strong><span>Esta seção registra as decisões originais. Na v5 mudaram quatro coisas: as configurações saíram do painel e foram para o app do ESP32, o painel ficou só para visualização, o WhatsApp foi adiado para a Fase 19 e a temperatura de fora passou a vir de dados externos. Veja <a href="#v5">Reformulação v5</a>.</span></div>
+    <div class="note warn"><strong>Visão da v4 (fases 1 a 10)</strong><span>Esta seção registra as decisões originais. Na v5 mudaram quatro coisas: as configurações saíram do painel e foram para o app do ESP32, o painel ficou só para visualização, o WhatsApp foi adiado para a última fase (agora a 20) e a temperatura de fora passou a vir de dados externos. Veja <a href="#v5">Reformulação v5</a>.</span></div>
     <div class="cols">
       <div class="stack">
         <h3>Funções</h3>
@@ -718,7 +718,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
       <div class="n">09</div>
       <div class="body">
         <div class="meta"><h3>Previsão e WhatsApp</h3><span class="chip v5">Encerrada na v5</span></div>
-        <ul><li>Chegou a funcionar (agenda pela consulta do ESP32, alertas, Open-Meteo e Zambretti), mas foi encerrada sem validação: o código é removido na Fase 11 e o WhatsApp volta, redesenhado, como a Fase 19. Veja <a href="#v5">Reformulação v5</a>.</li></ul>
+        <ul><li>Chegou a funcionar (agenda pela consulta do ESP32, alertas, Open-Meteo e Zambretti), mas foi encerrada sem validação: o código é removido na Fase 11 e o WhatsApp volta, redesenhado, como a Fase 20. Veja <a href="#v5">Reformulação v5</a>.</li></ul>
       </div>
     </div>
     <div class="phase">
@@ -852,6 +852,19 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
       </div>
       <div class="phase next">
         <div class="n">19</div>
+        <div class="body">
+          <div class="meta"><h3>Interface física: botão, LEDs e buzzer</h3><span class="chip">1–2 dias</span></div>
+          <ul>
+            <li><b>Botão</b> (D4): toque troca de página; segurar 2 s registra “Está chovendo aqui”, com tela de confirmação; segurar 5 s liga ou desliga a tela; com alerta ativo, o toque cala o alerta; no modo noturno, acende a tela por 15 s. Troca de página pelo botão, automática ou as duas, com proteção contra marcas no OLED.</li>
+            <li><b>LEDs</b> (vermelho D19, amarelo D18, verde D17): semáforo da chance de chuva (verde abaixo de 30 %, amarelo até o limite do alerta, vermelho a partir dele), vermelho piscando quando está chovendo, amarelo com duas piscadas quando algo falha; modo alternativo “Conforto” pelo Indoor; brilho ajustável e modo noturno.</li>
+            <li><b>Buzzer</b> (D16): 3 bipes quando o alerta dispara, clique nos toques do botão e dois tons ao registrar chuva; silencioso à noite; o botão cala.</li>
+            <li>Tudo configurado na aba Display do app local; “Testar alerta” passa a testar LEDs e buzzer.</li>
+          </ul>
+          <p class="accept"><b>Aceite:</b> os três gestos funcionam sem falso disparo; os LEDs acompanham o destaque da estação; o alerta toca uma vez por subida e respeita o horário silencioso.</p>
+        </div>
+      </div>
+      <div class="phase next">
+        <div class="n">20</div>
         <div class="body">
           <div class="meta"><h3>WhatsApp (por último)</h3><span class="chip">1–2 dias</span></div>
           <ul>

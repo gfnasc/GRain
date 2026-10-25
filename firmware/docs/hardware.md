@@ -16,6 +16,11 @@ Diagrama visual: `../../docs/plano.html` (seção Ligações).
 | LED | 2 | saída | LED onboard, pisca a cada leitura |
 | 3V3 | – | alimentação | trilho +, fio vermelho |
 | GND | – | alimentação | trilho −, fio preto (GND do lado direito) |
+| Botão (Fase 19, planejado) | 4 | entrada | para o GND, pull-up interno; GPIO 4 também é toque capacitivo (T0) |
+| LED vermelho (planejado) | 19 | saída | resistor de 220–330 Ω até o GND |
+| LED amarelo (planejado) | 18 | saída | resistor de 220–330 Ω até o GND |
+| LED verde (planejado) | 17 | saída | resistor de 220–330 Ω até o GND (pino TX2, UART2 não usada) |
+| Buzzer (planejado) | 16 | saída | módulo com transistor em 3V3 (pino RX2, UART2 não usada) |
 
 ## Periféricos e sensores
 | Item | Interface | Endereço/Pino | Observação |

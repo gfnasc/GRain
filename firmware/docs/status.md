@@ -188,7 +188,9 @@ mantém uma API local + página mínima em `grain.local`. Plano v5: Outdoor (dad
 
 ## Próximos passos
 1. Fechar a Fase 18 em 12/11: placar do teste (M2T e M4 contra M1–M3), cobertura ≥ 90 %, pelo menos 5 horas de chuva.
-2. Fase 19: WhatsApp (configurado na página local).
+2. Fase 19: interface física (botão em D4, LEDs vermelho/amarelo/verde em D19/D18/D17, buzzer em D16); ver docs/PLANO.md.
+   Pode ser feita durante o teste de 30 dias (gravação e reinício não o afetam; o código da chuva não muda).
+3. Fase 20: WhatsApp (configurado na página local).
 
 ## Problemas conhecidos
 - M2T e M4 treinam uma regressão por janela (1, 2 e 3 h) separadamente; às vezes a chance de 2 h sai 1 ponto abaixo

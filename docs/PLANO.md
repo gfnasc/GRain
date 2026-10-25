@@ -35,6 +35,8 @@ BMP280: CSB → 3V3 com fio **laranja**; SDO → GND com fio **amarelo** (pinos 
 Endereços: AHT20 `0x38` · BMP280 `0x76` (SDO em GND; ID `0x58`) · OLED `0x3C`.
 Atenção: no OLED o GND costuma vir antes do VCC. Nunca usar VIN (5 V).
 
+Planejado para a Fase 19 (também no lado direito): botão D4 → GND (pull-up interno; o GPIO 4 também aceita toque capacitivo); LEDs vermelho D19, amarelo D18 e verde D17, cada um com resistor de 220–330 Ω até o GND; buzzer D16 (módulo com transistor, alimentado em 3V3).
+
 ## Altitude e pressão
 `altitude = terreno + andar × altura_do_andar + altura_do_sensor` (valores iniciais em `firmware/include/site.h`, depois em `/config.json`)
 `P_mar = P / (1 − alt/44330)^5,255`. Cada ~8 m de erro na altitude erra ~1 hPa.
@@ -73,7 +75,7 @@ O que conta como chuva observada: o METAR (RA/DZ/SHRA/TSRA), o botão “Está c
 6. ✅ Nuvem: Nuxt na Vercel (`web/`), Postgres, `POST /api/v1/ingest` com token por aparelho, envio pelo ESP32 com reserva offline, painel com login.
 7. ✅ Histórico, gráficos (24 h / 7 d / 30 d), mínimas e máximas, exportação CSV no painel.
 8. ✅ Personalização do display pelo painel; ESP32 busca a configuração na nuvem. *(Na v5 o editor vai para o ESP32, Fase 12.)*
-9. ⏹️ Previsão + WhatsApp: encerrada na v5 sem validação; código removido na Fase 11, volta como Fase 19.
+9. ⏹️ Previsão + WhatsApp: encerrada na v5 sem validação; código removido na Fase 11, volta como Fase 20.
 10. ➡️ Robustez: movida para a Fase 17.
 
 **v5 — GRain**
@@ -86,7 +88,12 @@ O que conta como chuva observada: o METAR (RA/DZ/SHRA/TSRA), o botão “Está c
 16. ✅ Indoor: conforto, ar seco, mofo, janela, atraso térmico; resumo do dia com Indoor e Outdoor.
 17. ✅ Robustez: watchdog, OTA, reinício sem rede, aviso de erro no OLED, teste de 72 h. *Implementada (firmware 0.13.x). O primeiro teste de 72 h (desde 13/10 16:25) falhou: o 0.14.0 reiniciava sozinho por um erro de conta na autocura ("nuvem sem resposta por 6 h" sem a nuvem ter falhado), corrigido no 0.14.1. O teste recomeçou em 14/10 às 17:50 e passou em 17/10 às 17:50: 72 h sem reinícios, sem buracos no histórico (100 % das médias) e memória livre estável (195,7 KB no início, 198,9 KB no fim; pior momento 102 KB).*
 18. 🧪 Chuva v2: **M2 treinado** (só estação + aeroporto, com os pesos aprendidos no local; nas primeiras observações, o M2 com pesos fixos já batia com a previsão do Google) e **M4** combinado (estação + aeroporto + modelo), ambos aprendendo com as previsões guardadas e o que aconteceu, validados num teste de 30 dias; M5 experimental. *Implementada: regressão logística por janela sobre os sinais do M1/M2 (e o M3, no M4), puxada para os pesos fixos (sem dados, M2T = M2 e M4 = média de M2 e M3), refeita a cada 3 h; botão “Não choveu hoje” (painel e estação) para tirar do placar a chuva do METAR que não chegou aqui; firmware 0.14.0 com os cinco métodos e os prazos dos testes. Teste de 30 dias de 13/10 16:25 a 12/11 16:25 (aba Chuva). M5 (radar) fica para depois do teste.*
-19. WhatsApp: números, chaves e horários configurados no ESP32; mensagens Outdoor/Indoor/Chuva montadas pela nuvem e alerta de chuva.
+19. Interface física: botão, 3 LEDs e buzzer (pinos do lado direito: botão D4, LEDs vermelho D19, amarelo D18 e verde D17 com resistor de 220–330 Ω, buzzer D16).
+    - **Botão:** toque = próxima página; segurar 2 s = "Está chovendo aqui" (com tela de confirmação); segurar 5 s = liga/desliga a tela; com alerta ativo, o toque cala o alerta; no modo noturno, o toque acende a tela por 15 s. Troca de página escolhida no app: pelo botão, automática ou as duas (o toque segura a página por 30 s). Proteção do OLED no modo pelo botão: deslocar a imagem 1–2 pixels de tempos em tempos e escurecer depois de alguns minutos sem toque.
+    - **LEDs (semáforo da chuva):** verde abaixo de 30 %, amarelo de 30 % até o limite do alerta, vermelho a partir do limite (método em destaque, na janela do alerta); vermelho piscando = chovendo agora (aviso local nos últimos 30 min ou METAR com chuva); amarelo com duas piscadas a cada 10 s = falha (o mesmo "!" do OLED); apagados se a previsão estiver velha. Modo alternativo "Conforto" (verde confortável, amarelo atenção, vermelho alerta, pelo Indoor) ou desligados; brilho por PWM; seguem o modo noturno; sequência de teste ao ligar, progresso durante a gravação pelo Wi-Fi e piscada de confirmação nos gestos do botão.
+    - **Buzzer:** 3 bipes quando o alerta de chuva dispara (de novo só se a chance subir de nível); clique curto nos toques do botão e dois tons ao registrar chuva; silencioso no horário noturno (configurável); o toque no botão cala; liga/desliga no app; o "Testar alerta" do app passa a testar LEDs e buzzer.
+    - Configuração na aba Display do app local (modo dos LEDs, brilho, buzzer, horário silencioso, troca de página); a cópia vai para o painel.
+20. WhatsApp: números, chaves e horários configurados no ESP32; mensagens Outdoor/Indoor/Chuva montadas pela nuvem e alerta de chuva.
 
 ## Bibliotecas
 Firmware: Adafruit AHTX0 · Adafruit BMP280 Library · Adafruit Unified Sensor · U8g2 · ArduinoJson 7 · WiFiManager · (WebServer e HTTPClient do core ESP32)
