@@ -853,14 +853,13 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
       <div class="phase next">
         <div class="n">19</div>
         <div class="body">
-          <div class="meta"><h3>Interface física: botão, LEDs e buzzer</h3><span class="chip">1–2 dias</span></div>
+          <div class="meta"><h3>Interface física: botão e buzzer</h3><span class="chip">1 dia</span></div>
           <ul>
-            <li><b>Botão</b> (D4): toque troca de página; segurar 2 s registra “Está chovendo aqui”, com tela de confirmação; segurar 5 s liga ou desliga a tela; com alerta ativo, o toque cala o alerta; no modo noturno, acende a tela por 15 s. Troca de página pelo botão, automática ou as duas, com proteção contra marcas no OLED.</li>
-            <li><b>LEDs</b> (vermelho D19, amarelo D18, verde D17): semáforo da chance de chuva (verde abaixo de 30 %, amarelo até o limite do alerta, vermelho a partir dele), vermelho piscando quando está chovendo, amarelo com duas piscadas quando algo falha; modo alternativo “Conforto” pelo Indoor; brilho ajustável e modo noturno.</li>
-            <li><b>Buzzer</b> (D16): 3 bipes quando o alerta dispara, clique nos toques do botão e dois tons ao registrar chuva; silencioso à noite; o botão cala.</li>
-            <li>Tudo configurado na aba Display do app local; “Testar alerta” passa a testar LEDs e buzzer.</li>
+            <li><b>Botão</b> (D19): toque troca de página (com a tela apagada, acende por 15 s; com alerta ativo, cala o alerta); segurar 2 s registra “Está chovendo aqui”, com tela de confirmação; segurar 5 s liga ou desliga a tela. Troca de página pelo botão, automática ou as duas, com proteção contra marcas no OLED.</li>
+            <li><b>Buzzer</b> (D18, ativo): 3 bipes quando o alerta dispara (de novo só se a chance subir de nível), clique nos toques do botão e 2 bipes ao registrar chuva; horário silencioso (padrão 22h–7h); o botão cala.</li>
+            <li>Tudo configurado na aba Display do app local; “Testar buzzer” e “Testar alerta” no app.</li>
           </ul>
-          <p class="accept"><b>Aceite:</b> os três gestos funcionam sem falso disparo; os LEDs acompanham o destaque da estação; o alerta toca uma vez por subida e respeita o horário silencioso.</p>
+          <p class="accept"><b>Aceite:</b> os três gestos funcionam sem falso disparo; o alerta toca uma vez por subida e respeita o horário silencioso; nenhum bipe no boot.</p>
         </div>
       </div>
       <div class="phase next">
