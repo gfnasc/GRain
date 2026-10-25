@@ -128,7 +128,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
         </tbody>
       </table>
       <span class="mut" id="mthelp" hidden>Os mostradores acima usam o método em destaque (sublinhado): o modelo, até o placar ter dados; depois, o que mais acertou em cada janela. Detalhes e placar no painel, aba Chuva.</span>
-      <div class="row"><button id="rrep">☂ Está chovendo aqui</button><button id="rnone">☀ Não choveu hoje</button><span class="mut msg" id="rmsg"></span></div>
+      <div class="row"><button id="rrep" title="ou segure o botão da estação por 2 s">☂ Está chovendo aqui</button><button id="rnone">☀ Não choveu hoje</button><span class="mut msg" id="rmsg"></span></div>
     </div>
     <h2>Sensores agora</h2>
     <div class="grid">
@@ -153,17 +153,20 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
         <button id="next" aria-label="Próxima página">▶</button>
       </div>
       <div class="chips" id="chips"></div>
-      <div class="row"><button id="pause">Pausar carrossel</button><button id="power">Desligar tela</button></div>
-      <span class="mut" id="dst"></span>
+      <div class="row"><button id="power">Desligar tela</button><span class="mut" id="dst"></span></div>
+      <span class="mut">Botão da estação: toque troca de página (com a tela apagada, acende por 15 s; com alerta, cala); segure 2 s para “Está chovendo aqui”; segure 5 s para desligar a tela, ou para mantê-la ligada quando estiver apagada.</span>
     </div>
     <h2>Páginas</h2>
     <div class="box">
       <ol class="pl" id="pl"></ol>
       <div class="row"><select id="newp" aria-label="Tipo da nova página"></select><button id="addp">Adicionar página</button><span class="mut" id="pcount"></span></div>
       <div class="f2">
-        <label>Tempo por página (s)<input id="page_s" type="number" min="2" max="60" step="1"></label>
+        <label>Troca de página<select id="b_mode"><option value="button">pelo botão</option><option value="auto">automática</option><option value="both">automática e pelo botão</option></select></label>
+        <label id="ps_l">Tempo por página (s)<input id="page_s" type="number" min="2" max="60" step="1"></label>
+        <label id="bd_l">Escurecer sem toque (min)<input id="b_dim" type="number" min="0" max="120" step="1" title="0 = nunca"></label>
         <label>Brilho <span id="ctv"></span><input id="contrast" type="range" min="0" max="255" step="5"></label>
       </div>
+      <span class="mut" id="modehelp"></span>
     </div>
     <h2>Modo noturno</h2>
     <div class="box">
@@ -176,7 +179,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
     </div>
     <h2>Alerta de chuva</h2>
     <div class="box">
-      <span class="mut">Quando a chance passa do limite, o buzzer dá 3 bipes curtos, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta, e o LED azul pisca duplo. Um toque no botão cala; volta se a chance subir 15 pontos.</span>
+      <span class="mut">Quando a chance passa do limite, o buzzer dá 3 bipes curtos, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta (na troca automática, ela volta a cada duas páginas) e o LED azul pisca duplo. Um toque no botão cala; volta se a chance subir 15 pontos.</span>
       <div class="f2 f4">
         <label class="ck"><input id="a_on" type="checkbox">Ligado</label>
         <label>A partir de (%)<input id="a_pct" type="number" min="10" max="100" step="5"></label>
@@ -185,18 +188,14 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
       </div>
       <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta por 12 s com valores de exemplo (com bipe)</span></div>
     </div>
-    <h2>Botão, buzzer e LED</h2>
+    <h2>Buzzer e LED</h2>
     <div class="box">
-      <span class="mut">Botão: toque troca de página (com a tela apagada, acende por 15 s; com alerta, cala); segure 2 s para “Está chovendo aqui”; segure 5 s para desligar ou ligar a tela.</span>
       <div class="f2 f4">
-        <label>Troca de página<select id="b_mode"><option value="button">pelo botão</option><option value="auto">automática</option><option value="both">as duas</option></select></label>
-        <label>Escurecer sem toque (min)<input id="b_dim" type="number" min="0" max="120" step="1" title="só no modo pelo botão; 0 = nunca"></label>
         <label>LED azul<select id="d_led"><option value="normal">normal</option><option value="warnings">só avisos</option><option value="off">desligado</option></select></label>
         <label>LED no silencioso<select id="d_ledq"><option value="warnings">só avisos</option><option value="normal">normal</option><option value="off">desligado</option></select></label>
         <label class="ck"><input id="z_on" type="checkbox">Buzzer ligado</label>
         <label class="ck"><input id="z_click" type="checkbox">Clique nos toques</label>
         <label>O buzzer liga com<select id="z_lvl"><option value="high">nível alto</option><option value="low">nível baixo</option></select></label>
-        <span></span>
         <label class="ck"><input id="q_on" type="checkbox">Horário silencioso</label>
         <span class="mut">buzzer calado e LED como acima</span>
         <label>Das<input id="q_from" type="time"></label>
@@ -348,7 +347,7 @@ async function loadCfg(){
   $("n_on").checked=d.night.enabled;$("n_mode").value=d.night.mode;$("n_from").value=d.night.from;$("n_to").value=d.night.to;
   $("c_t").value=r1(k.temp,10);$("c_h").value=r1(k.hum,10);$("c_p").value=r1(k.pres,10);
   $("c_auto").checked=k.pres_auto!==false;autoTxt(k.pres_auto_offset);
-  pmode=d.page_mode||"auto";$("b_mode").value=pmode;$("b_dim").value=d.idle_dim_min??10;
+  pmode=d.page_mode||"auto";$("b_mode").value=pmode;$("b_dim").value=d.idle_dim_min??10;modeUI();
   const z=c.buzzer||{},q=c.quiet||{},lg=c.led||{};
   $("z_on").checked=z.enabled!==false;$("z_click").checked=z.clicks!==false;$("z_lvl").value=z.level||"high";
   $("q_on").checked=q.enabled!==false;$("q_from").value=q.from||"22:00";$("q_to").value=q.to||"07:00";
@@ -358,6 +357,10 @@ async function loadCfg(){
   drawPages();
   dirty=false;$("savebar").classList.remove("dirty");
 }
+// Troca de página: mostra só as opções que valem no modo escolhido.
+function modeUI(){const m=$("b_mode").value;$("ps_l").hidden=m==="button";$("bd_l").hidden=m!=="button";
+  $("modehelp").textContent=m==="button"?"A página só muda com o toque no botão (ou pelos controles acima). Sem toque, a tela escurece depois do tempo escolhido e a imagem se desloca 1 px de tempos em tempos, para não marcar o OLED.":m==="both"?"As páginas trocam sozinhas; um toque no botão avança e segura a página por 30 s.":"As páginas trocam sozinhas; um toque no botão avança e segura a página por 60 s."}
+$("b_mode").onchange=modeUI;
 for(const k in NAMES)$("newp").add(new Option(NAMES[k],k));
 $("addp").onclick=()=>{const t=$("newp").value;P.push(t==="fields"?{type:t,fields:["temp","hum","pres","dew"]}:{type:t,fields:[]});drawPages();markDirty()};
 $("contrast").oninput=ct;
@@ -413,23 +416,20 @@ function renderDisplay(d){
   $("pgpos").textContent="página "+(d.page+1)+" de "+d.pages.length;
   const c=$("chips");c.innerHTML="";
   d.pages.forEach((p,i)=>{const b=document.createElement("button");b.textContent=(i+1)+". "+(NAMES[p]||p);if(i===d.page)b.className="on";b.onclick=()=>act({page:i});c.appendChild(b)});
-  $("pause").textContent=d.paused?"Retomar carrossel":"Pausar carrossel";
-  $("pause").classList.toggle("on",d.paused);
   $("power").textContent=d.on?"Desligar tela":"Ligar tela";
   $("power").classList.toggle("on",!d.on);
   let st=[];
   if(!d.on)st.push("tela desligada até religar ou reiniciar");
   else if(d.night)st.push("modo noturno ativo");
   if(pmode==="button")st.push("troca pelo botão");
-  else if(d.paused)st.push("carrossel pausado");
-  else if(d.hold_s)st.push("volta a girar em "+d.hold_s+" s");
+  else if(d.paused)st.push("troca automática parada");
+  else if(d.hold_s)st.push("volta a trocar sozinha em "+d.hold_s+" s");
   else st.push("trocando a cada "+d.page_s+" s");
   $("dst").textContent=st.join(" · ");
 }
 async function act(body){try{renderDisplay(await post("/api/v1/display",body))}catch(e){$("dst").innerHTML='<span class="err">'+e.message+"</span>"}}
 $("prev").onclick=()=>act({page:"prev"});
 $("next").onclick=()=>act({page:"next"});
-$("pause").onclick=()=>disp&&act({paused:!disp.paused});
 $("power").onclick=()=>disp&&act({power:!disp.on});
 $("sync").onclick=async()=>{
   $("sync").disabled=true;$("syncmsg").textContent="sincronizando…";
@@ -524,7 +524,7 @@ async function tick(){
     if(c.url){$("cloud").href=c.url;$("cloud").hidden=false}
     renderDisplay(d);
     $("where").textContent=st.wifi.hostname+" · "+st.wifi.ip;
-    $("oled").textContent=d.on?"display: "+(NAMES[d.pages[d.page]]||d.pages[d.page])+(d.paused?" ‖":""):"display desligado";
+    $("oled").textContent=d.on?"display: "+(NAMES[d.pages[d.page]]||d.pages[d.page]):"display desligado";
     $("upd").textContent=st.time.synced?st.time.local.slice(11,16):"";
   }catch(e){
     $("oled").textContent="sem resposta da estação";$("upd").textContent="";

@@ -27,6 +27,7 @@ static uint32_t s_holdUntil = 0;  // navegação manual segura a página até es
 static const uint32_t HOLD_MS = 60000;
 // Botão e proteção do OLED (Fase 19).
 static uint32_t s_wakeUntil = 0;     // toque com a tela apagada/escura: acesa até este millis()
+static bool s_nightOverride = false; // "manter ligada" à noite (modo apagar): vale até o fim da noite
 static bool s_idleDim = false;       // modo pelo botão: escurecida por falta de toque
 static uint32_t s_lastTouch = 0;
 static int s_contrastSent = -1;      // o que já foi enviado ao SSD1306
@@ -437,7 +438,8 @@ static void drawHoldOverlay(uint32_t held) {
     msg = "solte: chovendo";
     fill = (held - BTN_RAIN_MS) * 116 / (BTN_SCREEN_MS - BTN_RAIN_MS);
   } else if (held < BTN_CANCEL_MS) {
-    msg = "solte: desligar tela";
+    bool waking = s_wakeUntil && (int32_t)(millis() - s_wakeUntil) < 0;
+    msg = s_manualOff || waking ? "solte: manter ligada" : "solte: desligar tela";
     fill = 116;
   } else {
     msg = "solte: cancelar";
@@ -451,6 +453,17 @@ static void drawHoldOverlay(uint32_t held) {
   s_oled.drawUTF8((128 - s_oled.getUTF8Width(msg)) / 2, 52, msg);
   s_oled.drawFrame(4, 55, 120, 6);
   if (fill > 0) s_oled.drawBox(6, 57, fill > 116 ? 116 : fill, 2);
+}
+
+// Tela acesa por 15 s depois de um toque com ela apagada: lembra como mantê-la ligada.
+static void drawWakeHint() {
+  s_oled.setDrawColor(0);
+  s_oled.drawBox(0, 53, 128, 11);
+  s_oled.setDrawColor(1);
+  s_oled.drawHLine(0, 53, 128);
+  s_oled.setFont(u8g2_font_5x8_tf);
+  const char *msg = "segure 5 s: manter ligada";
+  s_oled.drawUTF8((128 - s_oled.getUTF8Width(msg)) / 2, 62, msg);
 }
 
 // Proteção do OLED no modo pelo botão: desloca a imagem 1 px para os lados a cada 2 min
@@ -555,6 +568,7 @@ static void render() {
     }
     uint32_t held = buttonHeldMs();
     if (held >= 500) drawHoldOverlay(held);
+    else if (s_wakeUntil && (int32_t)(millis() - s_wakeUntil) < 0) drawWakeHint();
     if (settings().pageMode == 1) shiftBuffer();
   }
   s_oled.sendBuffer();
@@ -567,7 +581,7 @@ static void updateScreen() {
   uint32_t now = millis();
   bool waking = s_wakeUntil && (int32_t)(now - s_wakeUntil) < 0;
   if (s_wakeUntil && !waking) s_wakeUntil = 0;
-  bool off = !waking && (s_manualOff || (s_night == 1 && c.nightMode == 0));
+  bool off = !waking && (s_manualOff || (s_night == 1 && c.nightMode == 0 && !s_nightOverride));
   int want = c.displayContrast;
   if (!waking && ((s_night == 1 && c.nightMode == 1) || s_idleDim)) want = 0;
   if (want != s_contrastSent) {
@@ -630,6 +644,7 @@ static void applyNight() {
   }
   if (night == s_night) return;
   s_night = night;
+  if (!night) s_nightOverride = false;  // o "manter ligada" vale só até o fim da noite
   updateScreen();
   log_i("[%s] modo %s", TAG, night ? (c.nightMode == 0 ? "noturno (apagado)" : "noturno (escuro)") : "diurno");
 }
@@ -813,6 +828,7 @@ void displaySetPower(bool on) {
   s_lastTouch = millis();
   s_night = -1;  // reaplica o modo noturno (pode estar no horário)
   applyNight();
+  s_nightOverride = on && s_night == 1 && settings().nightMode == 0;  // ligar à noite: até o fim dela
   updateScreen();
   if (on) render();
   log_i("[%s] tela %s manualmente", TAG, on ? "ligada" : "desligada");
@@ -891,16 +907,19 @@ void displayRainReported(bool cloud) {
   render();
 }
 
+// Segurou 5 s. Tela apagada (ou acesa só pelos 15 s do toque): fica ligada de vez; à noite no
+// modo apagar, até o fim do horário noturno. Tela ligada: desliga até ligar de novo.
 void displayToggleScreen() {
   uint32_t now = millis();
   s_lastTouch = now;
-  if (s_powerSaveSent == 1) {
+  bool waking = s_wakeUntil && (int32_t)(now - s_wakeUntil) < 0;
+  if (s_powerSaveSent == 1 || waking || s_manualOff) {
     s_manualOff = false;
-    s_wakeUntil = now + DISPLAY_WAKE_MS;  // à noite (apagar), acende por 15 s
-    if (!s_wakeUntil) s_wakeUntil = 1;
+    s_wakeUntil = 0;
+    if (s_night == 1 && settings().nightMode == 0) s_nightOverride = true;
     updateScreen();
     render();
-    log_i("[%s] tela ligada pelo botão", TAG);
+    log_i("[%s] tela mantida ligada pelo botão", TAG);
   } else {
     displaySetPower(false);
   }
