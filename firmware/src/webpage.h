@@ -13,7 +13,7 @@ static const char WEB_INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a1013">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<title>GRain · estação local</title>
+<title>GWethr · estação local</title>
 <style>
 /* App local da estação: cara de aparelho (moldura escura, tipografia mono, ciano do OLED),
    para não confundir com o painel na nuvem (fonte Archivo, cobre, navegação no topo). */
@@ -107,7 +107,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
 </head>
 <body>
 <header class="bezel"><div>
-  <div class="brand"><img src="/favicon.svg" alt=""><h1>GRain</h1><span class="badge">APP LOCAL · ESP32</span><span class="where" id="where">grain.local</span></div>
+  <div class="brand"><img src="/favicon.svg" alt=""><h1>GWethr</h1><span class="badge">APP LOCAL · ESP32</span><span class="where" id="where">gwethr.local</span></div>
   <div class="oled"><span id="oled" aria-live="polite">conectando à estação…</span><span><span id="osend"></span> · <span id="upd">–</span></span></div>
 </div></header>
 <main>
@@ -242,6 +242,11 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
         <tr><td>Cópia da configuração</td><td id="c_cfg">–</td></tr>
       </table>
       <div class="row"><button id="sync">Sincronizar agora</button><a id="cloud" href="#" target="_blank" rel="noopener" hidden>Abrir o painel na nuvem ↗</a><span class="mut msg" id="syncmsg"></span></div>
+      <div class="f2">
+        <label>Endereço do painel<input id="c_url" type="url" inputmode="url" placeholder="https://..."></label>
+        <label>Senha da estação<input id="pw_url" type="password" autocomplete="current-password"></label>
+      </div>
+      <div class="row"><button id="urlsave">Trocar endereço</button><span class="mut msg" id="urlmsg"></span></div>
     </div>
     <h2>Próximas atualizações</h2>
     <table>
@@ -267,7 +272,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
     </table>
     <h2>Senha da estação</h2>
     <div class="box">
-      <span class="mut">Usada para salvar configurações, reiniciar e entrar na rede de configuração do Wi-Fi (GRain-Setup). De 8 a 63 caracteres, sem espaços nem acentos.</span>
+      <span class="mut">Usada para salvar configurações, reiniciar e entrar na rede de configuração do Wi-Fi (GWethr-Setup). De 8 a 63 caracteres, sem espaços nem acentos.</span>
       <div class="f3">
         <label>Senha atual<input id="pw_cur" type="password" autocomplete="current-password"></label>
         <label>Nova senha<input id="pw_new" type="password" autocomplete="new-password" minlength="8" maxlength="63"></label>
@@ -365,7 +370,7 @@ for(const k in NAMES)$("newp").add(new Option(NAMES[k],k));
 $("addp").onclick=()=>{const t=$("newp").value;P.push(t==="fields"?{type:t,fields:["temp","hum","pres","dew"]}:{type:t,fields:[]});drawPages();markDirty()};
 $("contrast").oninput=ct;
 $("l_lat").oninput=e=>{const m=e.target.value.match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);if(m){$("l_lat").value=m[1];$("l_lon").value=m[2]}};
-// Abas (lembradas no endereço, ex.: grain.local/#display) e barra de salvar nas abas de configuração.
+// Abas (lembradas no endereço, ex.: gwethr.local/#display) e barra de salvar nas abas de configuração.
 const TABS=["agora","display","ajustes","sistema"];
 function showTab(){const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):"agora";
   TABS.forEach(x=>{$("t-"+x).classList.toggle("on",x===t)});
@@ -441,6 +446,19 @@ $("reboot").onclick=async()=>{
   try{await post("/api/v1/system/reboot",{},{Authorization:auth(pw)});$("rbmsg").textContent="Reiniciando… a página volta em cerca de 15 s.";$("pw_rb").value=""}
   catch(e){$("rbmsg").innerHTML='<span class="err">'+(e.message.includes("401")?"Senha incorreta.":e.message)+"</span>"}
 };
+$("urlsave").onclick=async()=>{
+  const u=$("c_url").value.trim(),pw=$("pw_url").value;
+  if(!/^https:\/\//.test(u))return say("urlmsg","Use um endereço que comece com https://",1);
+  if(!pw)return say("urlmsg","Digite a senha da estação.",1);
+  try{
+    const r=await fetch("/api/v1/cloud/url",{method:"POST",headers:{"Content-Type":"application/json",Authorization:auth(pw)},body:JSON.stringify({url:u})});
+    const j=await r.json().catch(()=>({}));
+    if(r.status===401)throw new Error("Senha incorreta.");
+    if(!r.ok)throw new Error(j.detail||j.error||("HTTP "+r.status));
+    $("pw_url").value="";delete $("c_url").dataset.edit;say("urlmsg","Endereço trocado; enviando para o novo painel…");setTimeout(tick,4000);
+  }catch(e){say("urlmsg",e.message,1)}
+};
+$("c_url").oninput=()=>$("c_url").dataset.edit=1;
 $("pwchg").onclick=async()=>{
   const cur=$("pw_cur").value,nw=$("pw_new").value;
   if(!cur)return say("pwmsg","Digite a senha atual.",1);
@@ -522,6 +540,7 @@ async function tick(){
     $("c_q").textContent=c.queue;
     $("c_cfg").textContent=c.config_pending?"enviando…":(c.config_sent?"enviada às "+hm(c.config_sent):"–");
     if(c.url){$("cloud").href=c.url;$("cloud").hidden=false}
+    if(!$("c_url").dataset.edit&&document.activeElement!==$("c_url"))$("c_url").value=c.url||"";
     renderDisplay(d);
     $("where").textContent=st.wifi.hostname+" · "+st.wifi.ip;
     $("oled").textContent=d.on?"display: "+(NAMES[d.pages[d.page]]||d.pages[d.page]):"display desligado";

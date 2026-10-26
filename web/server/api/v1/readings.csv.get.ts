@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   ]
 
   const day = (d: Date) => d.toISOString().slice(0, 10).replaceAll('-', '')
-  const name = `grain-${day(range.from)}-${day(range.to)}${excel ? '-excel' : ''}.csv`
+  const name = `gwethr-${day(range.from)}-${day(range.to)}${excel ? '-excel' : ''}.csv`
   setHeader(event, 'Content-Type', 'text/csv; charset=utf-8')
   setHeader(event, 'Content-Disposition', `attachment; filename="${name}"`)
   setHeader(event, 'Cache-Control', 'no-store')

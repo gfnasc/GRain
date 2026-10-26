@@ -2,7 +2,7 @@
 
 // Pinos e constantes. Mantenha docs/hardware.md sincronizado.
 
-#define FW_VERSION "0.15.2"
+#define FW_VERSION "0.15.3"
 
 // Barramento I2C (AHT20, BMP280 e OLED compartilham)
 #define PIN_I2C_SDA 21
@@ -52,11 +52,12 @@
 #define DISPLAY_SPINNER_FRAME_MS 100   // velocidade do spinner
 
 // Rede
-#define DEFAULT_HOSTNAME "grain"           // acesso por grain.local
-#define LEGACY_HOSTNAME "gweather"         // nome antigo: migrado para DEFAULT_HOSTNAME ao carregar
+#define DEFAULT_HOSTNAME "gwethr"          // acesso por gwethr.local
+#define LEGACY_HOSTNAME "grain"            // nomes antigos (GRain, GWeather): migrados para DEFAULT_HOSTNAME ao carregar
+#define LEGACY_HOSTNAME2 "gweather"
 #define DEFAULT_NTP1 "pool.ntp.org"
 #define DEFAULT_NTP2 "time.google.com"
-#define PORTAL_AP_NAME "GRain-Setup"       // rede de configuração do Wi-Fi
+#define PORTAL_AP_NAME "GWethr-Setup"       // rede de configuração do Wi-Fi
 #define PORTAL_TIMEOUT_S 180               // só quando já existe Wi-Fi salvo
 #define WIFI_RETRY_MS 60000
 #define API_USER "admin"                  // usuário das rotas que alteram algo

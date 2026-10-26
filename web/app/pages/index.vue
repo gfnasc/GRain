@@ -3,7 +3,7 @@ import type { RainResp } from '~/components/RainNow.vue'
 import type { Indoor } from '~/components/IndoorInsights.vue'
 // Aba Agora: Outdoor (lá fora, dados externos) × Indoor (escritório, sensores da estação),
 // pressão com tendência (barômetro da estação) e previsão de hoje e amanhã.
-useHead({ title: 'GRain' })
+useHead({ title: 'GWethr' })
 
 type Reading = { ts: number; temp: number | null; hum: number | null; pres_slp: number | null; dew: number | null }
 type Latest = {
@@ -130,7 +130,7 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
             <span class="src" :title="out.raw ?? undefined">{{ sourceText }}</span>
           </template>
           <p v-else-if="!outdoor?.located" class="empty">
-            Defina a localização da estação em <code>grain.local</code> → Configurações para ver os dados de fora.
+            Defina a localização da estação em <code>gwethr.local</code> → Configurações para ver os dados de fora.
           </p>
           <p v-else class="empty">Aguardando a primeira coleta (acontece no próximo envio da estação).</p>
         </article>
@@ -183,7 +183,7 @@ const PLACE_LABEL = { sacada: 'Sacada', escritorio: 'Escritório' } as const
             </div>
             <span class="sub">Open-Meteo</span>
           </template>
-          <span v-else class="sub">{{ forecast?.location.configured ? 'Previsão indisponível no momento.' : 'Defina a localização em grain.local para ver a previsão.' }}</span>
+          <span v-else class="sub">{{ forecast?.location.configured ? 'Previsão indisponível no momento.' : 'Defina a localização em gwethr.local para ver a previsão.' }}</span>
         </article>
       </section>
 

@@ -66,7 +66,7 @@ void setup() {
   delay(500);
   ledBegin();
   buttonBegin();
-  log_i("[%s] boot: GRain %s", TAG, FW_VERSION);
+  log_i("[%s] boot: GWethr %s", TAG, FW_VERSION);
   healthBegin();
 
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, I2C_FREQ_HZ);

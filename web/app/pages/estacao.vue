@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // Aba Estação: estado da estação, cópia da configuração enviada por ela e o teste de robustez.
 import type { TrialState } from '~/components/TrialCountdown.vue'
-// Somente leitura; a configuração é feita na página local do ESP32 (grain.local).
-useHead({ title: 'Estação · GRain' })
+// Somente leitura; a configuração é feita na página local do ESP32 (gwethr.local).
+useHead({ title: 'Estação · GWethr' })
 
 type StationResp = {
   device: { id: string; name: string; last_seen_at: string | null; status: Record<string, any> | null; place: 'sacada' | 'escritorio' | null }
@@ -86,7 +86,7 @@ const fieldsText = (p: PageConfig) => (p.fields ?? []).map((f) => FIELD_LABELS[f
     <div class="intro">
       <h2>Estação</h2>
       <p class="muted">
-        Configuração atual, como a estação informou. Para alterar, abra <code>http://grain.local</code> num aparelho na rede de casa
+        Configuração atual, como a estação informou. Para alterar, abra <code>http://gwethr.local</code> num aparelho na rede de casa
         (a senha da estação aparece no comando <code>status</code> do console).
       </p>
     </div>

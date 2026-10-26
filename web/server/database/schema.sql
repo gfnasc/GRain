@@ -1,10 +1,10 @@
--- Esquema do banco do GRain (Postgres / Neon).
+-- Esquema do banco do GWethr (Postgres / Neon).
 -- Aplicar com: pnpm db:migrate  (idempotente)
 
 -- Estações cadastradas. O token do aparelho nunca é guardado em texto puro.
 create table if not exists devices (
-  id           text primary key,                 -- device_id do ESP32, ex.: grain-a1b2c3
-  name         text not null default 'GRain',
+  id           text primary key,                 -- device_id do ESP32, ex.: gwethr-a1b2c3
+  name         text not null default 'GWethr',
   token_hash   text not null,                    -- sha256 hex do token
   created_at   timestamptz not null default now(),
   last_seen_at timestamptz,
@@ -165,3 +165,7 @@ create table if not exists trials (
 -- Botão "Não choveu hoje": um "não choveu" que vale de covers_from (meia-noite local) até o
 -- aviso, em vez dos 30 min em volta. Um "Está chovendo aqui" continua valendo mais.
 alter table rain_reports add column if not exists covers_from timestamptz;
+
+-- 26/10/2026: projeto renomeado para GWethr (antes GRain). O id do aparelho não muda.
+alter table devices alter column name set default 'GWethr';
+update devices set name = 'GWethr' where name in ('GRain', 'GWeather');

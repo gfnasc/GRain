@@ -1,7 +1,7 @@
 // METAR do aeroporto mais próximo (aviationweather.gov, sem chave) e tradução para português.
 
 const API = 'https://aviationweather.gov/api/data/metar'
-const UA = 'GRain/1.0 (estacao meteorologica pessoal; github.com/gfnasc/GRain)'
+const UA = 'GWethr/1.0 (estacao meteorologica pessoal; github.com/gfnasc/GWethr)'
 
 export type MetarStation = { icao: string; name: string; lat: number; lon: number; dist_km: number }
 export type MetarObs = {

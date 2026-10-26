@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'Histórico · GRain' })
+useHead({ title: 'Histórico · GWethr' })
 
 type Point = { ts: number; temp: number | null; temp_min: number | null; temp_max: number | null; hum: number | null; hum_min: number | null; hum_max: number | null; pres: number | null; pres_min: number | null; pres_max: number | null; dew: number | null; out_temp: number | null; out_pres: number | null; n: number }
 type Extreme = { v: number; ts: number } | null

@@ -1,6 +1,6 @@
-# GRain
+# GWethr
 
-Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e display **OLED SSD1306** (antes chamada GWeather). Mede temperatura, umidade e pressão, mostra os dados no display e envia médias de 10 min para um painel em **Nuxt na Vercel**, com histórico e gráficos. O objetivo da versão 5 é prever chuva para 1 h, 2 h e 3 h cruzando o barômetro da estação com dados externos, com dois modos: **Outdoor** (lá fora) e **Indoor** (o ambiente onde a estação fica).
+Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e display **OLED SSD1306** (chamada GWeather até 13/10/2026 e GRain até 26/10/2026). Mede temperatura, umidade e pressão, mostra os dados no display e envia médias de 10 min para um painel em **Nuxt na Vercel**, com histórico e gráficos. O objetivo da versão 5 é prever chuva para 1 h, 2 h e 3 h cruzando o barômetro da estação com dados externos, com dois modos: **Outdoor** (lá fora) e **Indoor** (o ambiente onde a estação fica).
 
 > *ESP32 rain station (AHT20 + BMP280 + SSD1306 OLED). Documentation in Portuguese.*
 
@@ -25,7 +25,7 @@ Estação de chuva com **ESP32 DevKit v1**, sensores **AHT20** e **BMP280** e di
 | 8 | Personalização do display pelo painel | ✅ Concluída |
 | 9 | Previsão e WhatsApp | ⏹️ Encerrada na v5 (volta na 19) |
 | 10 | Robustez | ➡️ Movida para a 17 |
-| 11 | GRain: novo nome, flag "sacada" no histórico, remoção do WhatsApp | ✅ Concluída |
+| 11 | GWethr: novo nome, flag "sacada" no histórico, remoção do WhatsApp | ✅ Concluída |
 | 12 | Configurações só no ESP32; painel só para visualização | ✅ Concluída |
 | 13 | Outdoor: dados externos (METAR e Open-Meteo) | ✅ Concluída |
 | 14 | Pressão calibrada pelo aeroporto | ✅ Concluída |
@@ -43,11 +43,11 @@ Plano completo: [docs/PLANO.md](docs/PLANO.md). Versão visual, com diagrama int
 ```
 ESP32 ──envia leituras a cada 10 min (HTTPS)──► Nuxt na Vercel (API + banco)
   │                                                   │
-  └─ página mínima em grain.local                     └─ painel completo, com login,
+  └─ página mínima em gwethr.local                     └─ painel completo, com login,
      (funciona sem internet)                             acessível de qualquer lugar
 ```
 
-O ESP32 mede, mostra no display e envia os dados. O painel fica na nuvem porque um site HTTPS não consegue ler a API HTTP local do ESP32 e porque `grain.local` só existe dentro de casa. A partir da fase 12, todas as configurações passam para a página local do ESP32 e o painel fica só para visualização.
+O ESP32 mede, mostra no display e envia os dados. O painel fica na nuvem porque um site HTTPS não consegue ler a API HTTP local do ESP32 e porque `gwethr.local` só existe dentro de casa. A partir da fase 12, todas as configurações passam para a página local do ESP32 e o painel fica só para visualização.
 
 ---
 
@@ -127,8 +127,8 @@ As bibliotecas são instaladas automaticamente pelo PlatformIO, com versões fix
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/gfnasc/GRain.git
-   cd GRain/firmware
+   git clone https://github.com/gfnasc/GWethr.git
+   cd GWethr/firmware
    ```
 2. Crie o arquivo de configuração do local a partir do modelo:
    ```bash
@@ -148,26 +148,26 @@ Se houver mais de uma porta serial, o PlatformIO pergunta qual usar. Para fixar 
 
 **Depois da primeira gravação pelo cabo, dá para gravar pelo Wi-Fi (OTA)**, com a estação ligada em qualquer tomada da rede de casa. A senha é a da estação, passada por variável de ambiente (nunca no repositório):
 ```bash
-GRAIN_OTA_PASS='senha-da-estação' pio run -e ota -t upload
+GWETHR_OTA_PASS='senha-da-estação' pio run -e ota -t upload
 ```
-O display mostra "Atualizando firmware pelo Wi-Fi" com o progresso. O ambiente `ota` usa o build de release e o endereço `grain.local` (troque `upload_port` pelo IP se o mDNS não resolver).
+O display mostra "Atualizando firmware pelo Wi-Fi" com o progresso. O ambiente `ota` usa o build de release e o endereço `gwethr.local` (troque `upload_port` pelo IP se o mDNS não resolver).
 
 ### Conectar ao Wi-Fi
 
 Na primeira vez, sem Wi-Fi salvo, o display mostra **"Configurar Wi-Fi"** com o nome de uma rede e uma senha:
 
-1. No celular, conecte na rede **GRain-Setup** usando a senha do display. Ela é aleatória, gerada uma vez por placa.
+1. No celular, conecte na rede **GWethr-Setup** usando a senha do display. Ela é aleatória, gerada uma vez por placa.
 2. A página de configuração abre sozinha. Se não abrir, acesse `http://192.168.4.1`.
 3. Toque em **Configure WiFi**, escolha sua rede (**2,4 GHz**; o ESP32 não conecta em 5 GHz), digite a senha e toque em **Save**.
-4. O display volta às páginas normais, com a hora no canto. Na rede local, a estação responde em `grain.local`.
+4. O display volta às páginas normais, com a hora no canto. Na rede local, a estação responde em `gwethr.local`.
 
 O Wi-Fi fica salvo na placa. Para trocar de rede, use o comando `wifi esquecer` no console.
 
 ### Página local e API
 
-Com a estação no Wi-Fi, abra **http://grain.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. É o **app local** da estação: roda no próprio ESP32, funciona sem internet e é onde ficam **todas as configurações**; o painel na nuvem só mostra os dados e uma cópia da configuração.
+Com a estação no Wi-Fi, abra **http://gwethr.local** (ou o IP da página **Rede** do display) em qualquer aparelho da mesma rede. É o **app local** da estação: roda no próprio ESP32, funciona sem internet e é onde ficam **todas as configurações**; o painel na nuvem só mostra os dados e uma cópia da configuração.
 
-Para não confundir com o painel, o app local tem cara de aparelho: cabeçalho escuro com o selo **APP LOCAL · ESP32** e o endereço da estação, uma tirinha no estilo do OLED com a página que está no display naquele momento, tipografia monoespaçada e acento ciano, e as abas numa barra embaixo (**Agora**, **Display**, **Ajustes** e **Sistema**; a aba fica no endereço, ex.: `grain.local/#display`). Nas abas de configuração, uma barra fixa com a senha e o botão Salvar avisa quando há alterações não salvas. Atualiza a cada 5 s. Conteúdo, por aba:
+Para não confundir com o painel, o app local tem cara de aparelho: cabeçalho escuro com o selo **APP LOCAL · ESP32** e o endereço da estação, uma tirinha no estilo do OLED com a página que está no display naquele momento, tipografia monoespaçada e acento ciano, e as abas numa barra embaixo (**Agora**, **Display**, **Ajustes** e **Sistema**; a aba fica no endereço, ex.: `gwethr.local/#display`). Nas abas de configuração, uma barra fixa com a senha e o botão Salvar avisa quando há alterações não salvas. Atualiza a cada 5 s. Conteúdo, por aba:
 
 - **Leitura atual** e estado da estação (Wi-Fi, hora, memória, sensores, firmware).
 - **Display:** página anterior/próxima, atalho para cada página, pausar/retomar o carrossel e ligar/desligar a tela. Ao navegar com o carrossel girando, a página fica parada por 60 s. Esses controles valem até reiniciar.
@@ -195,9 +195,9 @@ A mesma porta serve a API `/api/v1`:
 🔒 = HTTP Basic com usuário `admin` e a **senha da estação** (a mesma da rede de configuração; o comando `status` no console mostra). Ela nasce aleatória e pode ser trocada na aba **Sistema** do app local (pede a atual) ou no console (`senha <nova>`, útil se você esquecer a atual, porque exige o cabo). Contrato completo: [docs/api-v1.md](docs/api-v1.md).
 
 ```bash
-curl http://grain.local/api/v1/now
+curl http://gwethr.local/api/v1/now
 curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
-  -d '{"display":{"page_s":8},"location":{"label":"Casa"}}' http://grain.local/api/v1/config
+  -d '{"display":{"page_s":8},"location":{"label":"Casa"}}' http://gwethr.local/api/v1/config
 ```
 
 ### Painel na nuvem (Nuxt na Vercel)
@@ -217,7 +217,7 @@ O display mostra o estado do envio na página **Rede** (`ok 16:10`, `erro`, `des
 O painel serve só para ver os dados; nada é configurado por ele. Quatro seções:
 - **Agora:** card **Chuva nas próximas horas** (chance em 1, 2 e 3 h, nível, motivo e o botão "Está chovendo aqui"); **Outdoor** (lá fora) e **Indoor** (onde a estação está) lado a lado. O Outdoor vem do METAR do aeroporto mais próximo da localização configurada na estação (temperatura, sensação, umidade, orvalho, vento e condição em português), com a condição atual do Open-Meteo como reserva quando o METAR atrasa ou o aeroporto está fechado. O Indoor traz a última média, mínimas e máximas de 24 h e a diferença em relação a fora. Logo abaixo, o card **No escritório**: conforto (faixas de 20 a 26 °C e de 40 a 60 %), sugestão de **abrir ou fechar a janela** (comparando com o Outdoor e com a chuva prevista), avisos de **ar seco** e de **risco de mofo** (horas com umidade acima de 70 % nos últimos 3 dias) e o **atraso térmico** (quantas horas o ambiente demora para acompanhar a temperatura de fora e quanto da variação chega dentro; precisa de 24 h de dados). Abaixo: pressão do barômetro da estação com tendência de 3 h, interpretação (Zambretti) e QNH do aeroporto para comparar; previsão de hoje e amanhã (Open-Meteo); últimas médias e estado da estação.
 - **Chuva:** os três métodos lado a lado para cada janela, com o motivo; gráfico das previsões com os trechos em que choveu de fato; placar de 30 dias por método e janela (erro de Brier, habilidade, acertos, alarmes falsos, perdidas); como funciona.
-- **Estação:** a configuração atual, como a estação informou (páginas do OLED com prévia, brilho, modo noturno, calibração e localização), e o estado da estação. A cópia chega a cada envio e logo depois de qualquer mudança feita em `grain.local`.
+- **Estação:** a configuração atual, como a estação informou (páginas do OLED com prévia, brilho, modo noturno, calibração e localização), e o estado da estação. A cópia chega a cada envio e logo depois de qualquer mudança feita em `gwethr.local`.
 - **Histórico:** períodos de 24 h, 7 e 30 dias ou datas escolhidas; gráficos de temperatura Indoor × Outdoor (com o ponto de orvalho), umidade e pressão (estação × QNH do aeroporto) (com faixa mínima–máxima nos períodos longos e lacunas visíveis quando faltam dados); extremos com horário; resumo por dia com mínimas e máximas Indoor e Outdoor; exportação em CSV (padrão ou para Excel, com a coluna `local`). O período em que a estação ficou na sacada aparece hachurado nos gráficos de temperatura e umidade e fica fora das mínimas, máximas e médias.
 
 ### Dados de fora (Outdoor)
@@ -277,7 +277,7 @@ No painel, o gráfico de pressão mostra a estação e o QNH do aeroporto juntos
 | Previsão de hoje e amanhã (Open-Meteo) | guardada por 30 min |
 | Conferência das previsões de chuva | a cada envio, para as janelas que terminaram há mais de 20 min |
 | Placar | recalculado a cada 10 min |
-| App local (`grain.local`) | atualiza a cada 5 s |
+| App local (`gwethr.local`) | atualiza a cada 5 s |
 | Painel, aba Agora | atualiza a cada 1 min (previsão do dia a cada 15 min) |
 | Painel, aba Chuva | atualiza a cada 2 min |
 | "Online" no painel | último envio há menos de 15 min |
@@ -307,6 +307,8 @@ Com `pio device monitor` aberto, digite `ajuda`:
 | `config padrao` | Volta aos valores iniciais de `site.h` |
 | `nuvem` | Estado do envio: endereço, fila, último envio e último erro |
 | `nuvem url <https://...>` / `nuvem token <token>` | Configura o envio para a nuvem (guardado na NVS) |
+
+O endereço do painel também pode ser trocado sem cabo, no app local: aba **Sistema** → **Nuvem** → "Endereço do painel" (pede a senha da estação).
 | `nuvem enviar` / `nuvem limpar` / `nuvem desligar` | Envia a fila e a cópia da configuração agora / descarta a fila / apaga endereço e token |
 | `tela ligar` / `tela desligar` | Liga ou desliga o display (até reiniciar) |
 | `carrossel pausar` / `carrossel retomar` | Pausa ou retoma a troca de páginas |
@@ -354,7 +356,7 @@ AHT20 : ok (0x38)
 BMP280: ok (0x76), chip id 0x58 = BMP280
 OLED  : ok (0x3C)
 [net] conectado em "MinhaRede", IP 192.168.1.105
-[net] mDNS: grain.local
+[net] mDNS: gwethr.local
 [net] hora sincronizada: 12/10/2026 15:23:12
 Digite "ajuda" para ver os comandos.
 [15:23:16] 28.16 °C  65.4 %  orvalho 21.1 °C  sensação 30.4 °C  |  1010.82 hPa (local 936.60)  BMP 27.82 °C
@@ -362,7 +364,7 @@ Digite "ajuda" para ver os comandos.
 Uma linha por leitura, a cada 5 s. O LED azul da placa pisca a cada leitura.
 
 ### Display
-No boot aparece a tela de abertura com o nome GRain e um spinner animado por 2,5 s. Depois, as páginas alternam no tempo configurado. As páginas, a ordem e o tempo de cada uma são escolhidos na página local (`grain.local`, seção **Configurações**). Tipos disponíveis:
+No boot aparece a tela de abertura com o nome GWethr e um spinner animado por 2,5 s. Depois, as páginas alternam no tempo configurado. As páginas, a ordem e o tempo de cada uma são escolhidos na página local (`gwethr.local`, seção **Configurações**). Tipos disponíveis:
 
 | Página | Conteúdo |
 |---|---|
@@ -395,9 +397,9 @@ Enquanto a rede de configuração estiver aberta, o display fica fixo nas instru
 | OLED aparece em `0x3D` | Jumper de endereço do módulo | Troque `ADDR_OLED` em `include/config.h` |
 | Temperatura 1–3 °C acima do real | Calor do ESP32 | Afaste os sensores do ESP32 |
 | Erro `Falta include/site.h` ao compilar | Configuração do local não criada | `cp include/site.h.example include/site.h` |
-| Não aparece a rede GRain-Setup | Já existe Wi-Fi salvo | Use `wifi portal` no console |
+| Não aparece a rede GWethr-Setup | Já existe Wi-Fi salvo | Use `wifi portal` no console |
 | Não conecta ao Wi-Fi | Rede de 5 GHz ou senha errada | Use uma rede de 2,4 GHz; `wifi esquecer` e configure de novo |
-| `grain.local` não abre | Aparelho sem suporte a mDNS (alguns Android) ou em outra rede | Use o IP mostrado na página Rede do display |
+| `gwethr.local` não abre | Aparelho sem suporte a mDNS (alguns Android) ou em outra rede | Use o IP mostrado na página Rede do display |
 | `PUT` responde 415 | Falta o cabeçalho JSON | Envie `Content-Type: application/json` |
 | Página Rede mostra `erro` na nuvem | Token errado, URL errada ou internet fora | Comando `nuvem` mostra o último erro; a fila guarda as médias e reenvia depois |
 | Computador não reconhece a placa | Cabo só de carga ou falta de driver | Troque o cabo; instale o driver CP210x ou CH340 |
@@ -407,7 +409,7 @@ Enquanto a rede de configuração estiver aberta, o display fica fixo nas instru
 ## Estrutura do repositório
 
 ```
-GRain/
+GWethr/
 ├── README.md
 ├── LICENSE
 ├── web/                      Painel Nuxt na Vercel (ver web/README.md)

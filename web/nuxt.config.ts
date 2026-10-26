@@ -9,11 +9,11 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'pt-BR' },
-      title: 'GRain',
+      title: 'GWethr',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'theme-color', content: '#15201c' },
-        { name: 'apple-mobile-web-app-title', content: 'GRain' },
+        { name: 'apple-mobile-web-app-title', content: 'GWethr' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },

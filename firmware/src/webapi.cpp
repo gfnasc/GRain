@@ -197,6 +197,21 @@ static void handleReboot() {
   if (s_rebootAt == 0) s_rebootAt = 1;
 }
 
+// Troca o endereço do painel na nuvem (antes só pelo console serial). Exige a senha (Basic)
+// e {"url": "https://..."}; manda a fila e a cópia da configuração para o endereço novo.
+static void handleCloudUrl() {
+  if (!requireAuth()) return;
+  JsonDocument in;
+  if (deserializeJson(in, s_srv.arg("plain")) || !in["url"].is<const char *>()) return sendError(400, "json_invalido", "envie {\"url\": \"https://...\"}");
+  String err;
+  if (!uplinkSetUrl(in["url"].as<const char *>(), err)) return sendError(422, "valor_invalido", err);
+  uplinkSendNow();
+  JsonDocument doc;
+  doc["ok"] = true;
+  doc["url"] = uplinkStatus().url;
+  sendJson(200, doc);
+}
+
 // Troca a senha da estação. Exige a senha atual (Basic) e {"new": "..."}.
 static void handlePassword() {
   if (!requireAuth()) return;
@@ -340,6 +355,7 @@ static void setupRoutes() {
   s_srv.on("/api/v1/config", HTTP_PUT, handlePutConfig);
   s_srv.on("/api/v1/system/reboot", HTTP_POST, handleReboot);
   s_srv.on("/api/v1/system/password", HTTP_POST, handlePassword);
+  s_srv.on("/api/v1/cloud/url", HTTP_POST, handleCloudUrl);
   s_srv.on("/api/v1/display", HTTP_GET, handleGetDisplay);
   s_srv.on("/api/v1/display", HTTP_POST, handlePostDisplay);
   s_srv.on("/api/v1/cloud/sync", HTTP_POST, handleCloudSync);

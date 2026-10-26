@@ -1,4 +1,6 @@
-# GRain (antigo GWeather) — Plano (v5)
+# GWethr (antes GRain e GWeather) — Plano (v5)
+
+Nome: **GWethr** (G + weather, escrito assim mesmo) desde 26/10/2026; foi **GRain** de 13/10 a 26/10 e **GWeather** antes disso.
 
 Versão visual e detalhada (diagrama de ligações, checklist de montagem, calculadora de altitude):
 [plano.html](plano.html) — baixe e abra no navegador.
@@ -8,14 +10,14 @@ Versão visual e detalhada (diagrama de ligações, checklist de montagem, calcu
 - Montagem em protoboard, alimentação USB 5 V, estação no **escritório**.
 - Foco: **previsão de chuva para 1 h, 2 h e 3 h**, cruzando o barômetro da estação com dados externos.
 - Dois modos: **Outdoor** (lá fora: dados externos + pressão da estação) e **Indoor** (escritório: sensores da estação).
-- **Configurações só no app do ESP32** (`grain.local`); **painel web em Nuxt na Vercel só para visualização**.
+- **Configurações só no app do ESP32** (`gwethr.local`); **painel web em Nuxt na Vercel só para visualização**.
 - WhatsApp (CallMeBot) adiado para a última fase.
 
 ## Arquitetura (v5)
 ```
 ESP32 (escritório) ──médias de 10 min + cópia da config (HTTPS)──► Nuxt na Vercel (Nitro API + Postgres)
   │                                                                   │   ▲
-  └─ grain.local: todas as configurações e controles                  │   └─ METAR + Open-Meteo
+  └─ gwethr.local: todas as configurações e controles                  │   └─ METAR + Open-Meteo
                                                                       └─ painel só leitura, com login
 ```
 - O ESP32 sempre inicia a comunicação; nada de abrir porta no roteador. Ele não busca mais configuração na nuvem: é a única fonte de verdade e envia uma cópia junto com o estado.
@@ -78,9 +80,9 @@ O que conta como chuva observada: o METAR (RA/DZ/SHRA/TSRA), o botão “Está c
 9. ⏹️ Previsão + WhatsApp: encerrada na v5 sem validação; código removido na Fase 11, volta como Fase 20.
 10. ➡️ Robustez: movida para a Fase 17.
 
-**v5 — GRain**
+**v5 — GWethr**
 
-11. ✅ GRain, escritório e limpeza: renome (GitHub, Vercel com domínio novo e o antigo como alias, firmware, `grain.local`), `placements` com flag sacada, remoção do WhatsApp (aba, rotas, envio, agenda, alertas, tabelas). *Resultado: firmware 0.8.0 com `grain.local`; repositório `gfnasc/GRain`; painel no domínio novo (o antigo segue como alias); histórico da sacada hachurado e fora dos extremos; WhatsApp e suas tabelas removidos.*
+11. ✅ GRain (hoje GWethr), escritório e limpeza: renome para GRain (GitHub, Vercel com domínio novo e o antigo como alias, firmware, `grain.local` — hoje `gwethr.local`), `placements` com flag sacada, remoção do WhatsApp (aba, rotas, envio, agenda, alertas, tabelas). *Resultado: firmware 0.8.0 com `gwethr.local`; repositório `gfnasc/GWethr`; painel no domínio novo (o antigo segue como alias); histórico da sacada hachurado e fora dos extremos; WhatsApp e suas tabelas removidos.*
 12. ✅ Configurações só no ESP32: editor do display com prévia do OLED, calibração e localização na página local; ESP32 para de buscar config e envia uma cópia; painel somente leitura (a aba Display vira Estação). *Resultado: firmware 0.9.0 com editor na página local (sem prévia do OLED, para poupar espaço; os botões de página mostram no próprio display); cópia da configuração chega ao painel ~2 s depois de salvar; aba Estação com prévia.*
 13. ✅ Outdoor: METAR e Open-Meteo gravados em `outdoor_obs`, cards Outdoor × Indoor e previsão de hoje/amanhã na aba Agora, Indoor × Outdoor no histórico. *Resultado: METAR do aeroporto mais próximo (detectado pela localização) com Open-Meteo como reserva e nos buracos; 72 h de histórico ao detectar; coleta depois da resposta ao ESP32.*
 14. ✅ Pressão calibrada automaticamente pelo QNH (mediana de 7 dias), aplicada pelo ESP32; gráfico estação × QNH. *Resultado: desvio de +2,29 hPa (desvio-padrão 0,23) calculado com a pressão sem calibração, sem realimentação; firmware 0.10.0 aplica pela resposta do envio; histórico antigo corrigido uma vez.*
@@ -91,7 +93,7 @@ O que conta como chuva observada: o METAR (RA/DZ/SHRA/TSRA), o botão “Está c
 19. Interface física: botão (D19), buzzer ativo (D18) e o LED azul embutido (GPIO 2) para retorno visual.
     - **Botão:** toque = próxima página (com a tela apagada, acende por 15 s; com alerta ativo, cala o alerta); segurar 2 s = "Está chovendo aqui", com tela de confirmação e 2 bipes; segurar 5 s = liga/desliga a tela. Enquanto segura, o display e o LED mostram o que vai acontecer ao soltar. Troca de página escolhida no app: pelo botão, automática ou as duas (o toque segura a página por 30 s). Proteção do OLED no modo pelo botão: deslocar a imagem 1–2 pixels de tempos em tempos e escurecer depois de alguns minutos sem toque.
     - **Buzzer (só bipes curtinhos):** bipe curtíssimo quando a estação termina de ligar; 3 bipes curtos quando o alerta de chuva dispara (de novo só se a chance subir de nível); clique nos toques do botão e 2 bipes curtos ao registrar chuva; horário silencioso configurável (padrão 22h–7h); o toque no botão cala; liga/desliga e "Testar buzzer" no app.
-    - **LED embutido (por prioridade):** aceso direto na gravação pelo Wi-Fi (piscando rápido) e na rede de configuração GRain-Setup; aceso enquanto o botão está apertado, pisca rápido ao chegar nos 2 s ("solte: chovendo") e fica fixo nos 5 s ("solte: tela"); 2 piscadas quando a nuvem confirma o aviso de chuva (pisca devagar enquanto ele aguarda envio); piscada dupla a cada 2 s com alerta de chuva ativo (aviso silencioso no horário noturno); piscada tripla a cada 5 s quando falta Wi-Fi, nuvem ou sensor; senão, piscada curtinha a cada leitura (sinal de vida). Modo no app: normal, só avisos (sem o sinal de vida) ou desligado; à noite, só avisos por padrão.
+    - **LED embutido (por prioridade):** aceso direto na gravação pelo Wi-Fi (piscando rápido) e na rede de configuração GWethr-Setup; aceso enquanto o botão está apertado, pisca rápido ao chegar nos 2 s ("solte: chovendo") e fica fixo nos 5 s ("solte: tela"); 2 piscadas quando a nuvem confirma o aviso de chuva (pisca devagar enquanto ele aguarda envio); piscada dupla a cada 2 s com alerta de chuva ativo (aviso silencioso no horário noturno); piscada tripla a cada 5 s quando falta Wi-Fi, nuvem ou sensor; senão, piscada curtinha a cada leitura (sinal de vida). Modo no app: normal, só avisos (sem o sinal de vida) ou desligado; à noite, só avisos por padrão.
     - Configuração na aba Display do app local; a cópia vai para o painel (aba Estação).
 20. WhatsApp: números, chaves e horários configurados no ESP32; mensagens Outdoor/Indoor/Chuva montadas pela nuvem e alerta de chuva.
 

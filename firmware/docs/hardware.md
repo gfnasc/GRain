@@ -1,4 +1,4 @@
-# Hardware — GRain
+# Hardware — GWethr
 
 Fonte de verdade do hardware. Atualize sempre que a fiação mudar e mantenha `include/config.h` sincronizado.
 Diagrama visual: `../../docs/plano.html` (seção Ligações).
@@ -27,8 +27,8 @@ Diagrama visual: `../../docs/plano.html` (seção Ligações).
 | OLED SSD1306 128×64 | I2C | 0x3C | 3 páginas rotativas |
 
 ## Rede e memória
-- Wi-Fi 2,4 GHz (WiFiManager); rede de configuração "GRain-Setup" com senha aleatória mostrada no OLED.
-- mDNS: `grain.local` (o hostname antigo `gweather` é migrado sozinho).
+- Wi-Fi 2,4 GHz (WiFiManager); rede de configuração "GWethr-Setup" com senha aleatória mostrada no OLED.
+- mDNS: `gwethr.local` (os antigos `grain` e `gweather` são migrados sozinhos).
 - Local: escritório (antes, sacada). Na sacada a temperatura e a umidade eram distorcidas por sol e calor do prédio.
 - Flash 4 MB (`partitions.csv`): app0/app1 de 1,44 MB cada (OTA), LittleFS 1 MB, coredump 64 KB.
 

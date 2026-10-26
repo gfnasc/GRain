@@ -1,4 +1,4 @@
-<title>GRain</title>
+<title>GWethr</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -197,7 +197,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
 <header class="top">
   <div class="stack">
     <span class="eyebrow">Plano do projeto · v5 · 13/out/2026</span>
-    <h1>GRain <span class="muted" style="font-size:.45em;font-weight:600">antigo GWeather</span></h1>
+    <h1>GWethr <span class="muted" style="font-size:.45em;font-weight:600">antes GRain e GWeather</span></h1>
     <p class="muted">ESP32 DevKit v1 com AHT20, BMP280 e OLED SSD1306, no escritório. Previsão de chuva para 1 h, 2 h e 3 h, cruzando o barômetro da estação com dados externos; Outdoor (lá fora) e Indoor (escritório). Configurações no app do próprio ESP32 e painel em Nuxt na Vercel só para visualização.</p>
     <p class="muted"><b>Projeto aberto, feito para um hardware específico:</b> para reproduzir, use exatamente os mesmos módulos e as mesmas ligações descritas aqui. Outras placas, sensores ou displays exigem adaptar o código.</p>
   </div>
@@ -230,8 +230,8 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
 <section id="v5">
   <div class="head">
     <span class="eyebrow">Reformulação · v5 · aprovada em 13/out/2026</span>
-    <h2>GRain: estação de chuva com Outdoor + Indoor</h2>
-    <p class="muted">O projeto passa a se chamar <b>GRain</b> (Guilherme + Rain, na mesma lógica do GWeather). A estação sai da sacada e vai para o escritório. O <b>Outdoor</b> passa a vir de dados externos (aeroporto mais próximo e modelo numérico), cruzados com a pressão medida pela estação. O <b>Indoor</b> é o escritório, medido pelos sensores. O foco principal é responder <b>“vai chover na próxima 1 h, 2 h ou 3 h?”</b>, com vários métodos, do menos ao mais preciso, e um placar de acertos de cada um.</p>
+    <h2>GWethr: estação de chuva com Outdoor + Indoor</h2>
+    <p class="muted">O projeto passou a se chamar <b>GRain</b> (G + Rain) e, em 26/10, <b>GWethr</b> (G + weather, escrito assim mesmo). A estação sai da sacada e vai para o escritório. O <b>Outdoor</b> passa a vir de dados externos (aeroporto mais próximo e modelo numérico), cruzados com a pressão medida pela estação. O <b>Indoor</b> é o escritório, medido pelos sensores. O foco principal é responder <b>“vai chover na próxima 1 h, 2 h ou 3 h?”</b>, com vários métodos, do menos ao mais preciso, e um placar de acertos de cada um.</p>
     <p class="muted">Duas regras novas: <b>todas as configurações ficam no app do ESP32</b> e o <b>painel web serve só para ver os dados</b>. O <b>WhatsApp sai agora</b>: o que já foi feito é removido, e ele volta como a última fase.</p>
   </div>
 
@@ -267,7 +267,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
 
     <h3>Onde fica cada coisa</h3>
     <div class="tbl"><table>
-      <thead><tr><th></th><th>App do ESP32 (<code>grain.local</code>)</th><th>Painel web (Vercel)</th></tr></thead>
+      <thead><tr><th></th><th>App do ESP32 (<code>gwethr.local</code>)</th><th>Painel web (Vercel)</th></tr></thead>
       <tbody>
         <tr><td><b>Papel</b></td><td>Todas as configurações e os controles da estação</td><td>Só visualização: agora, chuva, histórico e placar</td></tr>
         <tr><td><b>Display</b></td><td>Editor de páginas, campos, tempo por página, brilho e modo noturno, com prévia do OLED; navegar, pausar e ligar ou desligar a tela</td><td>Não edita nada. Mostra, só para leitura, a configuração atual que a estação informa</td></tr>
@@ -278,7 +278,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     </table></div>
     <div class="note warn">
       <strong>O que isso significa na prática</strong>
-      <span>As configurações só podem ser mudadas na rede de casa, pelo <code>grain.local</code>. Em troca, o ESP32 vira a única fonte de verdade: ele não busca mais a configuração na nuvem e manda uma cópia junto com o estado da estação. O botão “Está chovendo aqui” continua no painel, porque registra uma observação e não altera nenhuma configuração; ele também aparece na página local.</span>
+      <span>As configurações só podem ser mudadas na rede de casa, pelo <code>gwethr.local</code>. Em troca, o ESP32 vira a única fonte de verdade: ele não busca mais a configuração na nuvem e manda uma cópia junto com o estado da estação. O botão “Está chovendo aqui” continua no painel, porque registra uma observação e não altera nenhuma configuração; ele também aparece na página local.</span>
     </div>
 
     <h3>Chuva em 1 h, 2 h e 3 h: do menos ao mais preciso</h3>
@@ -354,7 +354,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
 
     <div class="note ok">
       <strong>Decidido</strong>
-      <span>Nome <b>GRain</b>. Histórico da sacada mantido com a flag <b>sacada</b>. Configurações só no ESP32 e painel só para visualização. WhatsApp removido agora e de volta na última fase. Ordem das fases aprovada.</span>
+      <span>Nome <b>GWethr</b>. Histórico da sacada mantido com a flag <b>sacada</b>. Configurações só no ESP32 e painel só para visualização. WhatsApp removido agora e de volta na última fase. Ordem das fases aprovada.</span>
     </div>
   </div>
 </section>
@@ -606,7 +606,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
   <div class="head">
     <span class="eyebrow">Roteiro</span>
     <h2>Fases do projeto</h2>
-    <p class="muted">Cada fase termina com um critério de aceite. Na v4 o painel saiu do ESP32 e foi para um app Nuxt na Vercel. Na v5 o projeto virou GRain: a Fase 9 foi encerrada, a robustez passou para a 17 (antes do M4, que precisa de um teste de 30 dias) e o WhatsApp voltou como a 19.</p>
+    <p class="muted">Cada fase termina com um critério de aceite. Na v4 o painel saiu do ESP32 e foi para um app Nuxt na Vercel. Na v5 o projeto virou GWethr: a Fase 9 foi encerrada, a robustez passou para a 17 (antes do M4, que precisa de um teste de 30 dias) e o WhatsApp voltou como a 19.</p>
   </div>
   <div class="phases">
     <div class="phase done">
@@ -731,22 +731,22 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
     <div class="phase" style="background:var(--bg)">
       <div class="n" style="color:var(--accent)">v5</div>
       <div class="body">
-        <div class="meta"><h3>Reformulação: GRain</h3><span class="chip v5">Aprovada em 13/out/2026</span></div>
+        <div class="meta"><h3>Reformulação: GWethr</h3><span class="chip v5">Aprovada em 13/out/2026</span></div>
         <p class="muted">A partir daqui: estação no escritório, Outdoor + Indoor, chuva em 1 h, 2 h e 3 h, configurações só no ESP32, painel só para visualização e WhatsApp por último. Detalhes em <a href="#v5">Reformulação v5</a>.</p>
       </div>
     </div>
       <div class="phase done">
         <div class="n">11</div>
         <div class="body">
-          <div class="meta"><h3>GRain, escritório e limpeza</h3><span class="chip done">Concluída</span><span class="chip">1 dia</span></div>
+          <div class="meta"><h3>GWethr, escritório e limpeza</h3><span class="chip done">Concluída</span><span class="chip">1 dia</span></div>
           <ul>
-            <li>Renomear para GRain: repositório no GitHub (o endereço antigo redireciona sozinho), projeto na Vercel com domínio novo (o antigo fica como alias até a estação apontar para o novo) e firmware (abertura, rede Wi-Fi de configuração <code>GRain-XXXX</code>, <code>grain.local</code>, títulos). O <code>device_id</code> e o token continuam os mesmos, então não há migração de dados.</li>
+            <li>Renomear para GRain (em 26/10 virou GWethr): repositório no GitHub (o endereço antigo redireciona sozinho), projeto na Vercel com domínio novo (o antigo fica como alias até a estação apontar para o novo) e firmware (abertura, rede Wi-Fi de configuração <code>GWethr-XXXX</code>, <code>gwethr.local</code>, títulos). O <code>device_id</code> e o token continuam os mesmos, então não há migração de dados.</li>
             <li>Tabela <code>placements</code>: flag sacada no histórico antigo e escritório a partir da data da mudança.</li>
             <li>Remover o WhatsApp: aba Mensagens, rotas <code>notify</code>, envio, agenda, alertas, textos e tabelas.</li>
           </ul>
-          <p class="accept"><b>Aceite:</b> GRain no ar no endereço novo, estação enviando do escritório, histórico antigo marcado como sacada e nenhum resto de WhatsApp no código.</p>
+          <p class="accept"><b>Aceite:</b> GWethr no ar no endereço novo, estação enviando do escritório, histórico antigo marcado como sacada e nenhum resto de WhatsApp no código.</p>
           <div class="result">
-            <span><b>Resultado:</b> firmware 0.8.0 com <code>grain.local</code>, rede <code>GRain-Setup</code> e nome na abertura (URL, token e senha preservados). Repositório renomeado para GRain; painel no domínio novo, com o antigo como alias. Estação no escritório desde 13/10; histórico da sacada hachurado nos gráficos de temperatura e umidade e fora de mínimas, máximas e médias; local da estação na aba Agora e coluna <code>local</code> no CSV. WhatsApp removido do painel, da API e do banco; localização preservada.</span>
+            <span><b>Resultado:</b> firmware 0.8.0 com <code>grain.local</code>, rede <code>GRain-Setup</code> (hoje <code>gwethr.local</code> e <code>GWethr-Setup</code>) e nome na abertura (URL, token e senha preservados). Repositório renomeado para GRain (em 26/10, GWethr); painel no domínio novo, com o antigo como alias. Estação no escritório desde 13/10; histórico da sacada hachurado nos gráficos de temperatura e umidade e fora de mínimas, máximas e médias; local da estação na aba Agora e coluna <code>local</code> no CSV. WhatsApp removido do painel, da API e do banco; localização preservada.</span>
           </div>
         </div>
       </div>
@@ -759,7 +759,7 @@ footer{margin-top:56px;padding-top:18px;border-top:2px solid var(--fg);display:g
             <li>A estação deixa de buscar configuração na nuvem e envia uma cópia da configuração e da localização junto com o estado.</li>
             <li>Painel: sai o editor da aba Display e saem as rotas de escrita de configuração. A aba vira <b>Estação</b>, só leitura, com o estado e a prévia do que está no OLED.</li>
           </ul>
-          <p class="accept"><b>Aceite:</b> tudo é configurado pelo <code>grain.local</code>, a mudança aparece no OLED na hora e o painel mostra a configuração nova sem permitir editar.</p>
+          <p class="accept"><b>Aceite:</b> tudo é configurado pelo <code>gwethr.local</code>, a mudança aparece no OLED na hora e o painel mostra a configuração nova sem permitir editar.</p>
           <div class="result">
             <span><b>Resultado:</b> firmware 0.9.0 com a seção Configurações na página local: páginas do display, tempo, brilho, modo noturno, calibração e localização, salvas com a senha da estação. Sem prévia do OLED na página, para poupar espaço; os botões de página mostram cada uma no próprio display. A estação não consulta mais a nuvem: manda uma cópia da configuração em cada envio e na hora em que algo muda (~2 s até o painel). A aba Display virou Estação, só de leitura, com a prévia do OLED.</span>
           </div>

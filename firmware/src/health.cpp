@@ -67,7 +67,7 @@ void healthRestart(const char *why) {
 
 static void beginOta() {
   ArduinoOTA.setHostname(settings().hostname.c_str());
-  ArduinoOTA.setMdnsEnabled(false);  // o mDNS já é do netmgr (grain.local)
+  ArduinoOTA.setMdnsEnabled(false);  // o mDNS já é do netmgr (gwethr.local)
   s_otaPass = netStatus().apPass;
   ArduinoOTA.setPassword(s_otaPass.c_str());
   ArduinoOTA.onStart([]() {

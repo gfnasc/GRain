@@ -18,7 +18,7 @@ struct NetStatus {
 // 8 a 63 caracteres visíveis, sem espaços. Vale na hora.
 bool netSetPassword(const String &pass, String &err);
 
-// Sem Wi-Fi salvo, abre a rede de configuração "GRain-Setup".
+// Sem Wi-Fi salvo, abre a rede de configuração "GWethr-Setup".
 void netBegin();
 
 // Chamar no loop(): atende o portal, reconecta e acompanha a hora.

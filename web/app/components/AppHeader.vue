@@ -28,7 +28,7 @@ async function logout() {
   <header class="top">
     <div class="brand">
       <span class="eyebrow">Estação de chuva</span>
-      <h1>GRain</h1>
+      <h1>GWethr</h1>
     </div>
     <nav aria-label="Seções">
       <NuxtLink to="/">Agora</NuxtLink>

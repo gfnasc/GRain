@@ -1,4 +1,4 @@
-# GRain — painel (Nuxt na Vercel)
+# GWethr — painel (Nuxt na Vercel)
 
 Painel web e API de nuvem da estação. Recebe as médias de 10 min enviadas pelo ESP32, guarda no Postgres (Neon) e mostra os dados com login. Só visualização: a configuração é feita na página local do ESP32, que manda uma cópia junto com as médias. O local da estação em cada período fica na tabela `placements`: temperatura e umidade medidas na sacada aparecem marcadas e ficam fora dos extremos.
 
@@ -57,7 +57,7 @@ vercel env add NUXT_SESSION_PASSWORD production
 Cadastrar a estação (o `device_id` aparece em `config` no console serial do ESP32):
 
 ```bash
-pnpm device:token grain-xxxxxx   # token em .device-token-grain-xxxxxx.txt
+pnpm device:token gwethr-xxxxxx   # token em .device-token-gwethr-xxxxxx.txt
 ```
 
 No console serial do ESP32:

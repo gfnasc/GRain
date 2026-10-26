@@ -4,7 +4,7 @@
 import type { RainMethod, RainResp } from '~/components/RainNow.vue'
 import type { TrialState } from '~/components/TrialCountdown.vue'
 
-useHead({ title: 'Chuva · GRain' })
+useHead({ title: 'Chuva · GWethr' })
 
 type Score = { method: RainMethod; horizon: number; n: number; events: number; brier: number | null; skill: number | null; hits: number; false_alarms: number; misses: number; reliability: { bin: number; n: number; freq: number }[] }
 type Learned = { method: 'm2t' | 'm4'; horizons: { h: number; n: number; events: number; trained_at: string | null; weights: { key: string; prior: number; value: number }[] }[] }

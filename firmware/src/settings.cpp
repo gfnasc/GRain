@@ -44,7 +44,7 @@ static void applyDefaults(Settings &c) {
     c.deviceId = keepId;
   } else {
     char id[24];
-    snprintf(id, sizeof id, "grain-%06lx", (unsigned long)(esp_random() & 0xFFFFFF));
+    snprintf(id, sizeof id, "gwethr-%06lx", (unsigned long)(esp_random() & 0xFFFFFF));
     c.deviceId = id;
   }
   c.hostname = DEFAULT_HOSTNAME;
@@ -181,7 +181,7 @@ static void fromJson(JsonDocument &doc, Settings &c) {
   // Campos ausentes mantêm o valor padrão já aplicado em c.
   c.deviceId = doc["device_id"] | c.deviceId;
   c.hostname = doc["hostname"] | c.hostname;
-  if (c.hostname == LEGACY_HOSTNAME) c.hostname = DEFAULT_HOSTNAME;  // projeto renomeado para GRain
+  if (c.hostname == LEGACY_HOSTNAME || c.hostname == LEGACY_HOSTNAME2) c.hostname = DEFAULT_HOSTNAME;  // projeto renomeado (GWeather → GRain → GWethr)
   c.tz = doc["time"]["tz"] | c.tz;
   c.ntp1 = doc["time"]["ntp1"] | c.ntp1;
   c.ntp2 = doc["time"]["ntp2"] | c.ntp2;
@@ -262,7 +262,8 @@ bool settingsBegin() {
     return save();
   }
   fromJson(doc, s_cfg);
-  if ((doc["schema"] | 1) < s_cfg.schema) save();  // grava os campos novos (e descarta os que saíram)
+  // Grava se o esquema mudou ou se o hostname antigo foi migrado (para valer no mDNS desde já).
+  if ((doc["schema"] | 1) < s_cfg.schema || s_cfg.hostname != String(doc["hostname"] | "")) save();  // grava os campos novos (e descarta os que saíram)
   log_i("[%s] configuração carregada de %s", TAG, PATH);
   return true;
 }

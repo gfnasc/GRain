@@ -1,4 +1,4 @@
-# API v1 — GRain
+# API v1 — GWethr
 
 Contrato da API HTTP. As rotas do **ESP32** existem desde a fase 5; as rotas da **nuvem** (Nuxt na Vercel) chegam na fase 6 e usam os mesmos nomes de campos.
 
@@ -12,7 +12,7 @@ Convenções:
 
 ## ESP32 (rede local)
 
-Base: `http://grain.local` (ou o IP mostrado na página **Rede** do display).
+Base: `http://gwethr.local` (ou o IP mostrado na página **Rede** do display).
 
 O servidor só responde com Wi-Fi conectado e a rede de configuração fechada. Rotas `GET` são abertas na rede local; rotas que alteram algo exigem **HTTP Basic** com usuário `admin` e a **senha da estação** (a mesma da rede de configuração, exibida pelo comando `status` no console serial).
 
@@ -26,7 +26,7 @@ Página mínima (HTML, sem dependências externas) com leitura atual e estado. A
 
 ```json
 {
-  "device_id": "grain-a1b2c3",
+  "device_id": "gwethr-a1b2c3",
   "ts": 1791830406,
   "age_s": 0,
   "temp": 28.02,
@@ -57,11 +57,11 @@ Status: `200`; `503` se ainda não houve nenhuma leitura.
 
 ```json
 {
-  "device": { "id": "grain-a1b2c3", "firmware": "0.14.1", "uptime_s": 24,
+  "device": { "id": "gwethr-a1b2c3", "firmware": "0.14.1", "uptime_s": 24,
               "heap_free": 226656, "heap_min": 222612, "reset_reason": "atualização pelo Wi-Fi", "boots": 4, "ota": true,
               "fs_used": 8192, "fs_total": 1048576 },
   "wifi": { "connected": true, "ssid": "MinhaRede", "ip": "192.168.1.105", "rssi": -45,
-            "hostname": "grain.local" },
+            "hostname": "gwethr.local" },
   "time": { "synced": true, "tz": "<-03>3", "local": "2026-10-12T15:33:51", "epoch": 1791830031 },
   "cloud": { "configured": true, "url": "https://SEU-PROJETO.vercel.app", "queue": 0, "last_ok": 1791830000,
              "last_http": 200, "last_error": "", "interval_s": 300, "config_sent": 1791830000, "config_pending": false,
@@ -76,8 +76,8 @@ Configuração gravada em `/config.json`. É a única fonte da configuração: a
 ```json
 {
   "schema": 3,
-  "device_id": "grain-a1b2c3",
-  "hostname": "grain",
+  "device_id": "gwethr-a1b2c3",
+  "hostname": "gwethr",
   "time": { "tz": "<-03>3", "ntp1": "pool.ntp.org", "ntp2": "time.google.com" },
   "site": { "ground_alt_m": 600, "floor": 10, "floor_height_m": 2.9, "sensor_height_m": 1 },
   "display": {
@@ -97,7 +97,7 @@ Altera um ou mais campos. O corpo é um JSON **parcial** no mesmo formato do `GE
 ```bash
 curl -u admin:SENHA -X PUT -H 'Content-Type: application/json' \
   -d '{"display":{"page_s":8},"site":{"floor":10}}' \
-  http://grain.local/api/v1/config
+  http://gwethr.local/api/v1/config
 ```
 
 | Campo | Regra |
@@ -132,6 +132,9 @@ Responde `202 {"ok": true}` e reinicia a placa meio segundo depois.
 
 ### `POST /api/v1/system/password` 🔒
 Troca a senha da estação (rede de configuração e rotas 🔒). Corpo `{"new": "..."}`, de 8 a 63 caracteres visíveis, sem espaços. Vale na hora. `200` · `401` senha atual errada · `422` senha nova fora da regra.
+
+### `POST /api/v1/cloud/url` 🔒
+Troca o endereço do painel na nuvem (antes só pelo console serial). Corpo `{"url": "https://..."}`; manda a fila e a cópia da configuração para o endereço novo. `200 {"ok": true, "url": "..."}` · `401` senha errada · `422` endereço sem `https://`.
 
 ### `GET /api/v1/display`
 ```json

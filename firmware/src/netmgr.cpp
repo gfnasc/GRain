@@ -108,7 +108,7 @@ void netBegin() {
   // Sem Wi-Fi salvo, a rede de configuração fica aberta até ser usada.
   // Com Wi-Fi salvo (ex.: roteador fora do ar no boot), fecha sozinha depois de um tempo.
   s_wm.setConfigPortalTimeout(s_wm.getWiFiIsSaved() ? PORTAL_TIMEOUT_S : 0);
-  s_wm.setTitle("GRain");
+  s_wm.setTitle("GWethr");
   static std::vector<const char *> menu = {"wifi", "info", "exit"};
   s_wm.setMenu(menu);
   s_wm.setClass("invert");

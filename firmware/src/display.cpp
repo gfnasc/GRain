@@ -530,7 +530,7 @@ static void drawSplashFull() {
   s_oled.clearBuffer();
   drawSpinner(s_spinFrame < 0 ? 0 : s_spinFrame);
   s_oled.setFont(u8g2_font_7x13B_tf);
-  const char *name = "GRain";
+  const char *name = "GWethr";
   s_oled.drawUTF8((128 - s_oled.getUTF8Width(name)) / 2, 51, name);
   s_oled.setFont(u8g2_font_5x8_tf);
   const char *msg = "iniciando...";

@@ -1,5 +1,5 @@
 {
-  "name": "grain-web",
+  "name": "gwethr-web",
   "type": "module",
   "private": true,
   "scripts": {
