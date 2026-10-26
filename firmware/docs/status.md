@@ -189,6 +189,11 @@ mantém uma API local + página mínima em `gwethr.local`. Plano v5: Outdoor (da
   USB; repositório `gfnasc/GWethr`; projeto da Vercel `gwethr` com domínio novo (os antigos ficam alguns dias e saem);
   nome do aparelho no banco "GWethr". Mantidos: `device_id` `gweather-884ad3`, namespace da NVS `gweather`, pasta local.
 
+- Firmware 0.15.4 (26/10): buzzer com ritmo por temporizador (esp_timer), não pelo loop — leitura do sensor ou redesenho
+  do OLED no meio da sequência alongavam um bipe; clique e confirmação do botão tocam mesmo no horário silencioso (são
+  resposta ao gesto), que passa a calar só os sons automáticos (alerta e bipe de boot); o bipe de boot espera a hora
+  sincronizar (até 20 s) para respeitar o silencioso; clique de 15 → 25 ms.
+
 ## Em andamento
 - Teste de chuva (Fase 18): de 13/10 16:25:22 a 12/11 16:25 (hora local); não recomeça com gravações.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).

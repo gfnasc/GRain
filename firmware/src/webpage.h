@@ -197,7 +197,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
         <label class="ck"><input id="z_click" type="checkbox">Clique nos toques</label>
         <label>O buzzer liga com<select id="z_lvl"><option value="high">nível alto</option><option value="low">nível baixo</option></select></label>
         <label class="ck"><input id="q_on" type="checkbox">Horário silencioso</label>
-        <span class="mut">buzzer calado e LED como acima</span>
+        <span class="mut">cala o alerta e o bipe de boot (os cliques do botão continuam) e o LED fica como acima</span>
         <label>Das<input id="q_from" type="time"></label>
         <label>Às<input id="q_to" type="time"></label>
       </div>
