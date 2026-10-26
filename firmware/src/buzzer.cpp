@@ -23,7 +23,7 @@ static volatile bool s_low = false;  // nível que liga (cópia de settings, lid
 static uint32_t s_rev = 0;
 static bool s_bootPending = false;
 // Repetição do alerta de chuva.
-static const uint32_t ALERT_REPEAT_MS = 2000, ALERT_TOTAL_MS = 30000;
+static const uint32_t ALERT_REPEAT_MS = 2000, ALERT_TOTAL_MS = ALERT_ACTIVE_MS;
 static uint32_t s_alertUntil = 0, s_alertNext = 0;
 static bool s_alertForce = false;
 

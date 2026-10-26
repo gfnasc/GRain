@@ -179,14 +179,14 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
     </div>
     <h2>Alerta de chuva</h2>
     <div class="box">
-      <span class="mut">Quando a chance passa do limite, o buzzer toca 3 bipes curtos a cada 2 s por até 30 s, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta (na troca automática, ela volta a cada duas páginas) e o LED azul pisca duplo. Um toque no botão cala os bipes e a tela de alerta; tudo volta se a chance subir 15 pontos.</span>
+      <span class="mut">Quando a chance passa do limite, o buzzer toca 3 bipes curtos a cada 2 s por até 30 s, o display pisca, mostra um guarda-chuva no cabeçalho e uma tela de alerta que fica por até 30 s (na troca automática, ela volta depois a cada duas páginas) e o LED azul pisca duplo. Um toque no botão cala os bipes e a tela de alerta; tudo volta se a chance subir 15 pontos.</span>
       <div class="f2 f4">
         <label class="ck"><input id="a_on" type="checkbox">Ligado</label>
         <label>A partir de (%)<input id="a_pct" type="number" min="10" max="100" step="5"></label>
         <label>Nas próximas<select id="a_h"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3">3 horas</option></select></label>
         <label>Mostrar<select id="a_mode"><option value="both">ícone e tela</option><option value="icon">só o ícone</option><option value="screen">só a tela</option></select></label>
       </div>
-      <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta por 12 s com valores de exemplo (com bipe)</span></div>
+      <div class="row"><button id="a_test">Testar alerta</button><span class="mut">mostra o alerta com valores de exemplo por até 30 s, com os bipes; um toque no botão encerra</span></div>
     </div>
     <h2>Buzzer e LED</h2>
     <div class="box">

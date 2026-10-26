@@ -45,6 +45,7 @@ static int pageCount() { return settings().pageCount ? settings().pageCount : 1;
 static bool s_alert = false;
 static int s_alertH = 0, s_alertP = 0;
 static bool s_alertScreen = false;     // a tela de alerta está no lugar de uma página
+static uint32_t s_alertScreenUntil = 0; // ao disparar: tela fixa por 30 s (junto com os bipes)
 static int s_pagesSinceAlert = 0;
 static int s_flashLeft = 0;            // inversões que faltam (par: termina normal)
 static uint32_t s_flashNext = 0;
@@ -552,6 +553,8 @@ static void render() {
     drawRainConfirm();
   } else if (s_alertScreen) {
     drawAlertScreen();
+    uint32_t held = buttonHeldMs();
+    if (held >= 500) drawHoldOverlay(held);
   } else {
     if (s_page >= pageCount()) s_page = 0;
     const PageCfg &pg = settings().pages[s_page];
@@ -680,8 +683,10 @@ static void evalAlert(uint32_t now) {
     if (!night && s_powerSaveSent != 1) {
       s_flashLeft = 6;
       s_flashNext = now;
-      if ((c.rainAlertMode & 2) && !s_paused) {
+      if (c.rainAlertMode & 2) {
         s_alertScreen = true;
+        s_alertScreenUntil = now + ALERT_ACTIVE_MS;
+        if (!s_alertScreenUntil) s_alertScreenUntil = 1;
         s_pagesSinceAlert = 0;
         s_pageSince = now;
         s_dropFrame = -1;
@@ -692,6 +697,7 @@ static void evalAlert(uint32_t now) {
   if (!active) {
     if (s_alert) buzzerStop();  // o alerta acabou: para a repetição dos bipes
     s_alertScreen = false;
+    s_alertScreenUntil = 0;
     s_alertAck = false;
   }
   s_alert = active;
@@ -769,8 +775,11 @@ void displayLoop() {
       drawAlertArt(frame);
       s_oled.updateDisplayArea(0, 0, 6, 8);
     }
-    if ((uint32_t)(now - s_pageSince) >= settings().displayPageMs) {
+    // Ao disparar, fica 30 s (ou até o toque); nas voltas do carrossel, o tempo de uma página.
+    bool over = s_alertScreenUntil ? (int32_t)(now - s_alertScreenUntil) >= 0 : (uint32_t)(now - s_pageSince) >= settings().displayPageMs;
+    if (over) {
       s_alertScreen = false;
+      s_alertScreenUntil = 0;
       s_pageSince = now;
       if (!s_paused && cfg.pageMode != 1) s_page = (s_page + 1) % pageCount();
       render();
@@ -844,6 +853,7 @@ void displaySetPaused(bool paused) {
 
 static void showPage(int index) {
   s_alertScreen = false;
+  s_alertScreenUntil = 0;
   s_page = index;
   s_pageSince = millis();
   if (!s_paused && settings().pageMode != 1) {
@@ -885,6 +895,7 @@ DisplayTap displayTap() {
   if (s_alert && !s_alertAck) {
     s_alertAck = true;
     s_alertScreen = false;
+    s_alertScreenUntil = 0;
     buzzerStop();
     render();
     log_i("[%s] alerta calado pelo botão", TAG);
@@ -935,7 +946,7 @@ bool displayRainAlert(int *h, int *p) {
 }
 
 void displayAlertTest() {
-  s_testUntil = millis() + 12000;
+  s_testUntil = millis() + ALERT_ACTIVE_MS;
   if (s_testUntil == 0) s_testUntil = 1;
   s_alert = false;  // força o "disparo" (pisca e mostra a tela)
 }

@@ -51,5 +51,5 @@ bool displayProblem();
 bool displayRainAlert(int *h, int *p);
 // O alerta atual foi calado pelo botão (volta se a chance subir 15 pontos).
 bool displayAlertAcked();
-// Mostra o alerta por 12 s com valores de exemplo (botão "Testar alerta").
+// Mostra o alerta por 30 s com valores de exemplo (botão "Testar alerta"); o toque no botão encerra.
 void displayAlertTest();

@@ -195,6 +195,8 @@ mantém uma API local + página mínima em `gwethr.local`. Plano v5: Outdoor (da
   sincronizar (até 20 s) para respeitar o silencioso; clique de 15 → 25 ms.
 - Firmware 0.15.5 (26/10): alerta de chuva repete os 3 bipes a cada 2 s por até 30 s, ou até o toque no botão
   (ou o fim do alerta); começa de novo se a chance subir 15 pontos. No silencioso não toca (teste do alerta toca).
+- Firmware 0.15.6 (26/10): a tela de alerta fica fixa durante os mesmos 30 s dos bipes (sai junto com eles no toque
+  do botão); "Testar alerta" passa a durar 30 s.
 
 ## Em andamento
 - Teste de chuva (Fase 18): de 13/10 16:25:22 a 12/11 16:25 (hora local); não recomeça com gravações.

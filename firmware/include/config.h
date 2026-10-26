@@ -2,7 +2,7 @@
 
 // Pinos e constantes. Mantenha docs/hardware.md sincronizado.
 
-#define FW_VERSION "0.15.5"
+#define FW_VERSION "0.15.6"
 
 // Barramento I2C (AHT20, BMP280 e OLED compartilham)
 #define PIN_I2C_SDA 21
@@ -30,6 +30,7 @@
 #define BTN_CANCEL_MS 10000      // segurou demais (ou travou): não faz nada
 #define DISPLAY_WAKE_MS 15000    // toque com a tela apagada: acende por 15 s
 #define DISPLAY_TAP_HOLD_MS 30000  // modo "as duas": o toque segura a página por 30 s
+#define ALERT_ACTIVE_MS 30000    // alerta de chuva: tela de alerta e bipes por até 30 s (o toque cala)
 
 // Leitura
 #define SENSOR_INTERVAL_MS 5000
