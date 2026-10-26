@@ -193,6 +193,8 @@ mantém uma API local + página mínima em `gwethr.local`. Plano v5: Outdoor (da
   do OLED no meio da sequência alongavam um bipe; clique e confirmação do botão tocam mesmo no horário silencioso (são
   resposta ao gesto), que passa a calar só os sons automáticos (alerta e bipe de boot); o bipe de boot espera a hora
   sincronizar (até 20 s) para respeitar o silencioso; clique de 15 → 25 ms.
+- Firmware 0.15.5 (26/10): alerta de chuva repete os 3 bipes a cada 2 s por até 30 s, ou até o toque no botão
+  (ou o fim do alerta); começa de novo se a chance subir 15 pontos. No silencioso não toca (teste do alerta toca).
 
 ## Em andamento
 - Teste de chuva (Fase 18): de 13/10 16:25:22 a 12/11 16:25 (hora local); não recomeça com gravações.

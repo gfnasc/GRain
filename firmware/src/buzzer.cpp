@@ -22,6 +22,10 @@ static volatile int s_step = 0;
 static volatile bool s_low = false;  // nível que liga (cópia de settings, lida no callback)
 static uint32_t s_rev = 0;
 static bool s_bootPending = false;
+// Repetição do alerta de chuva.
+static const uint32_t ALERT_REPEAT_MS = 2000, ALERT_TOTAL_MS = 30000;
+static uint32_t s_alertUntil = 0, s_alertNext = 0;
+static bool s_alertForce = false;
 
 static inline void out(bool on) { digitalWrite(PIN_BUZZER, on != s_low ? HIGH : LOW); }
 
@@ -85,7 +89,18 @@ void buzzerPlay(BuzzPattern p, bool force) {
   start(p);
 }
 
+void buzzerAlertStart(bool force) {
+  if (!force && (!settings().buzzerEnabled || quietNow())) return;
+  uint32_t now = millis();
+  s_alertForce = force;
+  s_alertUntil = now + ALERT_TOTAL_MS;
+  if (!s_alertUntil) s_alertUntil = 1;
+  s_alertNext = now + ALERT_REPEAT_MS;
+  start(BZ_ALERT);
+}
+
 void buzzerStop() {
+  s_alertUntil = 0;
   if (s_timer) esp_timer_stop(s_timer);
   s_seq = nullptr;
   out(false);
@@ -97,6 +112,15 @@ void buzzerLoop() {
     s_rev = settingsRevision();
     s_low = settings().buzzerActiveLow;
     if (!s_seq) out(false);
+  }
+  if (s_alertUntil) {
+    uint32_t now = millis();
+    if ((int32_t)(now - s_alertUntil) >= 0) {
+      s_alertUntil = 0;
+    } else if ((int32_t)(now - s_alertNext) >= 0) {
+      s_alertNext += ALERT_REPEAT_MS;
+      if (s_alertForce || (settings().buzzerEnabled && !quietNow())) start(BZ_ALERT);
+    }
   }
   if (s_bootPending && (netStatus().timeSynced || millis() > 20000)) {
     s_bootPending = false;

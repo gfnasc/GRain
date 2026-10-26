@@ -676,7 +676,7 @@ static void evalAlert(uint32_t now) {
     s_alertAck = false;
     s_alertBeepP = p;
     s_lastTouch = now;  // tira do "escurecido por falta de toque"
-    buzzerPlay(BZ_ALERT, test);
+    buzzerAlertStart(test);
     if (!night && s_powerSaveSent != 1) {
       s_flashLeft = 6;
       s_flashNext = now;
@@ -690,6 +690,7 @@ static void evalAlert(uint32_t now) {
   }
   bool changed = active != s_alert || h != s_alertH || p != s_alertP;
   if (!active) {
+    if (s_alert) buzzerStop();  // o alerta acabou: para a repetição dos bipes
     s_alertScreen = false;
     s_alertAck = false;
   }
