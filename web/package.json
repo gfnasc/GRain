@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "device:token": "node --env-file=.env.local scripts/create-device.mjs",
+    "reader:token": "node --env-file=.env.local scripts/create-reader.mjs",
     "placement": "node --env-file=.env.local scripts/placement.mjs",
     "trial:start": "node --env-file=.env.local scripts/trial-start.mjs",
     "panel:password": "node scripts/hash-password.mjs"

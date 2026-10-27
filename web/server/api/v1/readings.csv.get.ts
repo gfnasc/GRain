@@ -1,9 +1,9 @@
-// Exporta as médias da estação (5 min; antes, 10 min) em CSV. Exige login.
+// Exporta as médias da estação (5 min; antes, 10 min) em CSV. Exige login ou token de leitura.
 // Mesmos parâmetros de intervalo de /api/v1/readings.
 //   ?excel=1  separador ";" e vírgula decimal (Excel em português)
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireReadAccess(event)
   const range = await resolveRange(event)
   const tz = useRuntimeConfig(event).public.tz as string
   const excel = getQuery(event).excel === '1'

@@ -220,6 +220,14 @@ Exige a sessão do painel. Devolve a estação (com `place`: `sacada`, `escritor
 ### `POST /api/auth/login`
 `{"password": "..."}` → `200` e cookie de sessão (30 dias) · `401` senha incorreta.
 
+### Token de leitura (🔐)
+As rotas marcadas com 🔐 aceitam a sessão do painel **ou** um token de leitura em
+`Authorization: Bearer <token>`: aparelhos que só mostram os dados (como a Gspresso) leem o painel sem
+guardar a senha dele. O token vale só para rotas `GET`; ações como `POST /api/v1/rain/report` continuam
+exigindo a sessão. Criar ou trocar: `pnpm reader:token <nome>` (grava o token em
+`web/.reader-token-<nome>.txt`, fora do git; o banco guarda só o sha256, na tabela `readers`).
+Token ausente ou errado: `401`.
+
 ### Período (parâmetros comuns às rotas de histórico)
 
 - `?range=24h | 7d | 30d` — relativo a agora (padrão `24h`), ou

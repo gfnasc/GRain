@@ -1,4 +1,4 @@
-// Horários das atualizações, para os contadores do painel. Exige login.
+// Horários das atualizações, para os contadores do painel. Exige login ou token de leitura.
 // Estimativas: a estação envia uma média de 5 min logo que o intervalo fecha; a previsão de
 // chuva é recalculada a cada 10 min (no primeiro envio de cada intervalo de 10 min); o METAR
 // é conferido a cada envio e o aeroporto publica de hora em hora (ou antes, se o tempo mudar);
@@ -9,7 +9,7 @@ const RAIN_S = 600
 const MODEL_S = 30 * 60
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireReadAccess(event)
   const deviceId = await defaultDeviceId()
   if (!deviceId) throw createError({ statusCode: 404, message: 'nenhuma estação cadastrada' })
   const sql = useSql()

@@ -1,9 +1,9 @@
 // Probabilidade prevista por método (M1, M2, M2T, M3, M4) ao longo do tempo (para uma janela de 1, 2 ou 3 h) e os
-// trechos em que choveu (METAR, aviso no painel/estação ou, sem METAR, o modelo). Exige login.
+// trechos em que choveu (METAR, aviso no painel/estação ou, sem METAR, o modelo). Exige login ou token de leitura.
 //   ?range=24h|7d|30d (ou from/to)  &h=1|2|3
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireReadAccess(event)
   const range = await resolveRange(event)
   const h = Math.min(3, Math.max(1, Number(getQuery(event).h ?? 1) || 1))
   const deviceId = await defaultDeviceId()

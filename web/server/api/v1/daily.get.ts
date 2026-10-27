@@ -1,10 +1,10 @@
-// Resumo por dia (no fuso configurado): mínimas, máximas e médias. Exige login.
+// Resumo por dia (no fuso configurado): mínimas, máximas e médias. Exige login ou token de leitura.
 // Aceita os mesmos parâmetros de intervalo de /api/v1/readings.
 // Temperatura e umidade da sacada ficam de fora (ver placements); a pressão entra sempre.
 // Traz também a mínima e a máxima de fora (Outdoor) de cada dia.
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireReadAccess(event)
   const range = await resolveRange(event)
   const tz = useRuntimeConfig(event).public.tz as string
   const deviceId = await defaultDeviceId()

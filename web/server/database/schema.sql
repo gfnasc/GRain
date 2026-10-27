@@ -169,3 +169,12 @@ alter table rain_reports add column if not exists covers_from timestamptz;
 -- 26/10/2026: projeto renomeado para GWethr (antes GRain). O id do aparelho não muda.
 alter table devices alter column name set default 'GWethr';
 update devices set name = 'GWethr' where name in ('GRain', 'GWeather');
+
+-- Leitores: aparelhos que só leem o painel (ex.: a Gspresso), com token próprio.
+-- O token nunca é guardado em texto puro; dá acesso só às rotas GET de leitura.
+create table if not exists readers (
+  id           text primary key,                 -- nome curto, ex.: gspresso
+  token_hash   text not null unique,             -- sha256 hex do token
+  created_at   timestamptz not null default now(),
+  last_used_at timestamptz
+);

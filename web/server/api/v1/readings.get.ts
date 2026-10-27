@@ -1,4 +1,4 @@
-// Série histórica para os gráficos. Exige login.
+// Série histórica para os gráficos. Exige login ou token de leitura.
 // Agrega por intervalo (10 min, 1 h, 3 h ou 1 dia, conforme o tamanho do
 // período) com média, mínima e máxima de cada grandeza, e devolve os
 // extremos exatos do período com o horário em que ocorreram.
@@ -11,7 +11,7 @@
 type Extreme = { v: number; ts: number } | null
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireReadAccess(event)
   const range = await resolveRange(event)
   const step = stepFor(range)
   const tz = useRuntimeConfig(event).public.tz as string

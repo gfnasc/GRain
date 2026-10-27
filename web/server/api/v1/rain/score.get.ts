@@ -1,8 +1,8 @@
 // Placar dos métodos de chuva nos últimos 30 dias, o teste de 30 dias (situação, placar desde o
-// começo e duelos nas mesmas rodadas) e o que o M2T e o M4 aprenderam. Exige login.
+// começo e duelos nas mesmas rodadas) e o que o M2T e o M4 aprenderam. Exige login ou token de leitura.
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event)
+  await requireReadAccess(event)
   const deviceId = await defaultDeviceId()
   if (!deviceId) throw createError({ statusCode: 404, message: 'nenhuma estação cadastrada' })
   const sql = useSql()
