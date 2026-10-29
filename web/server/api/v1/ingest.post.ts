@@ -44,6 +44,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const sql = useSql()
+  const rejected = ts.length ? await sanitizeReadings(deviceId, ts, temp, hum, pres, presRaw, dew) : 0
+  if (rejected) console.warn(`${deviceId}: ${rejected} valor(es) fora do plausível descartados`)
   let accepted = 0
   if (ts.length) {
     const rows = await sql`

@@ -198,6 +198,12 @@ mantém uma API local + página mínima em `gwethr.local`. Plano v5: Outdoor (da
 - Firmware 0.15.6 (26/10): a tela de alerta fica fixa durante os mesmos 30 s dos bipes (sai junto com eles no toque
   do botão); "Testar alerta" passa a durar 30 s.
 
+- Nuvem (29/10): filtro de leituras fisicamente impossíveis no envio (`web/server/utils/sanitize.ts`): pressão a mais de
+  10 hPa do QNH do aeroporto (ou, sem boletim, salto de mais de 6 hPa em 15 min) e saltos de mais de 8 °C / 30 pontos
+  de umidade. O valor vira null e vai para `rejected_readings` com o motivo (nada inventado nem perdido; restaurável).
+  Motivo: outro aparelho no barramento I2C fez o BMP280 marcar 1043 hPa; médias de 07:30/07:35 e a rodada de chuva
+  de 07:40 apagadas (a rodada foi recalculada com os dados limpos).
+
 ## Em andamento
 - Teste de chuva (Fase 18): de 13/10 16:25:22 a 12/11 16:25 (hora local); não recomeça com gravações.
 - Pendente da fase 7: conferir ~144 médias no primeiro dia completo (resumo por dia).

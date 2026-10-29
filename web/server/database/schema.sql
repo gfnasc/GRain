@@ -178,3 +178,16 @@ create table if not exists readers (
   created_at   timestamptz not null default now(),
   last_used_at timestamptz
 );
+
+-- 29/10/2026: valores descartados pelo filtro de leituras impossíveis (utils/sanitize.ts). Nada é
+-- inventado nem perdido: o valor sai da média gravada (fica null) e é guardado aqui com o motivo,
+-- podendo ser restaurado se for real.
+create table if not exists rejected_readings (
+  device_id text        not null references devices(id) on delete cascade,
+  ts        timestamptz not null,                  -- horário da média
+  field     text        not null,                  -- 'pres' ou 'aht' (temperatura, umidade e orvalho)
+  value     jsonb       not null,                  -- valores originais
+  reason    text        not null,
+  logged_at timestamptz not null default now(),
+  primary key (device_id, ts, field)
+);
