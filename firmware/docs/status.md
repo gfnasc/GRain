@@ -186,7 +186,7 @@ mantém uma API local + página mínima em `gwethr.local`. Plano v5: Outdoor (da
 - Renomeado para **GWethr** em 26/10/2026 (firmware 0.15.3): `gwethr.local` (migra `grain` e `gweather`), rede
   `GWethr-Setup`, novos `device_id` com prefixo `gwethr-`, gravação OTA com `GWETHR_OTA_PASS`; app local e painel com o
   nome novo; campo "Endereço do painel" na aba Sistema (`POST /api/v1/cloud/url`, com senha) para trocar o domínio sem
-  USB; repositório `gfnasc/GWethr`; projeto da Vercel `gwethr` com domínio novo (os antigos ficam alguns dias e saem);
+  USB; repositório `gfnasc/GWethr`; projeto da Vercel `gwethr` com domínio novo (os antigos foram removidos em 29/10);
   nome do aparelho no banco "GWethr". Mantidos: `device_id` `gweather-884ad3`, namespace da NVS `gweather`, pasta local.
 
 - Firmware 0.15.4 (26/10): buzzer com ritmo por temporizador (esp_timer), não pelo loop — leitura do sensor ou redesenho
